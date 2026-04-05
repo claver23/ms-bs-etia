@@ -1,5 +1,7 @@
 package com.etlions.ms_bs_etia.doc_notadeb.service.impl;
 
+import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
+import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notadeb.mapper.NotaDebitoMapper;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoEntity;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoRepository;
@@ -7,6 +9,7 @@ import com.etlions.ms_bs_etia.doc_notadeb.service.docNotadebService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -20,6 +23,7 @@ public class docNotadebServiceImpl implements docNotadebService {
     private final NotaDebitoMapper notaDebitoMapper;
 
     @Override
+    @Transactional
     public ActualizarNotaDebitoBorrador200Response emitirNotaDebito(NotaDebitoEmitirRequest request) {
         NotaDebitoEntity entity = notaDebitoMapper.toEntity(request);
         entity.setEstado("BORRADOR");
@@ -35,10 +39,13 @@ public class docNotadebServiceImpl implements docNotadebService {
     }
 
     @Override
+    @Transactional
     public ActualizarNotaDebitoBorrador200Response actualizarNotaDebitoBorrador(String notaDebitoId,
                                                                                 NotaDebitoUpdateRequest request) {
         NotaDebitoEntity entity = notaDebitoRepository.findById(notaDebitoId)
-                .orElseThrow(() -> new RuntimeException("Nota de débito no encontrada: " + notaDebitoId));
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de débito", notaDebitoId));
+        // — Solo borradores son editables —
+        SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Nota de débito", notaDebitoId);
         notaDebitoMapper.updateEntity(request, entity);
         NotaDebitoEntity saved = notaDebitoRepository.save(entity);
         NotaDebitoData data = notaDebitoMapper.toData(saved);
@@ -51,8 +58,13 @@ public class docNotadebServiceImpl implements docNotadebService {
     }
 
     @Override
+    @Transactional
     public SuccessResponse eliminarNotaDebitoBorrador(String notaDebitoId) {
-        notaDebitoRepository.deleteById(notaDebitoId);
+        NotaDebitoEntity entity = notaDebitoRepository.findById(notaDebitoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de débito", notaDebitoId));
+        // — SUNAT: solo borradores se eliminan —
+        SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Nota de débito", notaDebitoId);
+        notaDebitoRepository.delete(entity);
         return new SuccessResponse()
                 .isSuccess(true)
                 .status("OK")

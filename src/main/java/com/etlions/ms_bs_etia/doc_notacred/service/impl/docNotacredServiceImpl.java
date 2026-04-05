@@ -1,5 +1,7 @@
 package com.etlions.ms_bs_etia.doc_notacred.service.impl;
 
+import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
+import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notacred.mapper.NotaCreditoMapper;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoEntity;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoRepository;
@@ -7,6 +9,7 @@ import com.etlions.ms_bs_etia.doc_notacred.service.docNotacredService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -20,6 +23,7 @@ public class docNotacredServiceImpl implements docNotacredService {
     private final NotaCreditoMapper notaCreditoMapper;
 
     @Override
+    @Transactional
     public ActualizarNotaCreditoBorrador200Response emitirNotaCredito(NotaCreditoEmitirRequest request) {
         NotaCreditoEntity entity = notaCreditoMapper.toEntity(request);
         entity.setEstado("BORRADOR");
@@ -35,10 +39,13 @@ public class docNotacredServiceImpl implements docNotacredService {
     }
 
     @Override
+    @Transactional
     public ActualizarNotaCreditoBorrador200Response actualizarNotaCreditoBorrador(String notaCreditoId,
                                                                                   NotaCreditoUpdateRequest request) {
         NotaCreditoEntity entity = notaCreditoRepository.findById(notaCreditoId)
-                .orElseThrow(() -> new RuntimeException("Nota de crédito no encontrada: " + notaCreditoId));
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de crédito", notaCreditoId));
+        // — Solo borradores son editables —
+        SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Nota de crédito", notaCreditoId);
         notaCreditoMapper.updateEntity(request, entity);
         NotaCreditoEntity saved = notaCreditoRepository.save(entity);
         NotaCreditoData data = notaCreditoMapper.toData(saved);
@@ -51,8 +58,13 @@ public class docNotacredServiceImpl implements docNotacredService {
     }
 
     @Override
+    @Transactional
     public SuccessResponse eliminarNotaCreditoBorrador(String notaCreditoId) {
-        notaCreditoRepository.deleteById(notaCreditoId);
+        NotaCreditoEntity entity = notaCreditoRepository.findById(notaCreditoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de crédito", notaCreditoId));
+        // — SUNAT: solo borradores se eliminan —
+        SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Nota de crédito", notaCreditoId);
+        notaCreditoRepository.delete(entity);
         return new SuccessResponse()
                 .isSuccess(true)
                 .status("OK")

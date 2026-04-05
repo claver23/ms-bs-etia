@@ -1,5 +1,8 @@
 package com.etlions.ms_bs_etia.doc_factura.service.impl;
 
+import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
+import com.etlions.ms_bs_etia.app_util.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
@@ -7,6 +10,7 @@ import com.etlions.ms_bs_etia.doc_factura.service.docFacturaService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -18,10 +22,25 @@ public class docFacturaServiceImpl implements docFacturaService {
 
     private final FacturaRepository facturaRepository;
     private final FacturaMapper facturaMapper;
+    private final CorrelativoService correlativoService;
+
+    private static final String DEFAULT_SERIE_FACTURA = "F001";
 
     @Override
+    @Transactional
     public AnularFactura200Response emitirFactura(FacturaEmitirRequest request) {
+        // — Validaciones SUNAT —
+        String serie = request.getSerie() != null ? request.getSerie().toUpperCase() : DEFAULT_SERIE_FACTURA;
+        SunatValidator.validarFormatoSerie(serie);
+        SunatValidator.validarSerieFactura(serie);
+        SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal());
+
+        // — Correlativo automático (ignora numero del request) —
+        int numero = correlativoService.siguienteNumero(request.getCompanyId(), serie);
+
         FacturaEntity entity = facturaMapper.toEntity(request);
+        entity.setSerie(serie);
+        entity.setNumero(numero);
         entity.setEstado("BORRADOR");
         entity.setFechaCreacion(LocalDateTime.now());
         FacturaEntity saved = facturaRepository.save(entity);
@@ -29,15 +48,16 @@ public class docFacturaServiceImpl implements docFacturaService {
         return new AnularFactura200Response()
                 .isSuccess(true)
                 .status("OK")
-                .message("Factura emitida exitosamente")
+                .message("Factura emitida exitosamente — " + serie + "-" + numero)
                 .timestamp(new Date())
                 .data(data);
     }
 
     @Override
+    @Transactional
     public AnularFactura200Response anularFactura(String facturaId, AnularFacturaRequest request) {
         FacturaEntity entity = facturaRepository.findById(facturaId)
-                .orElseThrow(() -> new RuntimeException("Factura no encontrada: " + facturaId));
+                .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
         entity.setEstado("ANULADA");
         FacturaEntity saved = facturaRepository.save(entity);
         FacturaData data = facturaMapper.toData(saved);
@@ -50,8 +70,13 @@ public class docFacturaServiceImpl implements docFacturaService {
     }
 
     @Override
+    @Transactional
     public SuccessResponse eliminarFactura(String facturaId) {
-        facturaRepository.deleteById(facturaId);
+        FacturaEntity entity = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
+        // — SUNAT: solo se pueden eliminar borradores —
+        SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Factura", facturaId);
+        facturaRepository.delete(entity);
         return new SuccessResponse()
                 .isSuccess(true)
                 .status("OK")
