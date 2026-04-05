@@ -1,0 +1,1768 @@
+openapi: 3.0.3
+info:
+  title: ETIA - Facturación Electrónica Perú
+  version: 1.1.0
+  description: Backend-driven SaaS onboarding with hybrid authentication and mandatory subscription. Incluye comprobantes electrónicos según SUNAT (factura, boleta, nota crédito, nota débito, libros electrónicos).
+servers:
+  - url: http://localhost:8080/api
+
+tags:
+  - name: company
+    description: Empresas emisoras registradas en ETIA
+  - name: client
+    description: Clientes (adquirientes) de los comprobantes
+  - name: factura
+    description: Facturas electrónicas (FE) según SUNAT
+  - name: boleta
+    description: Boletas de venta electrónicas
+  - name: nota_credito
+    description: Notas de crédito electrónicas
+  - name: nota_debito
+    description: Notas de débito electrónicas
+  - name: libro_electronico
+    description: Libros electrónicos (ventas, compras, anexos)
+
+paths:
+  # ==================== COMPANY ====================
+  /company:
+    post:
+      summary: Registrar nueva empresa emisora
+      operationId: registrarEmpresa
+      tags:
+        - company
+      requestBody:
+        description: Datos de registro de la empresa
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRegisterRequest'
+      responses:
+        "200":
+          description: Empresa registrada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompanyData'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+
+    get:
+      summary: Obtener lista de empresas (con paginación)
+      operationId: listarEmpresas
+      tags:
+        - company
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: ruc
+          in: query
+          schema:
+            type: string
+          description: Filtrar por RUC
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado
+      responses:
+        "200":
+          description: Lista de empresas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CompanyData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+
+    put:
+      summary: Actualizar datos de una empresa
+      operationId: actualizarEmpresa
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID de la empresa a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdateRequest'
+      responses:
+        "200":
+          description: Empresa actualizada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompanyData'
+        "400":
+          description: Bad Request
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+    delete:
+      summary: Eliminar empresa (soft delete o lógico)
+      operationId: eliminarEmpresa
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Si es true, solo desactiva; si false, elimina físicamente
+      responses:
+        "200":
+          description: Empresa eliminada (desactivada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+  # ==================== CLIENT ====================
+  /client:
+    post:
+      summary: Registrar cliente (adquiriente)
+      operationId: registrarCliente
+      tags:
+        - client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientRegisterRequest'
+      responses:
+        "200":
+          description: Cliente registrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ClientData'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+
+    get:
+      summary: Listar clientes por empresa
+      operationId: listarClientes
+      tags:
+        - client
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tipoDocumento
+          in: query
+          schema:
+            type: string
+            enum: [DNI, RUC, CE, PASAPORTE]
+        - name: numeroDocumento
+          in: query
+          schema:
+            type: string
+        - name: denominacion
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ClientData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+        "401":
+          description: Unauthorized
+
+    put:
+      summary: Actualizar cliente
+      operationId: actualizarCliente
+      tags:
+        - client
+      parameters:
+        - name: clientId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientUpdateRequest'
+      responses:
+        "200":
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ClientData'
+        "404":
+          description: Cliente no encontrado
+
+    delete:
+      summary: Eliminar cliente
+      operationId: eliminarCliente
+      tags:
+        - client
+      parameters:
+        - name: clientId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cliente eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Cliente no encontrado
+
+  # ==================== FACTURA ====================
+  /factura:
+    post:
+      summary: Emitir factura electrónica
+      operationId: emitirFactura
+      tags:
+        - factura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacturaEmitirRequest'
+      responses:
+        "200":
+          description: Factura emitida exitosamente (incluye CDR y resumen)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FacturaData'
+        "400":
+          description: Error de validación SUNAT
+        "500":
+          description: Error interno
+
+    get:
+      summary: Obtener facturas emitidas
+      operationId: listarFacturas
+      tags:
+        - factura
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: desdeFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hastaFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+        - name: numero
+          in: query
+          schema:
+            type: integer
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de facturas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/FacturaData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+    put:
+      summary: Anular factura (nota de crédito automática)
+      operationId: anularFactura
+      tags:
+        - factura
+      parameters:
+        - name: facturaId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - motivoAnulacion
+              properties:
+                motivoAnulacion:
+                  type: string
+                  description: Motivo de la anulación
+                  example: "Error en el monto total"
+                generarNotaCredito:
+                  type: boolean
+                  default: true
+                  description: Si genera automáticamente nota de crédito
+      responses:
+        "200":
+          description: Factura anulada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FacturaData'
+        "400":
+          description: No se puede anular la factura
+        "404":
+          description: Factura no encontrada
+
+    delete:
+      summary: Eliminar factura (solo si no fue enviada a SUNAT)
+      operationId: eliminarFactura
+      tags:
+        - factura
+      parameters:
+        - name: facturaId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Factura eliminada localmente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "400":
+          description: No se puede eliminar una factura ya enviada a SUNAT
+        "404":
+          description: Factura no encontrada
+
+  # ==================== BOLETA ====================
+  /boleta:
+    post:
+      tags:
+        - boleta
+      summary: Emitir boleta de venta electrónica
+      operationId: emitirBoleta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoletaEmitirRequest'
+      responses:
+        "200":
+          description: Boleta emitida exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BoletaData'
+        "400":
+          description: Error de validación
+        "500":
+          description: Error interno
+
+    get:
+      tags:
+        - boleta
+      summary: Listar boletas emitidas
+      operationId: listarBoletas
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: desdeFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hastaFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+        - name: numero
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de boletas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/BoletaData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+    put:
+      tags:
+        - boleta
+      summary: Anular boleta
+      operationId: anularBoleta
+      parameters:
+        - name: boletaId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                motivoAnulacion:
+                  type: string
+      responses:
+        "200":
+          description: Boleta anulada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BoletaData'
+
+    delete:
+      tags:
+        - boleta
+      summary: Eliminar borrador de boleta
+      operationId: eliminarBoletaBorrador
+      parameters:
+        - name: boletaId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Borrador eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "400":
+          description: Solo se pueden eliminar borradores no enviados
+
+  # ==================== NOTA CRÉDITO ====================
+  /nota_credito:
+    post:
+      tags:
+        - nota_credito
+      summary: Emitir nota de crédito electrónica
+      operationId: emitirNotaCredito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaCreditoEmitirRequest'
+      responses:
+        "200":
+          description: Nota de crédito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaCreditoData'
+        "400":
+          description: Error de validación
+        "500":
+          description: Error interno
+
+    get:
+      tags:
+        - nota_credito
+      summary: Listar notas de crédito
+      operationId: listarNotasCredito
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: facturaReferenciaId
+          in: query
+          schema:
+            type: string
+        - name: desdeFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hastaFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de notas de crédito
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/NotaCreditoData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+    put:
+      tags:
+        - nota_credito
+      summary: Actualizar nota de crédito no enviada
+      operationId: actualizarNotaCreditoBorrador
+      parameters:
+        - name: notaCreditoId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaCreditoUpdateRequest'
+      responses:
+        "200":
+          description: Nota de crédito actualizada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaCreditoData'
+        "400":
+          description: Solo se pueden actualizar notas no enviadas a SUNAT
+        "404":
+          description: Nota de crédito no encontrada
+
+    delete:
+      tags:
+        - nota_credito
+      summary: Eliminar borrador de nota de crédito
+      operationId: eliminarNotaCreditoBorrador
+      parameters:
+        - name: notaCreditoId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Borrador eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== NOTA DÉBITO ====================
+  /nota_debito:
+    post:
+      tags:
+        - nota_debito
+      summary: Emitir nota de débito electrónica
+      operationId: emitirNotaDebito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaDebitoEmitirRequest'
+      responses:
+        "200":
+          description: Nota de débito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaDebitoData'
+        "400":
+          description: Error de validación
+        "500":
+          description: Error interno
+
+    get:
+      tags:
+        - nota_debito
+      summary: Listar notas de débito
+      operationId: listarNotasDebito
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: facturaReferenciaId
+          in: query
+          schema:
+            type: string
+        - name: desdeFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hastaFecha
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de notas de débito
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/NotaDebitoData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+    put:
+      tags:
+        - nota_debito
+      summary: Actualizar nota de débito no enviada
+      operationId: actualizarNotaDebitoBorrador
+      parameters:
+        - name: notaDebitoId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotaDebitoUpdateRequest'
+      responses:
+        "200":
+          description: Nota de débito actualizada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaDebitoData'
+
+    delete:
+      tags:
+        - nota_debito
+      summary: Eliminar borrador de nota de débito
+      operationId: eliminarNotaDebitoBorrador
+      parameters:
+        - name: notaDebitoId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Borrador eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== LIBRO ELECTRÓNICO ====================
+  /libro_electronico:
+    post:
+      tags:
+        - libro_electronico
+      summary: Generar libro electrónico (ventas/compras)
+      operationId: generarLibroElectronico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibroGenerarRequest'
+      responses:
+        "200":
+          description: Archivo TXT/XML generado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LibroElectronicoData'
+        "400":
+          description: Error en la generación
+        "500":
+          description: Error interno
+
+    get:
+      tags:
+        - libro_electronico
+      summary: Obtener libros generados por periodo
+      operationId: listarLibrosElectronicos
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          schema:
+            type: string
+            enum: [ventas, compras, anexo]
+        - name: periodo
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+            example: "2026-01"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de libros electrónicos generados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/LibroElectronicoData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+components:
+  schemas:
+    # ===== GENERIC =====
+    SuccessResponse:
+      type: object
+      required: [isSuccess, status, message, timestamp]
+      properties:
+        isSuccess:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: "OK"
+        message:
+          type: string
+          example: "Operación exitosa"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "ERR-400"
+        message:
+          type: string
+          example: "Error en la solicitud"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+        errors:
+          type: array
+          items:
+            type: string
+          example: ["El campo ruc es requerido", "Formato de RUC inválido"]
+
+    # ===== COMPANY =====
+    CompanyRegisterRequest:
+      type: object
+      required:
+        - ruc
+        - razonSocial
+        - nombreComercial
+        - codigoUbigeo
+        - direccion
+        - urbanizacion
+        - departamento
+        - provincia
+        - distrito
+        - usuarioSol
+        - claveSol
+        - certificadoPath
+        - certificadoPassword
+      properties:
+        ruc:
+          type: string
+          minLength: 11
+          maxLength: 11
+          pattern: "^[0-9]{11}$"
+          description: Número de RUC de la empresa (11 dígitos)
+          example: "20601234567"
+        razonSocial:
+          type: string
+          maxLength: 300
+          description: Razón social completa
+          example: "EMPRESA EJEMPLO S.A.C."
+        nombreComercial:
+          type: string
+          maxLength: 200
+          description: Nombre comercial (opcional pero recomendado)
+          example: "Empresa Ejemplo"
+        codigoUbigeo:
+          type: string
+          pattern: "^[0-9]{6}$"
+          description: Código de ubigeo SUNAT (6 dígitos)
+          example: "150101"
+        direccion:
+          type: string
+          maxLength: 250
+          example: "Av. Principal 123, San Isidro"
+        urbanizacion:
+          type: string
+          maxLength: 100
+          example: "San Isidro"
+        departamento:
+          type: string
+          example: "Lima"
+        provincia:
+          type: string
+          example: "Lima"
+        distrito:
+          type: string
+          example: "San Isidro"
+        usuarioSol:
+          type: string
+          description: Usuario SOL (SUNAT Operaciones en Línea)
+          example: "MIEMPRESAUSU"
+        claveSol:
+          type: string
+          format: password
+          description: Clave SOL
+          example: "ClaveSOL123"
+        certificadoPath:
+          type: string
+          description: Ruta o referencia del certificado .p12
+          example: "/certs/20601234567.p12"
+        certificadoPassword:
+          type: string
+          format: password
+          example: "certPass123"
+        emailContacto:
+          type: string
+          format: email
+          example: "contacto@empresa.com"
+        telefono:
+          type: string
+          example: "5112345678"
+        regimen:
+          type: string
+          enum: [general, mype_tributario, renta_especial]
+          default: general
+          example: "general"
+
+    CompanyUpdateRequest:
+      type: object
+      properties:
+        nombreComercial:
+          type: string
+          example: "Nuevo Nombre Comercial"
+        direccion:
+          type: string
+          example: "Calle Nueva 456"
+        emailContacto:
+          type: string
+          format: email
+          example: "nuevo@empresa.com"
+        telefono:
+          type: string
+          example: "51987654321"
+        usuarioSol:
+          type: string
+          example: "NUEVOUSUARIO"
+        claveSol:
+          type: string
+          format: password
+          example: "NuevaClave123"
+        certificadoPassword:
+          type: string
+          format: password
+          example: "NuevoCertPass"
+
+    # ===== CLIENT =====
+    ClientRegisterRequest:
+      type: object
+      required:
+        - companyId
+        - tipoDocumento
+        - numeroDocumento
+        - denominacion
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        tipoDocumento:
+          type: string
+          enum: [DNI, RUC, CE, PASAPORTE]
+          example: "RUC"
+        numeroDocumento:
+          type: string
+          example: "20601234567"
+        denominacion:
+          type: string
+          description: Nombre o razón social del cliente
+          example: "CLIENTE EJEMPLO S.R.L."
+        direccion:
+          type: string
+          example: "Av. Los Clientes 789"
+        email:
+          type: string
+          format: email
+          example: "cliente@ejemplo.com"
+        telefono:
+          type: string
+          example: "51987654321"
+
+    ClientUpdateRequest:
+      type: object
+      properties:
+        denominacion:
+          type: string
+          example: "NUEVO CLIENTE S.A.C."
+        direccion:
+          type: string
+          example: "Calle Actualizada 123"
+        email:
+          type: string
+          format: email
+          example: "nuevo@cliente.com"
+        telefono:
+          type: string
+          example: "51999999999"
+
+    # ===== FACTURA =====
+    FacturaEmitirRequest:
+      type: object
+      required:
+        - companyId
+        - clientId
+        - serie
+        - numero
+        - fechaEmision
+        - moneda
+        - gravadas
+        - igv
+        - total
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clientId:
+          type: string
+          example: "cli_123456"
+        serie:
+          type: string
+          example: "F001"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-04"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 1000.00
+        igv:
+          type: number
+          example: 180.00
+        total:
+          type: number
+          example: 1180.00
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        leyenda:
+          type: string
+          example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+
+    # ===== BOLETA =====
+    BoletaEmitirRequest:
+      type: object
+      required:
+        - companyId
+        - clientId
+        - serie
+        - numero
+        - total
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clientId:
+          type: string
+          example: "cli_123456"
+        serie:
+          type: string
+          example: "B001"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-04"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          default: "PEN"
+        gravadas:
+          type: number
+          example: 500.00
+        igv:
+          type: number
+          example: 90.00
+        total:
+          type: number
+          example: 590.00
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        leyenda:
+          type: string
+          example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+
+    # ===== NOTA CRÉDITO =====
+    NotaCreditoEmitirRequest:
+      type: object
+      required:
+        - companyId
+        - facturaReferenciaId
+        - motivo
+        - montoDescuento
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        facturaReferenciaId:
+          type: string
+          example: "fac_123456"
+        motivo:
+          type: string
+          enum: [anulacion, devolucion, descuento, otro]
+          example: "devolucion"
+        montoDescuento:
+          type: number
+          example: 180.00
+        tipoDocumento:
+          type: string
+          enum: [factura, boleta]
+          default: "factura"
+        descripcion:
+          type: string
+          example: "Devolución de productos defectuosos"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+
+    NotaCreditoUpdateRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          enum: [anulacion, devolucion, descuento, otro]
+        montoDescuento:
+          type: number
+        descripcion:
+          type: string
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+
+    # ===== NOTA DÉBITO =====
+    NotaDebitoEmitirRequest:
+      type: object
+      required:
+        - companyId
+        - facturaReferenciaId
+        - motivo
+        - montoIncremento
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        facturaReferenciaId:
+          type: string
+          example: "fac_123456"
+        motivo:
+          type: string
+          enum: [intereses, gastos_administrativos, penalidades, otros]
+          example: "intereses"
+        montoIncremento:
+          type: number
+          example: 50.00
+        descripcion:
+          type: string
+          example: "Intereses por mora en pago"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+
+    NotaDebitoUpdateRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          enum: [intereses, gastos_administrativos, penalidades, otros]
+        montoIncremento:
+          type: number
+        descripcion:
+          type: string
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+
+    # ===== LIBRO ELECTRÓNICO =====
+    LibroGenerarRequest:
+      type: object
+      required:
+        - companyId
+        - tipo
+        - periodo
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        tipo:
+          type: string
+          enum: [ventas, compras, anexo]
+          example: "ventas"
+        periodo:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+          example: "2026-04"
+        formato:
+          type: string
+          enum: [TXT, XML, CSV]
+          default: "TXT"
+          example: "TXT"
+        incluirDetalle:
+          type: boolean
+          default: true
+          description: Si incluye el detalle de los comprobantes
+
+    # ===== DETALLE REUSABLE =====
+    DetalleItem:
+      type: object
+      properties:
+        codigo:
+          type: string
+          example: "PROD-001"
+        descripcion:
+          type: string
+          example: "LAPTOP HP 15"
+        cantidad:
+          type: number
+          example: 2
+        precioUnitario:
+          type: number
+          example: 500.00
+        subtotal:
+          type: number
+          example: 1000.00
+        igv:
+          type: number
+          example: 180.00
+        icbper:
+          type: number
+          example: 0.00
+          description: Impuesto al consumo de bolsas plásticas (si aplica)
+        descuento:
+          type: number
+          example: 0.00
+
+    # ===== PAGINACIÓN =====
+    PaginationMeta:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+          example: 50
+        totalPages:
+          type: integer
+          example: 5
+        currentPage:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+
+    # ===== RESPONSE DATA SCHEMAS =====
+    CompanyData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "cmp_20601234567"
+        ruc:
+          type: string
+          example: "20601234567"
+        razonSocial:
+          type: string
+          example: "EMPRESA EJEMPLO S.A.C."
+        nombreComercial:
+          type: string
+          example: "Empresa Ejemplo"
+        codigoUbigeo:
+          type: string
+          example: "150101"
+        direccion:
+          type: string
+          example: "Av. Principal 123, San Isidro"
+        urbanizacion:
+          type: string
+          example: "San Isidro"
+        departamento:
+          type: string
+          example: "Lima"
+        provincia:
+          type: string
+          example: "Lima"
+        distrito:
+          type: string
+          example: "San Isidro"
+        emailContacto:
+          type: string
+          format: email
+          example: "contacto@empresa.com"
+        telefono:
+          type: string
+          example: "5112345678"
+        regimen:
+          type: string
+          enum: [general, mype_tributario, renta_especial]
+          example: "general"
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+        fechaActualizacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T12:00:00Z"
+
+    ClientData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "cli_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        tipoDocumento:
+          type: string
+          enum: [DNI, RUC, CE, PASAPORTE]
+          example: "RUC"
+        numeroDocumento:
+          type: string
+          example: "20601234567"
+        denominacion:
+          type: string
+          example: "CLIENTE EJEMPLO S.R.L."
+        direccion:
+          type: string
+          example: "Av. Los Clientes 789"
+        email:
+          type: string
+          format: email
+          example: "cliente@ejemplo.com"
+        telefono:
+          type: string
+          example: "51987654321"
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    FacturaData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "fac_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clientId:
+          type: string
+          example: "cli_123456"
+        serie:
+          type: string
+          example: "F001"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-04"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 1000.00
+        igv:
+          type: number
+          example: 180.00
+        total:
+          type: number
+          example: 1180.00
+        estado:
+          type: string
+          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "ACEPTADA"
+        hashCdr:
+          type: string
+          description: Hash del CDR recibido de SUNAT
+          example: "a1b2c3d4e5f6..."
+        codigoRespuestaSunat:
+          type: string
+          description: Código de respuesta SUNAT
+          example: "0"
+        descripcionRespuestaSunat:
+          type: string
+          description: Descripción de la respuesta SUNAT
+          example: "La Factura fue aceptada"
+        leyenda:
+          type: string
+          example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    BoletaData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "bol_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clientId:
+          type: string
+          example: "cli_123456"
+        serie:
+          type: string
+          example: "B001"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-04"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 500.00
+        igv:
+          type: number
+          example: 90.00
+        total:
+          type: number
+          example: 590.00
+        estado:
+          type: string
+          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "ACEPTADA"
+        leyenda:
+          type: string
+          example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    NotaCreditoData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "nc_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        facturaReferenciaId:
+          type: string
+          example: "fac_123456"
+        motivo:
+          type: string
+          enum: [anulacion, devolucion, descuento, otro]
+          example: "devolucion"
+        montoDescuento:
+          type: number
+          example: 180.00
+        tipoDocumento:
+          type: string
+          enum: [factura, boleta]
+          example: "factura"
+        descripcion:
+          type: string
+          example: "Devolución de productos defectuosos"
+        estado:
+          type: string
+          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
+          example: "ACEPTADA"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    NotaDebitoData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "nd_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        facturaReferenciaId:
+          type: string
+          example: "fac_123456"
+        motivo:
+          type: string
+          enum: [intereses, gastos_administrativos, penalidades, otros]
+          example: "intereses"
+        montoIncremento:
+          type: number
+          example: 50.00
+        descripcion:
+          type: string
+          example: "Intereses por mora en pago"
+        estado:
+          type: string
+          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
+          example: "ACEPTADA"
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetalleItem'
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
+    LibroElectronicoData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "lib_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        tipo:
+          type: string
+          enum: [ventas, compras, anexo]
+          example: "ventas"
+        periodo:
+          type: string
+          example: "2026-04"
+        formato:
+          type: string
+          enum: [TXT, XML, CSV]
+          example: "TXT"
+        estado:
+          type: string
+          enum: [GENERADO, ERROR, PENDIENTE]
+          example: "GENERADO"
+        archivoUrl:
+          type: string
+          description: URL o ruta del archivo generado
+          example: "/libros/20601234567/ventas-2026-04.txt"
+        totalRegistros:
+          type: integer
+          example: 150
+        fechaGeneracion:
+          type: string
+          format: date-time
+          example: "2026-04-04T10:30:00Z"
+
