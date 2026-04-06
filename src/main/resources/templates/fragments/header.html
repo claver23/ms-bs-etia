@@ -1,0 +1,29 @@
+<!-- ═══════ ETIA — Header Fragment ═══════ -->
+<header th:fragment="header(backUrl, backLabel)" class="g-header"
+        xmlns:th="http://www.thymeleaf.org">
+    <div class="g-header-left">
+        <a th:href="@{/menu}" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:inherit;">
+            <span class="g-logo">🧾</span>
+            <div class="g-brand">
+                <h1>ETIA</h1>
+                <sub>Facturación Electrónica · v0.1.0</sub>
+            </div>
+        </a>
+    </div>
+    <div class="g-header-right">
+        <span class="g-chip"><span class="dot" style="background:var(--info);"></span> DEMO</span>
+        <span class="g-chip" id="hdr-location-chip">
+            <span class="dot"></span>
+            <span id="hdr-location">Cargando...</span>
+        </span>
+        <!-- ⚙️ Config gear -->
+        <button class="g-config-btn" onclick="openConfigOverlay()" title="Configuración">⚙️</button>
+        <div class="g-session">
+            <span class="g-company-name" id="hdr-company">EMPRESA</span>
+            <a th:href="@{/}" class="g-logout">🔓 Salir</a>
+        </div>
+        <a th:if="${backUrl != null}" th:href="@{__${backUrl}__}" class="g-back">
+            ← <span th:text="${backLabel} ?: 'Atrás'">Atrás</span>
+        </a>
+    </div>
+</header>

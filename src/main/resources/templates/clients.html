@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Clientes')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>👥 Clientes Registrados</h2>
+            <p>Administra tu cartera de adquirientes y contribuyentes</p>
+        </div>
+
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <input type="text" id="client-search" class="vt-search" placeholder="🔍 Buscar por nombre, RUC, DNI..." oninput="filterClients(this.value)"/>
+            </div>
+        </div>
+
+        <div class="panel active" id="client-panel">
+            <div id="client-content">
+                <p class="pm-empty">⏳ Cargando clientes...</p>
+            </div>
+            <div id="client-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var allClients = [], filteredClients = [], currentPage = 0, PAGE_SIZE = 10;
+    var tipoLabels = { 'DNI':'DNI', 'RUC':'RUC', 'CE':'C.E.', 'PASAPORTE':'Pasaporte', '1':'DNI', '6':'RUC', '4':'C.E.', '7':'Pasaporte' };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() { loadClients(); });
+    });
+
+    function loadClients() {
+        ApiClient.listClients(ETIA.companyId).then(function(clients) {
+            allClients = clients || [];
+            filteredClients = allClients;
+            currentPage = 0;
+            renderPage();
+        }).catch(function() {
+            document.getElementById('client-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando clientes</p>';
+        });
+    }
+
+    function filterClients(term) {
+        if (!term) { filteredClients = allClients; } else {
+            var lower = term.toLowerCase();
+            filteredClients = allClients.filter(function(c) {
+                return (c.denominacion || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (c.numeroDocumento || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (c.email || '').toLowerCase().indexOf(lower) !== -1;
+            });
+        }
+        currentPage = 0;
+        renderPage();
+    }
+
+    function renderPage() {
+        var total = filteredClients.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE;
+        renderClients(filteredClients.slice(start, start + PAGE_SIZE));
+        renderPagination(total, totalPages, 'client');
+    }
+
+    function goToPage(p) { currentPage = p; renderPage(); }
+
+    function renderClients(clients) {
+        if (!clients || clients.length === 0) {
+            document.getElementById('client-content').innerHTML = '<p class="pm-empty">📭 No hay clientes registrados</p>';
+            return;
+        }
+        var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+            '<th>Tipo Doc.</th><th>Nro. Documento</th><th>Denominación</th><th>Dirección</th><th>Email</th><th>Teléfono</th>' +
+            '</tr></thead><tbody>';
+        clients.forEach(function(c) {
+            var tipoLabel = tipoLabels[c.tipoDocumento] || c.tipoDocumento || '—';
+            html += '<tr>' +
+                '<td><span class="badge badge-blue">' + tipoLabel + '</span></td>' +
+                '<td style="font-family:var(--font-mono);">' + (c.numeroDocumento || '—') + '</td>' +
+                '<td><strong>' + (c.denominacion || '—') + '</strong></td>' +
+                '<td style="font-size:0.75rem;color:var(--text-secondary);">' + (c.direccion || '—') + '</td>' +
+                '<td>' + (c.email || '—') + '</td>' +
+                '<td>' + (c.telefono || '—') + '</td>' +
+                '</tr>';
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('client-content').innerHTML = html;
+    }
+
+    function renderPagination(total, totalPages, prefix) {
+        var bar = document.getElementById(prefix + '-pag');
+        if (total === 0) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        var start = currentPage * PAGE_SIZE + 1;
+        var end = Math.min((currentPage + 1) * PAGE_SIZE, total);
+        var html = '<div class="pag-info"><span class="badge badge-blue">' + total + ' cliente' + (total !== 1 ? 's' : '') + '</span> ' +
+            'Mostrando ' + start + '–' + end + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(0)" ' + (currentPage === 0 ? 'disabled' : '') + '>«</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) {
+                if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
+                continue;
+            }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (totalPages - 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>»</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
+</script>
+</body>
+</html>
+

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Bienvenido')}"></head>
+<body>
+
+<!-- Header minimal (sin sesión, sin back) -->
+<header class="g-header">
+    <div class="g-header-left">
+        <span class="g-logo">🧾</span>
+        <div class="g-brand">
+            <h1>ETIA</h1>
+            <sub>Facturación Electrónica · v0.1.0</sub>
+        </div>
+    </div>
+    <div class="g-header-right">
+        <span class="g-chip"><span class="dot" style="background:var(--info);"></span> DEMO</span>
+        <span class="g-chip" id="hdr-location-chip">
+            <span class="dot"></span>
+            <span id="hdr-location">Cargando...</span>
+        </span>
+    </div>
+</header>
+
+<!-- Welcome Screen -->
+<div class="screen-center screen">
+    <div class="welcome-card">
+        <div class="welcome-icon">🧾</div>
+        <h2>Bienvenido a ETIA</h2>
+        <p class="subtitle">Configura tu acceso para comenzar a facturar electrónicamente</p>
+
+        <div class="f-row">
+            <div class="f-group">
+                <label>👤 Usuario SOL</label>
+                <input type="text" id="onb-usersol" placeholder="MODDATOS"/>
+            </div>
+            <div class="f-group">
+                <label>🔑 Clave SOL</label>
+                <input type="password" id="onb-clavesol" placeholder="••••••••"/>
+            </div>
+        </div>
+        <div class="f-row">
+            <div class="f-group">
+                <label>📧 Correo electrónico</label>
+                <input type="email" id="onb-email" placeholder="facturacion@empresa.com"/>
+            </div>
+            <div class="f-group">
+                <label>📱 Teléfono</label>
+                <input type="tel" id="onb-phone" placeholder="+51 999 888 777"/>
+            </div>
+        </div>
+
+        <a th:href="@{/menu}" class="btn btn-accent btn-block" style="margin-top:1.5rem;text-decoration:none;">
+            🚀 Comenzar a Facturar
+        </a>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1rem;">
+            Tus datos se guardan localmente para esta sesión demo
+        </p>
+    </div>
+</div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function(company) {
+            if (company) {
+                var el;
+                el = document.getElementById('onb-usersol'); if (el && !el.value) el.value = company.usuarioSol || '';
+                el = document.getElementById('onb-clavesol'); if (el && !el.value) el.value = company.claveSol || '';
+                el = document.getElementById('onb-email'); if (el && !el.value) el.value = company.emailContacto || '';
+                el = document.getElementById('onb-phone'); if (el && !el.value) el.value = company.telefono || '';
+            }
+        });
+    });
+</script>
+</body>
+</html>
+

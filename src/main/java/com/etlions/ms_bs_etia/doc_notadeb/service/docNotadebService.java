@@ -20,4 +20,6 @@ public interface docNotadebService {
     ListarNotasDebito200Response listarNotasDebito(String companyId, String facturaReferenciaId,
                                                    Date desdeFecha, Date hastaFecha,
                                                    Integer page, Integer size);
+
+    ActualizarNotaDebitoBorrador200Response obtenerNotaDebito(String notaDebitoId);
 }

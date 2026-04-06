@@ -36,4 +36,9 @@ public class DocNotadebOpenApi implements NotaDebitoApi {
     public ResponseEntity<ListarNotasDebito200Response> listarNotasDebito(String companyId, String facturaReferenciaId, Date desdeFecha, Date hastaFecha, Integer page, Integer size) {
         return ResponseEntity.ok(docNotadebService.listarNotasDebito(companyId, facturaReferenciaId, desdeFecha, hastaFecha, page, size));
     }
+
+    @Override
+    public ResponseEntity<ActualizarNotaDebitoBorrador200Response> obtenerNotaDebito(String notaDebitoId) {
+        return ResponseEntity.ok(docNotadebService.obtenerNotaDebito(notaDebitoId));
+    }
 }

@@ -1,0 +1,20 @@
+<!-- Document Preview Modal Fragment -->
+<div th:fragment="docPreviewModal" class="doc-preview-overlay" id="doc-preview-overlay" onclick="if(event.target===this)closeDocPreview()">
+    <div class="doc-preview-card">
+        <div class="dp-header">
+            <div class="dp-header-left">
+                <h2 id="dp-title">📄 Documento</h2>
+                <div class="dp-subtitle" id="dp-subtitle"></div>
+            </div>
+            <button class="dp-close" onclick="closeDocPreview()">✕</button>
+        </div>
+        <div class="dp-body" id="dp-body">
+            <p class="pm-spinner">⏳ Cargando documento...</p>
+        </div>
+        <div class="dp-footer" id="dp-footer" style="display:none;">
+            <button class="btn btn-ghost" onclick="closeDocPreview()">Cerrar</button>
+            <a id="dp-edit-btn" class="btn btn-accent" style="display:none;">✏️ Editar Borrador</a>
+        </div>
+    </div>
+</div>
+

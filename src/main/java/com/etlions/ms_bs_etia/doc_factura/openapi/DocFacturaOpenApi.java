@@ -36,4 +36,9 @@ public class DocFacturaOpenApi implements FacturaApi {
     public ResponseEntity<ListarFacturas200Response> listarFacturas(String companyId, Date desdeFecha, Date hastaFecha, String serie, Integer numero, String estado, Integer page, Integer size) {
         return ResponseEntity.ok(docFacturaService.listarFacturas(companyId, desdeFecha, hastaFecha, serie, numero, estado, page, size));
     }
+
+    @Override
+    public ResponseEntity<AnularFactura200Response> obtenerFactura(String facturaId) {
+        return ResponseEntity.ok(docFacturaService.obtenerFactura(facturaId));
+    }
 }

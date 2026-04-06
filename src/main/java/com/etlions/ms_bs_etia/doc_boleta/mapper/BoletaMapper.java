@@ -24,7 +24,6 @@ public interface BoletaMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
-    @Mapping(target = "fechaEmision", ignore = true)
     BoletaEntity toEntity(BoletaEmitirRequest request);
 
     @Mapping(target = "moneda", expression = "java(entity.getMoneda() != null ? BoletaData.MonedaEnum.fromValue(entity.getMoneda()) : null)")

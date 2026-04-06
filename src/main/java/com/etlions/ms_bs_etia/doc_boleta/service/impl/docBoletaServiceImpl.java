@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -42,6 +43,9 @@ public class docBoletaServiceImpl implements docBoletaService {
         entity.setSerie(serie);
         entity.setNumero(numero);
         entity.setEstado("BORRADOR");
+        if (entity.getFechaEmision() == null) {
+            entity.setFechaEmision(LocalDate.now());
+        }
         entity.setFechaCreacion(LocalDateTime.now());
         BoletaEntity saved = boletaRepository.save(entity);
         BoletaData data = boletaMapper.toData(saved);
@@ -106,5 +110,18 @@ public class docBoletaServiceImpl implements docBoletaService {
         response.setTimestamp(new Date());
         response.setData(responseData);
         return response;
+    }
+
+    @Override
+    public AnularBoleta200Response obtenerBoleta(String boletaId) {
+        BoletaEntity entity = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
+        BoletaData data = boletaMapper.toData(entity);
+        return new AnularBoleta200Response()
+                .isSuccess(true)
+                .status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date())
+                .data(data);
     }
 }

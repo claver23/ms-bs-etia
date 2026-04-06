@@ -36,4 +36,9 @@ public class DocNotacredOpenApi implements NotaCreditoApi {
     public ResponseEntity<ListarNotasCredito200Response> listarNotasCredito(String companyId, String facturaReferenciaId, Date desdeFecha, Date hastaFecha, Integer page, Integer size) {
         return ResponseEntity.ok(docNotacredService.listarNotasCredito(companyId, facturaReferenciaId, desdeFecha, hastaFecha, page, size));
     }
+
+    @Override
+    public ResponseEntity<ActualizarNotaCreditoBorrador200Response> obtenerNotaCredito(String notaCreditoId) {
+        return ResponseEntity.ok(docNotacredService.obtenerNotaCredito(notaCreditoId));
+    }
 }

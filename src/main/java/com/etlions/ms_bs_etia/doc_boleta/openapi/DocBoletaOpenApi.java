@@ -36,4 +36,9 @@ public class DocBoletaOpenApi implements BoletaApi {
     public ResponseEntity<ListarBoletas200Response> listarBoletas(String companyId, Date desdeFecha, Date hastaFecha, String serie, Integer numero, Integer page, Integer size) {
         return ResponseEntity.ok(docBoletaService.listarBoletas(companyId, desdeFecha, hastaFecha, serie, numero, page, size));
     }
+
+    @Override
+    public ResponseEntity<AnularBoleta200Response> obtenerBoleta(String boletaId) {
+        return ResponseEntity.ok(docBoletaService.obtenerBoleta(boletaId));
+    }
 }

@@ -21,6 +21,18 @@ tags:
     description: Notas de débito electrónicas
   - name: libro_electronico
     description: Libros electrónicos (ventas, compras, anexos)
+  - name: product
+    description: Catálogo de productos y servicios
+  - name: employee
+    description: Empleados y operadores del sistema
+  - name: ubigeo
+    description: Catálogo de ubigeos SUNAT
+  - name: unidad_medida
+    description: Catálogo de unidades de medida SUNAT
+  - name: serie_config
+    description: Configuración de series por tipo de documento
+  - name: user_preference
+    description: Preferencias de usuario por empresa
 
 paths:
   # ==================== COMPANY ====================
@@ -478,6 +490,33 @@ paths:
         "404":
           description: Factura no encontrada
 
+  /factura/{facturaId}:
+    get:
+      tags:
+        - factura
+      summary: Obtener factura por ID
+      operationId: obtenerFactura
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Factura encontrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FacturaData'
+        "404":
+          description: Factura no encontrada
+
   # ==================== BOLETA ====================
   /boleta:
     post:
@@ -621,6 +660,33 @@ paths:
         "400":
           description: Solo se pueden eliminar borradores no enviados
 
+  /boleta/{boletaId}:
+    get:
+      tags:
+        - boleta
+      summary: Obtener boleta por ID
+      operationId: obtenerBoleta
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Boleta encontrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BoletaData'
+        "404":
+          description: Boleta no encontrada
+
   # ==================== NOTA CRÉDITO ====================
   /nota_credito:
     post:
@@ -759,6 +825,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
+  /nota_credito/{notaCreditoId}:
+    get:
+      tags:
+        - nota_credito
+      summary: Obtener nota de crédito por ID
+      operationId: obtenerNotaCredito
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nota de crédito encontrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaCreditoData'
+        "404":
+          description: Nota de crédito no encontrada
+
   # ==================== NOTA DÉBITO ====================
   /nota_debito:
     post:
@@ -893,6 +986,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
+  /nota_debito/{notaDebitoId}:
+    get:
+      tags:
+        - nota_debito
+      summary: Obtener nota de débito por ID
+      operationId: obtenerNotaDebito
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nota de débito encontrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotaDebitoData'
+        "404":
+          description: Nota de débito no encontrada
+
   # ==================== LIBRO ELECTRÓNICO ====================
   /libro_electronico:
     post:
@@ -974,6 +1094,424 @@ paths:
                               $ref: '#/components/schemas/LibroElectronicoData'
                           pagination:
                             $ref: '#/components/schemas/PaginationMeta'
+
+  # ==================== PRODUCT ====================
+  /product:
+    get:
+      tags:
+        - product
+      summary: Buscar productos por empresa
+      operationId: buscarProductos
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: term
+          in: query
+          schema:
+            type: string
+            default: ""
+          description: Término de búsqueda (por descripción o código)
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ProductData'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      tags:
+        - product
+      summary: Crear producto o servicio
+      operationId: crearProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequest'
+      responses:
+        "200":
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ProductData'
+        "400":
+          description: Error de validación
+        "500":
+          description: Error interno
+
+    put:
+      tags:
+        - product
+      summary: Actualizar producto
+      operationId: actualizarProducto
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateRequest'
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ProductData'
+        "404":
+          description: Producto no encontrado
+
+    delete:
+      tags:
+        - product
+      summary: Eliminar producto (soft delete)
+      operationId: eliminarProducto
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Producto eliminado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Producto no encontrado
+
+  /product/{productId}:
+    get:
+      tags:
+        - product
+      summary: Obtener producto por ID
+      operationId: obtenerProducto
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ProductData'
+        "404":
+          description: Producto no encontrado
+
+  # ==================== EMPLOYEE ====================
+  /employee:
+    get:
+      tags:
+        - employee
+      summary: Listar empleados por empresa
+      operationId: listarEmpleados
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado
+      responses:
+        "200":
+          description: Lista de empleados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EmployeeData'
+
+    post:
+      tags:
+        - employee
+      summary: Registrar empleado
+      operationId: registrarEmpleado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreateRequest'
+      responses:
+        "200":
+          description: Empleado registrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/EmployeeData'
+
+    put:
+      tags:
+        - employee
+      summary: Actualizar empleado
+      operationId: actualizarEmpleado
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdateRequest'
+      responses:
+        "200":
+          description: Empleado actualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/EmployeeData'
+        "404":
+          description: Empleado no encontrado
+
+    delete:
+      tags:
+        - employee
+      summary: Eliminar empleado (soft delete)
+      operationId: eliminarEmpleado
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Empleado eliminado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Empleado no encontrado
+
+  /employee/{employeeId}:
+    get:
+      tags:
+        - employee
+      summary: Obtener empleado por ID
+      operationId: obtenerEmpleado
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Empleado encontrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/EmployeeData'
+        "404":
+          description: Empleado no encontrado
+
+  # ==================== UBIGEO ====================
+  /ubigeo:
+    get:
+      tags:
+        - ubigeo
+      summary: Listar ubigeos (catálogo SUNAT)
+      operationId: listarUbigeos
+      responses:
+        "200":
+          description: Lista de ubigeos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UbigeoData'
+
+  # ==================== UNIDAD MEDIDA ====================
+  /unidad_medida:
+    get:
+      tags:
+        - unidad_medida
+      summary: Listar unidades de medida (catálogo SUNAT)
+      operationId: listarUnidadesMedida
+      responses:
+        "200":
+          description: Lista de unidades de medida
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadMedidaData'
+
+  # ==================== SERIE CONFIG ====================
+  /serie_config:
+    get:
+      tags:
+        - serie_config
+      summary: Listar configuración de series por empresa
+      operationId: listarSeriesConfig
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tipoDocumento
+          in: query
+          schema:
+            type: string
+            enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          description: Filtrar por tipo de documento
+      responses:
+        "200":
+          description: Lista de series configuradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SerieConfigData'
+
+  # ==================== USER PREFERENCE ====================
+  /user_preference:
+    get:
+      tags:
+        - user_preference
+      summary: Listar preferencias por empresa
+      operationId: listarPreferencias
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de preferencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserPreferenceData'
+
+    put:
+      tags:
+        - user_preference
+      summary: Guardar o actualizar preferencia
+      operationId: guardarPreferencia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceSaveRequest'
+      responses:
+        "200":
+          description: Preferencia guardada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceData'
 
 components:
   schemas:
@@ -1412,11 +1950,20 @@ components:
         descripcion:
           type: string
           example: "LAPTOP HP 15"
+        unidadMedida:
+          type: string
+          description: Código SUNAT de unidad de medida
+          example: "NIU"
         cantidad:
           type: number
           example: 2
+        valorUnitario:
+          type: number
+          description: Valor unitario sin IGV
+          example: 423.73
         precioUnitario:
           type: number
+          description: Valor unitario con IGV
           example: 500.00
         subtotal:
           type: number
@@ -1765,4 +2312,240 @@ components:
           type: string
           format: date-time
           example: "2026-04-04T10:30:00Z"
+
+    # ===== PRODUCT =====
+    ProductCreateRequest:
+      type: object
+      required:
+        - companyId
+        - descripcion
+        - valorUnitario
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        codigoProducto:
+          type: string
+          example: "SRV-001"
+        descripcion:
+          type: string
+          example: "Servicio de Consultoría en TI"
+        unidadMedida:
+          type: string
+          description: Código SUNAT de unidad de medida
+          default: "ZZ"
+          example: "ZZ"
+        valorUnitario:
+          type: number
+          description: Valor unitario sin IGV
+          example: 2500.00
+
+    ProductUpdateRequest:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        codigoProducto:
+          type: string
+        unidadMedida:
+          type: string
+        valorUnitario:
+          type: number
+
+    ProductData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "prd_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        codigoProducto:
+          type: string
+          example: "SRV-001"
+        descripcion:
+          type: string
+          example: "Servicio de Consultoría en TI"
+        unidadMedida:
+          type: string
+          example: "ZZ"
+        valorUnitario:
+          type: number
+          example: 2500.00
+        precioUnitario:
+          type: number
+          description: Valor unitario + IGV (calculado por backend)
+          example: 2950.00
+        igv:
+          type: number
+          description: IGV 18% (calculado por backend)
+          example: 450.00
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+
+    # ===== EMPLOYEE =====
+    EmployeeCreateRequest:
+      type: object
+      required:
+        - companyId
+        - nombre
+        - cargo
+        - dni
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        nombre:
+          type: string
+          example: "Carlos Mendoza Rivera"
+        cargo:
+          type: string
+          example: "Contador Principal"
+        dni:
+          type: string
+          example: "45678901"
+        codigo:
+          type: string
+          example: "EMP-001"
+
+    EmployeeUpdateRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        cargo:
+          type: string
+        dni:
+          type: string
+        codigo:
+          type: string
+
+    EmployeeData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "emp_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        nombre:
+          type: string
+          example: "Carlos Mendoza Rivera"
+        cargo:
+          type: string
+          example: "Contador Principal"
+        dni:
+          type: string
+          example: "45678901"
+        codigo:
+          type: string
+          example: "EMP-001"
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ===== UBIGEO =====
+    UbigeoData:
+      type: object
+      properties:
+        id:
+          type: string
+        codigo:
+          type: string
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+
+    # ===== UNIDAD MEDIDA =====
+    UnidadMedidaData:
+      type: object
+      properties:
+        id:
+          type: string
+        codigo:
+          type: string
+          example: "ZZ"
+        descripcion:
+          type: string
+          example: "Servicio"
+
+    # ===== SERIE CONFIG =====
+    SerieConfigData:
+      type: object
+      properties:
+        id:
+          type: string
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        serie:
+          type: string
+          example: "F001"
+        descripcion:
+          type: string
+          example: "Serie principal Factura"
+        esDefault:
+          type: boolean
+          example: true
+        activa:
+          type: boolean
+          example: true
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ===== USER PREFERENCE =====
+    UserPreferenceSaveRequest:
+      type: object
+      required:
+        - companyId
+        - clave
+        - valor
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clave:
+          type: string
+          example: "moneda"
+        valor:
+          type: string
+          example: "PEN"
+
+    UserPreferenceData:
+      type: object
+      properties:
+        id:
+          type: string
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clave:
+          type: string
+          example: "moneda"
+        valor:
+          type: string
+          example: "PEN"
+        fechaActualizacion:
+          type: string
+          format: date-time
 

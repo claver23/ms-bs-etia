@@ -1,0 +1,52 @@
+<!-- ═══════ ETIA — Shared Modals Fragment ═══════ -->
+<div th:fragment="responseModal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-overlay" id="modal" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="modal-card" id="modal-card">
+            <h3 id="modal-title"></h3>
+            <pre id="modal-body"></pre>
+            <div class="btn-row" style="justify-content:center;">
+                <button class="btn btn-ghost" onclick="document.getElementById('modal').classList.remove('show')">Cerrar</button>
+                <button class="btn btn-accent" onclick="resetAll()">🔄 Nuevo Documento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="productSearchModal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-overlay" id="product-modal" onclick="if(event.target===this)closeProductModal()">
+        <div class="modal-card" style="max-width:550px;">
+            <h3 style="margin-bottom:0.75rem;">🔍 <span style="color:var(--accent);">Buscar Producto</span></h3>
+            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;">Escribe para filtrar del catálogo. Haz clic en un producto para seleccionarlo.</p>
+            <input class="pm-search" id="pm-search-input"
+                   placeholder="Buscar por nombre, código..."
+                   autocomplete="off"
+                   oninput="onModalProductSearch(this.value)"/>
+            <div class="pm-list" id="pm-results">
+                <div class="pm-empty">Escribe al menos 1 carácter para buscar</div>
+            </div>
+            <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+                <button class="btn btn-ghost" onclick="closeProductModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="clientSearchModal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-overlay" id="client-modal" onclick="if(event.target===this)closeClientModal()">
+        <div class="modal-card" style="max-width:550px;">
+            <h3 style="margin-bottom:0.75rem;">🔍 <span style="color:var(--accent);">Buscar Cliente</span></h3>
+            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;">Selecciona un cliente registrado o busca por nombre, RUC, DNI...</p>
+            <input class="pm-search" id="cm-search-input"
+                   placeholder="Buscar por nombre, RUC, DNI..."
+                   autocomplete="off"
+                   oninput="onModalClientSearch(this.value)"/>
+            <div class="pm-list" id="cm-results">
+                <div class="pm-empty">Cargando clientes...</div>
+            </div>
+            <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+                <button class="btn btn-ghost" onclick="closeClientModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+

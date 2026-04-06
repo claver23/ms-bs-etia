@@ -19,4 +19,6 @@ public interface docFacturaService {
     ListarFacturas200Response listarFacturas(String companyId, Date desdeFecha, Date hastaFecha,
                                              String serie, Integer numero, String estado,
                                              Integer page, Integer size);
+
+    AnularFactura200Response obtenerFactura(String facturaId);
 }

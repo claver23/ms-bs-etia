@@ -20,4 +20,6 @@ public interface docNotacredService {
     ListarNotasCredito200Response listarNotasCredito(String companyId, String facturaReferenciaId,
                                                      Date desdeFecha, Date hastaFecha,
                                                      Integer page, Integer size);
+
+    ActualizarNotaCreditoBorrador200Response obtenerNotaCredito(String notaCreditoId);
 }

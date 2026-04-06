@@ -27,7 +27,6 @@ public interface FacturaMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
-    @Mapping(target = "fechaEmision", ignore = true)
     FacturaEntity toEntity(FacturaEmitirRequest request);
 
     @Mapping(target = "moneda", expression = "java(entity.getMoneda() != null ? FacturaData.MonedaEnum.fromValue(entity.getMoneda()) : null)")

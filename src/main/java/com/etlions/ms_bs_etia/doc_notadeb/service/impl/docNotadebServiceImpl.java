@@ -95,4 +95,17 @@ public class docNotadebServiceImpl implements docNotadebService {
         response.setData(responseData);
         return response;
     }
+
+    @Override
+    public ActualizarNotaDebitoBorrador200Response obtenerNotaDebito(String notaDebitoId) {
+        NotaDebitoEntity entity = notaDebitoRepository.findById(notaDebitoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de débito", notaDebitoId));
+        NotaDebitoData data = notaDebitoMapper.toData(entity);
+        return new ActualizarNotaDebitoBorrador200Response()
+                .isSuccess(true)
+                .status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date())
+                .data(data);
+    }
 }

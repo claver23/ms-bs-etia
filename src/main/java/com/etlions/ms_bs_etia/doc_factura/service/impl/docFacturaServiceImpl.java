@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -42,6 +43,9 @@ public class docFacturaServiceImpl implements docFacturaService {
         entity.setSerie(serie);
         entity.setNumero(numero);
         entity.setEstado("BORRADOR");
+        if (entity.getFechaEmision() == null) {
+            entity.setFechaEmision(LocalDate.now());
+        }
         entity.setFechaCreacion(LocalDateTime.now());
         FacturaEntity saved = facturaRepository.save(entity);
         FacturaData data = facturaMapper.toData(saved);
@@ -106,5 +110,18 @@ public class docFacturaServiceImpl implements docFacturaService {
         response.setTimestamp(new Date());
         response.setData(responseData);
         return response;
+    }
+
+    @Override
+    public AnularFactura200Response obtenerFactura(String facturaId) {
+        FacturaEntity entity = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
+        FacturaData data = facturaMapper.toData(entity);
+        return new AnularFactura200Response()
+                .isSuccess(true)
+                .status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date())
+                .data(data);
     }
 }

@@ -95,4 +95,17 @@ public class docNotacredServiceImpl implements docNotacredService {
         response.setData(responseData);
         return response;
     }
+
+    @Override
+    public ActualizarNotaCreditoBorrador200Response obtenerNotaCredito(String notaCreditoId) {
+        NotaCreditoEntity entity = notaCreditoRepository.findById(notaCreditoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de crédito", notaCreditoId));
+        NotaCreditoData data = notaCreditoMapper.toData(entity);
+        return new ActualizarNotaCreditoBorrador200Response()
+                .isSuccess(true)
+                .status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date())
+                .data(data);
+    }
 }

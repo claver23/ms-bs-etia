@@ -1,0 +1,209 @@
+<!-- ═══════ ETIA — Config Overlay Fragment ═══════ -->
+<div th:fragment="configOverlay" xmlns:th="http://www.thymeleaf.org">
+
+    <div class="cfg-overlay" id="cfg-overlay">
+        <div class="cfg-card">
+
+            <!-- ─── Sidebar ─── -->
+            <nav class="cfg-sidebar">
+                <div class="cfg-sidebar-title">⚙️ Configuración</div>
+                <div class="cfg-sidebar-item active" data-tab="empresa" onclick="switchConfigTab('empresa')">
+                    <span class="cfg-icon">🏢</span>
+                    <span class="cfg-label">Empresa</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
+                <div class="cfg-sidebar-item" data-tab="preferencias" onclick="switchConfigTab('preferencias')">
+                    <span class="cfg-icon">⚙️</span>
+                    <span class="cfg-label">Preferencias</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
+                <div class="cfg-sidebar-item" data-tab="series" onclick="switchConfigTab('series')">
+                    <span class="cfg-icon">📋</span>
+                    <span class="cfg-label">Series</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
+                <div class="cfg-sidebar-item" data-tab="sede" onclick="switchConfigTab('sede')">
+                    <span class="cfg-icon">📍</span>
+                    <span class="cfg-label">Sede</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
+            </nav>
+
+            <!-- ─── Content ─── -->
+            <div class="cfg-content">
+                <div class="cfg-content-header">
+                    <h2 id="cfg-title">⚙️ Configuración</h2>
+                    <button class="cfg-close" onclick="closeConfigOverlay()">✕</button>
+                </div>
+
+                <!-- ══ PANEL: Empresa ══ -->
+                <div class="cfg-panel active" id="cfg-panel-empresa">
+                    <div class="cfg-company-card">
+                        <div class="cfg-co-icon">🏢</div>
+                        <div class="cfg-co-info">
+                            <h4 id="cfg-co-razon">Cargando...</h4>
+                            <span id="cfg-co-ruc">RUC: ---</span>
+                        </div>
+                        <span class="cfg-co-badge">🟢 Activa</span>
+                    </div>
+                    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-top:0.5rem;">
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Nombre Comercial</span>
+                                <input id="cfg-co-nombre" readonly style="opacity:0.7;cursor:not-allowed;"/>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Régimen</span>
+                                <input id="cfg-co-regimen" readonly style="opacity:0.7;cursor:not-allowed;"/>
+                            </div>
+                        </div>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Dirección Fiscal</span>
+                            <input id="cfg-co-direccion" readonly style="opacity:0.7;cursor:not-allowed;"/>
+                        </div>
+                    </div>
+                    <div class="warn-banner" style="margin-top:1rem;max-width:100%;">
+                        ⚠️ Cambiar de empresa implica cerrar sesión y reiniciar el flujo completo.
+                    </div>
+                    <div class="cfg-save-bar">
+                        <a th:href="@{/}" class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);">🔓 Cambiar Empresa</a>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Preferencias ══ -->
+                <div class="cfg-panel" id="cfg-panel-preferencias">
+                    <div class="cfg-row">
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Moneda por defecto</span>
+                            <select id="cfg-currency">
+                                <option value="PEN">PEN — Sol Peruano</option>
+                                <option value="USD">USD — Dólar Americano</option>
+                            </select>
+                            <p class="cfg-field-hint">Se pre-selecciona al emitir un documento</p>
+                        </div>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Tipo de ítem por defecto</span>
+                            <select id="cfg-item-type">
+                                <option value="servicio">Servicio (ZZ)</option>
+                                <option value="producto">Producto (NIU)</option>
+                            </select>
+                            <p class="cfg-field-hint">Filtro inicial al buscar productos</p>
+                        </div>
+                    </div>
+
+                    <div class="cfg-field" style="margin-top:1rem;">
+                        <span class="cfg-field-label">Tema de interfaz</span>
+                        <div class="cfg-theme-toggle">
+                            <div class="cfg-theme-option active" data-theme="dark" onclick="selectTheme('dark')">
+                                <span class="cfg-th-icon">🌙</span>
+                                <span class="cfg-th-label">Oscuro</span>
+                            </div>
+                            <div class="cfg-theme-option" data-theme="light" onclick="selectTheme('light')">
+                                <span class="cfg-th-icon">☀️</span>
+                                <span class="cfg-th-label">Claro</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Series ══ -->
+                <div class="cfg-panel" id="cfg-panel-series">
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
+                        Configura la serie por defecto para cada tipo de documento electrónico.
+                    </p>
+                    <div class="cfg-row">
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">🧾 Factura</span>
+                            <input id="cfg-serie-fac" value="F001" placeholder="F001" maxlength="4"/>
+                            <p class="cfg-field-hint">Series: F001, F002...</p>
+                        </div>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">🎫 Boleta</span>
+                            <input id="cfg-serie-bol" value="B001" placeholder="B001" maxlength="4"/>
+                            <p class="cfg-field-hint">Series: B001, B002...</p>
+                        </div>
+                    </div>
+                    <div class="cfg-row">
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">📉 Nota de Crédito</span>
+                            <input id="cfg-serie-nc" value="FC01" placeholder="FC01" maxlength="4"/>
+                            <p class="cfg-field-hint">Series: FC01, BC01...</p>
+                        </div>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">📈 Nota de Débito</span>
+                            <input id="cfg-serie-nd" value="FD01" placeholder="FD01" maxlength="4"/>
+                            <p class="cfg-field-hint">Series: FD01, BD01...</p>
+                        </div>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Sede ══ -->
+                <div class="cfg-panel" id="cfg-panel-sede">
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
+                        Selecciona la sede o sucursal desde la cual se emiten los documentos.
+                        Busca una dirección o haz clic en el mapa para ubicar tu sede.
+                    </p>
+
+                    <div class="cfg-field">
+                        <span class="cfg-field-label">Ubigeo / Sede</span>
+                        <select id="cfg-sede-select">
+                            <option value="">— Sede principal —</option>
+                            <!-- Populated dynamically by JS via ApiClient.listUbigeos() -->
+                        </select>
+                        <p class="cfg-field-hint">Ubigeo que se incluirá en el comprobante</p>
+                    </div>
+
+                    <!-- Dirección con búsqueda en mapa -->
+                    <div class="cfg-field">
+                        <span class="cfg-field-label">📍 Dirección de la sede</span>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input id="cfg-sede-dir" placeholder="Ej: Av. Javier Prado Este 1234, San Isidro"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();searchAddressOnMap();}"
+                                   style="flex:1;"/>
+                            <button class="btn btn-accent" onclick="searchAddressOnMap()" style="padding:0.6rem 1rem;font-size:0.78rem;white-space:nowrap;">
+                                🔍 Buscar
+                            </button>
+                        </div>
+                        <p class="cfg-field-hint">Escribe la dirección y presiona "Buscar" para ubicar en el mapa, o haz clic directamente en el mapa</p>
+                    </div>
+
+                    <!-- Mapa Leaflet -->
+                    <div class="cfg-field">
+                        <span class="cfg-field-label">🗺️ Ubicación en mapa</span>
+                        <div id="cfg-map" style="height:240px;border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;margin-top:0.4rem;z-index:1;"></div>
+                    </div>
+
+                    <!-- Coordenadas (readonly info) -->
+                    <div class="cfg-row" style="margin-top:0.2rem;">
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Latitud</span>
+                            <input id="cfg-sede-lat" readonly style="opacity:0.7;cursor:default;font-family:var(--font-mono);font-size:0.82rem;" placeholder="—"/>
+                        </div>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Longitud</span>
+                            <input id="cfg-sede-lng" readonly style="opacity:0.7;cursor:default;font-family:var(--font-mono);font-size:0.82rem;" placeholder="—"/>
+                        </div>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+

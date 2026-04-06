@@ -23,8 +23,28 @@ public interface ClientMapper {
     @Mapping(target = "numeroDocumento", ignore = true)
     void updateEntity(ClientUpdateRequest request, @MappingTarget ClientEntity entity);
 
-    @Mapping(target = "tipoDocumento", expression = "java(entity.getTipoDocumento() != null ? ClientData.TipoDocumentoEnum.fromValue(entity.getTipoDocumento()) : null)")
+    @Mapping(target = "tipoDocumento", expression = "java(mapTipoDocumento(entity.getTipoDocumento()))")
     ClientData toData(ClientEntity entity);
+
+    /**
+     * Maps both SUNAT codes ("1","6","4","7") and enum names ("DNI","RUC","CE","PASAPORTE")
+     * to the ClientData.TipoDocumentoEnum safely.
+     */
+    default ClientData.TipoDocumentoEnum mapTipoDocumento(String raw) {
+        if (raw == null) return null;
+        // Try direct enum match first (e.g. "RUC", "DNI")
+        try {
+            return ClientData.TipoDocumentoEnum.fromValue(raw);
+        } catch (IllegalArgumentException ignored) { }
+        // Fallback: SUNAT code mapping
+        switch (raw) {
+            case "1": return ClientData.TipoDocumentoEnum.DNI;
+            case "6": return ClientData.TipoDocumentoEnum.RUC;
+            case "4": return ClientData.TipoDocumentoEnum.CE;
+            case "7": return ClientData.TipoDocumentoEnum.PASAPORTE;
+            default:  return null;
+        }
+    }
 }
 
 

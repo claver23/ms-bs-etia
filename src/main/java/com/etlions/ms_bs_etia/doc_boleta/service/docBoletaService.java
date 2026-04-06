@@ -19,4 +19,6 @@ public interface docBoletaService {
     ListarBoletas200Response listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
                                            String serie, Integer numero,
                                            Integer page, Integer size);
+
+    AnularBoleta200Response obtenerBoleta(String boletaId);
 }
