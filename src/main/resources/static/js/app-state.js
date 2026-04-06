@@ -45,41 +45,201 @@ ETIA.saveConfig = function(key, value) {
     }
 })();
 
+/* ─── Cache helpers (sessionStorage + TTL) ─── */
+var CACHE_TTL = 5 * 60 * 1000; /* 5 minutes */
+
+function _cacheSet(key, data) {
+    try {
+        sessionStorage.setItem('etia_cache_' + key, JSON.stringify({ ts: Date.now(), data: data }));
+    } catch (e) { /* quota exceeded — ignore */ }
+}
+
+function _cacheGet(key) {
+    try {
+        var raw = sessionStorage.getItem('etia_cache_' + key);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (Date.now() - parsed.ts > CACHE_TTL) {
+            sessionStorage.removeItem('etia_cache_' + key);
+            return null;
+        }
+        return parsed.data;
+    } catch (e) { return null; }
+}
+
+function _cacheInvalidate(key) {
+    sessionStorage.removeItem('etia_cache_' + key);
+}
+
 /* ─── Bootstrap: load company + client + sedes + notifications from API ─── */
 ETIA.init = function() {
-    return ApiClient.listCompanies().then(function(companies) {
-        if (companies && companies.length > 0) {
-            var c = companies[0];
-            ETIA.company   = c;
-            ETIA.companyId = c.id;
-            /* Populate header company name */
-            var hdrCompany = document.getElementById('hdr-company');
-            if (hdrCompany) hdrCompany.textContent = c.razonSocial || '';
+    /* Try cache first for company/clients/sedes */
+    var cachedCompany = _cacheGet('company');
+    var cachedClients = _cacheGet('clients');
+    var cachedSedes   = _cacheGet('sedes');
 
-            /* Load in parallel: clients, sedes, rejected docs */
-            var loadClients = ApiClient.listClients(c.id).then(function(clients) {
-                if (clients && clients.length > 0) {
-                    ETIA.client   = clients[0];
-                    ETIA.clientId = clients[0].id;
-                }
+    var companyPromise;
+    if (cachedCompany) {
+        /* Apply cached data immediately */
+        _applyCompanyData(cachedCompany);
+        companyPromise = Promise.resolve(cachedCompany);
+        /* Revalidate company in background (silent) */
+        ApiClient.listCompanies().then(function(companies) {
+            if (companies && companies.length > 0) _cacheSet('company', companies[0]);
+        }).catch(function() {});
+    } else {
+        companyPromise = ApiClient.listCompanies().then(function(companies) {
+            if (companies && companies.length > 0) {
+                var c = companies[0];
+                _applyCompanyData(c);
+                _cacheSet('company', c);
+                return c;
+            }
+            return null;
+        });
+    }
+
+    return companyPromise.then(function(c) {
+        if (!c && !ETIA.company) return null;
+        var company = c || ETIA.company;
+        var cid = company.id;
+
+        /* Clients — use cache or fetch */
+        var loadClients;
+        if (cachedClients) {
+            _applyClientsData(cachedClients);
+            loadClients = Promise.resolve();
+            /* Background revalidation */
+            ApiClient.listClients(cid).then(function(cl) { _cacheSet('clients', cl); }).catch(function() {});
+        } else {
+            loadClients = ApiClient.listClients(cid).then(function(clients) {
+                _applyClientsData(clients);
+                _cacheSet('clients', clients);
             }).catch(function(err) { console.warn('ETIA.init: Error loading clients:', err); });
+        }
 
-            var loadSedes = ApiClient.listSedes(c.id).then(function(sedes) {
+        /* Sedes — use cache or fetch */
+        var loadSedes;
+        if (cachedSedes) {
+            ETIA.sedes = cachedSedes;
+            _populateSedeSelector(cachedSedes);
+            loadSedes = Promise.resolve();
+            /* Background revalidation */
+            ApiClient.listSedes(cid).then(function(s) { _cacheSet('sedes', s); }).catch(function() {});
+        } else {
+            loadSedes = ApiClient.listSedes(cid).then(function(sedes) {
                 ETIA.sedes = sedes || [];
                 _populateSedeSelector(ETIA.sedes);
+                _cacheSet('sedes', sedes);
             }).catch(function(err) { console.warn('ETIA.init: Error loading sedes:', err); });
-
-            var loadNotifs = _loadRejectedDocs(c.id);
-            var loadTxNotifs = _loadTransmissionNotifs(c.id);
-
-            return Promise.all([loadClients, loadSedes, loadNotifs, loadTxNotifs]).then(function() { return c; });
         }
-        return null;
+
+        /* Notifications — always fresh (no cache) */
+        var loadNotifs = _loadRejectedDocs(cid);
+        var loadTxNotifs = _loadTransmissionNotifs(cid);
+
+        /* Tipo de cambio — for header badge */
+        var loadTc = _loadTcBadge();
+
+        return Promise.all([loadClients, loadSedes, loadNotifs, loadTxNotifs, loadTc]).then(function() { return company; });
     }).catch(function(err) {
         console.error('ETIA.init error:', err);
         return null;
     });
 };
+
+/* ─── Apply data helpers ─── */
+function _applyCompanyData(c) {
+    ETIA.company   = c;
+    ETIA.companyId = c.id;
+    var hdrCompany = document.getElementById('hdr-company');
+    if (hdrCompany) hdrCompany.textContent = c.razonSocial || '';
+}
+
+function _applyClientsData(clients) {
+    if (clients && clients.length > 0) {
+        ETIA.client   = clients[0];
+        ETIA.clientId = clients[0].id;
+    }
+}
+
+/* ─── Tipo de Cambio — Header Live Badge ─── */
+ETIA.tipoCambio = null;
+
+function _loadTcBadge() {
+    var badge = document.getElementById('hdr-tc-badge');
+    if (!badge) return Promise.resolve();
+
+    var today = new Date().toISOString().split('T')[0];
+    var fuente = ETIA.config.tipoCambioFuente || 'SBS';
+
+    /* Try cache first */
+    var cachedTc = _cacheGet('tc_today');
+    if (cachedTc) {
+        ETIA.tipoCambio = cachedTc;
+        _renderTcBadge(cachedTc);
+        /* Background revalidation */
+        ApiClient.getTipoCambio(today, 'USD', fuente).then(function(data) {
+            var tc = data && data.tasaVenta ? data : (data && data.data ? data.data : null);
+            if (tc) { _cacheSet('tc_today', tc); ETIA.tipoCambio = tc; _renderTcBadge(tc); }
+        }).catch(function() {});
+        return Promise.resolve();
+    }
+
+    return ApiClient.getTipoCambio(today, 'USD', fuente).then(function(data) {
+        var tc = data && data.tasaVenta ? data : (data && data.data ? data.data : null);
+        if (tc) {
+            ETIA.tipoCambio = tc;
+            _cacheSet('tc_today', tc);
+            _renderTcBadge(tc);
+        } else {
+            badge.style.display = 'none';
+        }
+    }).catch(function() {
+        badge.style.display = 'none';
+    });
+}
+
+function _renderTcBadge(tc) {
+    var badge = document.getElementById('hdr-tc-badge');
+    if (!badge || !tc) return;
+    var venta = parseFloat(tc.tasaVenta).toFixed(4);
+    badge.querySelector('.tc-badge-rate').textContent = venta;
+    badge.style.display = '';
+
+    /* Populate popup */
+    var popup = document.getElementById('hdr-tc-popup');
+    if (popup) {
+        var compra = parseFloat(tc.tasaCompra).toFixed(4);
+        popup.querySelector('.tc-popup-compra').textContent = compra;
+        popup.querySelector('.tc-popup-venta').textContent = venta;
+        popup.querySelector('.tc-popup-fuente').textContent = (tc.fuente || 'SBS') + ' · ' + ETIA.formatDate(tc.fecha);
+    }
+
+    /* Also populate menu widget if present */
+    _renderTcMenuWidget(tc);
+}
+
+function _renderTcMenuWidget(tc) {
+    var widget = document.getElementById('tc-menu-widget');
+    if (!widget || !tc) return;
+    widget.style.display = '';
+    var compra = parseFloat(tc.tasaCompra).toFixed(4);
+    var venta = parseFloat(tc.tasaVenta).toFixed(4);
+    widget.querySelector('.tcw-compra-val').textContent = 'S/ ' + compra;
+    widget.querySelector('.tcw-venta-val').textContent = 'S/ ' + venta;
+    widget.querySelector('.tcw-fuente').textContent = 'Fuente: ' + (tc.fuente || 'SBS') + ' · ' + ETIA.formatDate(tc.fecha);
+}
+
+function toggleTcPopup() {
+    var popup = document.getElementById('hdr-tc-popup');
+    if (popup) popup.style.display = popup.style.display === 'none' ? '' : 'none';
+}
+
+function refreshTcBadge() {
+    _cacheInvalidate('tc_today');
+    _loadTcBadge();
+}
 
 /* ─── Sede Selector Logic ─── */
 function _populateSedeSelector(sedes) {
@@ -284,4 +444,15 @@ ETIA.formatDateTime = function(dateStr) {
     var timePart = String(dateStr).substring(11, 16);
     return timePart ? (d + ' ' + timePart) : d;
 };
+
+/* ─── Close TC popup on outside click ─── */
+document.addEventListener('click', function(e) {
+    var popup = document.getElementById('hdr-tc-popup');
+    var badge = document.getElementById('hdr-tc-badge');
+    if (popup && popup.style.display !== 'none') {
+        if (!popup.contains(e.target) && (!badge || !badge.contains(e.target))) {
+            popup.style.display = 'none';
+        }
+    }
+});
 

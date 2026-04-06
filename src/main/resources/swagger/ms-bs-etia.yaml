@@ -37,6 +37,10 @@ tags:
     description: Preferencias de usuario por empresa
   - name: tipo_cambio
     description: Tipos de cambio (SBS / SUNAT)
+  - name: notification
+    description: Notificaciones de transmisión de documentos
+  - name: reniec
+    description: Consulta de documentos RENIEC / SUNAT
 
 paths:
   # ==================== COMPANY ====================
@@ -1506,6 +1510,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TipoCambioListResponseDto'
+
+  # ==================== NOTIFICATION ====================
+  /notification:
+    get:
+      tags:
+        - notification
+      summary: Listar notificaciones de transmisión por empresa
+      operationId: listarNotificaciones
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de notificaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponseDto'
+
+    post:
+      tags:
+        - notification
+      summary: Publicar una notificación de transmisión
+      operationId: publicarNotificacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPublishDto'
+      responses:
+        "200":
+          description: Notificación publicada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - notification
+      summary: Limpiar notificaciones por empresa
+      operationId: limpiarNotificaciones
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notificaciones limpiadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /notification/read-all:
+    put:
+      tags:
+        - notification
+      summary: Marcar todas las notificaciones como leídas
+      operationId: marcarTodasLeidas
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Todas marcadas como leídas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /notification/{notificationId}/read:
+    put:
+      tags:
+        - notification
+      summary: Marcar una notificación como leída
+      operationId: marcarNotificacionLeida
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notificación marcada como leída
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== RENIEC ====================
+  /reniec:
+    get:
+      tags:
+        - reniec
+      summary: Consultar documento RENIEC / SUNAT
+      operationId: consultarDocumento
+      parameters:
+        - name: tipo
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [DNI, RUC, CE, PASAPORTE]
+          description: Tipo de documento a consultar
+        - name: numero
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Número de documento
+      responses:
+        "200":
+          description: Datos del documento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReniecResponseDto'
+        "400":
+          description: Error en la consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -3062,4 +3206,144 @@ components:
       properties:
         motivoAnulacion:
           type: string
+
+    # ===== NOTIFICATION =====
+    NotificationPublishDto:
+      type: object
+      required:
+        - companyId
+        - accion
+        - tipoDocumento
+        - mensaje
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        accion:
+          type: string
+          enum: [EMITIDA, ANULADA, ELIMINADA]
+          example: "EMITIDA"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        documentoId:
+          type: string
+          example: "fac_123456"
+        serie:
+          type: string
+          example: "F001"
+        mensaje:
+          type: string
+          example: "Factura F001-1 emitida exitosamente"
+
+    NotificationData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "notif-001"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        accion:
+          type: string
+          enum: [EMITIDA, ANULADA, ELIMINADA]
+          example: "EMITIDA"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        documentoId:
+          type: string
+          example: "fac_123456"
+        serie:
+          type: string
+          example: "F001"
+        mensaje:
+          type: string
+          example: "Factura F001-1 emitida exitosamente"
+        timestamp:
+          type: integer
+          format: int64
+          description: Timestamp en milisegundos
+          example: 1712345678000
+        leida:
+          type: boolean
+          example: false
+
+    NotificationListData:
+      type: object
+      properties:
+        unreadCount:
+          type: integer
+          format: int64
+          example: 5
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationData'
+
+    NotificationListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotificationListData'
+
+    # ===== RENIEC =====
+    ReniecData:
+      type: object
+      properties:
+        tipoDocumento:
+          type: string
+          example: "DNI"
+        numeroDocumento:
+          type: string
+          example: "12345678"
+        denominacion:
+          type: string
+          example: "JUAN CARLOS GARCIA LOPEZ"
+        nombre:
+          type: string
+          example: "JUAN CARLOS"
+        apellidoPaterno:
+          type: string
+          example: "GARCIA"
+        apellidoMaterno:
+          type: string
+          example: "LOPEZ"
+        razonSocial:
+          type: string
+          example: "EMPRESA DEMO S.A.C."
+        direccion:
+          type: string
+          example: "AV. AREQUIPA 1234, LIMA"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        estado:
+          type: string
+          example: "ACTIVO"
+        condicion:
+          type: string
+          example: "HABIDO"
+        mensaje:
+          type: string
+          description: Mensaje informativo si la consulta no está disponible
+
+    ReniecResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ReniecData'
 

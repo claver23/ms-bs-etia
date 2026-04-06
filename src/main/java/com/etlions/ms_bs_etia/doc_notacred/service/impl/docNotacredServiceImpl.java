@@ -1,12 +1,12 @@
 package com.etlions.ms_bs_etia.doc_notacred.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
-import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notacred.mapper.NotaCreditoMapper;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoEntity;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoRepository;
 import com.etlions.ms_bs_etia.doc_notacred.service.DocNotacredService;
-import com.etlions.ms_bs_etia.notification.NotificationService;
+import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

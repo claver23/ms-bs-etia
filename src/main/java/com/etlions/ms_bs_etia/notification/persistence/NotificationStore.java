@@ -1,4 +1,4 @@
-package com.etlions.ms_bs_etia.notification;
+package com.etlions.ms_bs_etia.notification.persistence;
 
 import org.springframework.stereotype.Component;
 
@@ -55,4 +55,5 @@ public class NotificationStore {
         items.removeIf(n -> companyId.equals(n.getCompanyId()));
     }
 }
+
 

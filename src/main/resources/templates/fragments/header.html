@@ -24,6 +24,26 @@
                 <option value="">Cargando sedes…</option>
             </select>
         </div>
+        <!-- TC Live Badge -->
+        <div class="g-tc-wrap">
+            <button class="g-tc-badge" id="hdr-tc-badge" onclick="toggleTcPopup()" title="Tipo de Cambio del día" style="display:none;">
+                <span class="g-tc-icon">💱</span>
+                <span class="g-tc-rate tc-badge-rate">—</span>
+            </button>
+            <div class="g-tc-popup" id="hdr-tc-popup" style="display:none;">
+                <div class="g-tc-popup-title">💱 Tipo de Cambio · USD/PEN</div>
+                <div class="g-tc-popup-row">
+                    <span class="g-tc-popup-label">📈 Compra</span>
+                    <span class="g-tc-popup-val tc-popup-compra">—</span>
+                </div>
+                <div class="g-tc-popup-row">
+                    <span class="g-tc-popup-label">📉 Venta</span>
+                    <span class="g-tc-popup-val g-tc-popup-val-accent tc-popup-venta">—</span>
+                </div>
+                <div class="g-tc-popup-footer tc-popup-fuente">SBS · —</div>
+                <button class="g-tc-popup-refresh" onclick="refreshTcBadge()">⟳ Actualizar</button>
+            </div>
+        </div>
         <button class="g-notif-btn" id="hdr-notif-btn" onclick="toggleNotifPanel()" title="Notificaciones">
             🔔 <span class="g-notif-count" id="hdr-notif-count" style="display:none;">0</span>
         </button>

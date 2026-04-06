@@ -1,8 +1,8 @@
 package com.etlions.ms_bs_etia.reniec.service;
 
-import java.util.Map;
+import com.etlions.openapicodegen.dto.ReniecData;
 
 public interface ReniecService {
-    Map<String, Object> consultarDocumento(String tipo, String numero);
+    ReniecData consultarDocumento(String tipo, String numero);
 }
 

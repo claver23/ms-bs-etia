@@ -181,6 +181,105 @@ a { color: inherit; text-decoration: none; }
     100% { transform: scale(1); }
 }
 
+/* ─── TC Live Badge (Header) ─── */
+.g-tc-wrap { position: relative; }
+.g-tc-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.25rem 0.7rem 0.25rem 0.5rem;
+    cursor: pointer; transition: var(--transition);
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
+    color: var(--accent); line-height: 1;
+}
+.g-tc-badge:hover {
+    border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow);
+}
+.g-tc-icon { font-size: 0.85rem; }
+.g-tc-rate { letter-spacing: 0.5px; }
+
+/* TC Popup */
+.g-tc-popup {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 220px; background: var(--bg-card);
+    border: 1px solid var(--accent-dim); border-radius: var(--radius);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px var(--accent-glow);
+    z-index: 60; padding: 0.8rem;
+    animation: screenIn 0.25s ease;
+}
+.g-tc-popup-title {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+    margin-bottom: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+}
+.g-tc-popup-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.3rem 0;
+}
+.g-tc-popup-label { font-size: 0.72rem; color: var(--text-secondary); }
+.g-tc-popup-val {
+    font-size: 0.85rem; font-weight: 800; font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+.g-tc-popup-val-accent { color: var(--accent); }
+.g-tc-popup-footer {
+    font-size: 0.62rem; color: var(--text-muted); font-family: var(--font-mono);
+    margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid var(--border);
+    text-align: center;
+}
+.g-tc-popup-refresh {
+    display: block; width: 100%; margin-top: 0.5rem;
+    background: none; border: 1px solid var(--border);
+    color: var(--text-secondary); border-radius: var(--radius-sm);
+    padding: 0.3rem; font-size: 0.68rem; cursor: pointer;
+    font-family: var(--font-mono); transition: var(--transition);
+}
+.g-tc-popup-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ─── TC Menu Widget ─── */
+.tc-widget {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem; gap: 1.5rem;
+    transition: var(--transition);
+    animation: screenIn 0.4s ease;
+}
+.tc-widget:hover {
+    border-color: var(--accent-dim);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 20px var(--accent-glow);
+}
+.tcw-header { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+.tcw-icon { font-size: 1.8rem; filter: drop-shadow(0 0 8px var(--accent-glow)); }
+.tcw-title-wrap { display: flex; flex-direction: column; }
+.tcw-title {
+    font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+.tcw-fuente {
+    font-size: 0.62rem; color: var(--text-muted); font-family: var(--font-mono);
+    letter-spacing: 0.3px; margin-top: 0.15rem;
+}
+.tcw-rates { display: flex; align-items: center; gap: 1.2rem; }
+.tcw-rate-box { display: flex; flex-direction: column; align-items: center; }
+.tcw-rate-label {
+    font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-muted); font-family: var(--font-mono);
+    margin-bottom: 0.2rem;
+}
+.tcw-rate-val {
+    font-size: 1.15rem; font-weight: 800; font-family: var(--font-mono);
+    color: var(--text-primary); letter-spacing: 0.5px;
+}
+.tcw-rate-val-accent { color: var(--accent); }
+.tcw-divider {
+    width: 1px; height: 32px; background: var(--border); flex-shrink: 0;
+}
+@media (max-width: 600px) {
+    .tc-widget { flex-direction: column; text-align: center; gap: 0.8rem; padding: 0.8rem 1rem; }
+    .tcw-header { justify-content: center; }
+    .g-tc-badge .g-tc-icon { display: none; }
+}
+
 /* ─── Notification Panel ─── */
 .g-notif-panel {
     position: fixed; top: 52px; right: 1rem;

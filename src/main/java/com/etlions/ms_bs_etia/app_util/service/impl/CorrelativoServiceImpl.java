@@ -1,6 +1,6 @@
-package com.etlions.ms_bs_etia.app_util.impl;
+package com.etlions.ms_bs_etia.app_util.service.impl;
 
-import com.etlions.ms_bs_etia.app_util.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.persistence.CorrelativoEntity;
 import com.etlions.ms_bs_etia.app_util.persistence.CorrelativoRepository;
 import lombok.RequiredArgsConstructor;

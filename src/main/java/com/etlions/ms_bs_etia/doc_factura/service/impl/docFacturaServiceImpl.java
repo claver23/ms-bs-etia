@@ -1,15 +1,15 @@
 package com.etlions.ms_bs_etia.doc_factura.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
-import com.etlions.ms_bs_etia.app_util.CorrelativoService;
-import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
 import com.etlions.ms_bs_etia.doc_factura.service.DocFacturaService;
-import com.etlions.ms_bs_etia.notification.NotificationService;
+import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

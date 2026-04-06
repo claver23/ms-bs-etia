@@ -1,4 +1,4 @@
-package com.etlions.ms_bs_etia.app_util;
+package com.etlions.ms_bs_etia.app_util.validation;
 
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 
@@ -20,9 +20,6 @@ public final class SunatValidator {
     /**
      * Valida que el tipo de documento de identidad del cliente sea compatible
      * con el tipo de comprobante (FACTURA o BOLETA) según reglas SUNAT.
-     *
-     * @param tipoComprobante  "FACTURA" o "BOLETA"
-     * @param tipoDocCliente   Código SUNAT del tipo de documento de identidad del cliente ("1","4","6","7")
      */
     public static void validarTipoDocumentoCliente(String tipoComprobante, String tipoDocCliente) {
         if (tipoDocCliente == null || tipoDocCliente.isBlank()) {
@@ -116,5 +113,4 @@ public final class SunatValidator {
         }
     }
 }
-
 

@@ -1,4 +1,4 @@
-package com.etlions.ms_bs_etia.app_config;
+package com.etlions.ms_bs_etia.app_config.config;
 
 import org.springframework.context.annotation.Configuration;
 

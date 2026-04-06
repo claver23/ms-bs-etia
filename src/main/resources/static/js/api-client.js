@@ -69,7 +69,8 @@ var ApiClient = (function() {
 
     /* ═══════ RENIEC / SUNAT Document Query ═══════ */
     function consultarReniec(tipo, numero) {
-        return _get('/reniec?tipo=' + encodeURIComponent(tipo) + '&numero=' + encodeURIComponent(numero));
+        return _get('/reniec?tipo=' + encodeURIComponent(tipo) + '&numero=' + encodeURIComponent(numero))
+            .then(function(res) { return res.data || res; });
     }
 
     /* ═══════ TIPO DE CAMBIO ═══════ */
@@ -310,7 +311,13 @@ var ApiClient = (function() {
         listarNotasDebito:  listarNotasDebito,
         getNotaDebito:      getNotaDebito,
         annulDocument:      annulDocument,
-        listNotifications:  function(companyId) { return _get('/notifications?companyId=' + companyId); },
-        markAllNotifRead:   function(companyId) { return _put('/notifications/read-all?companyId=' + companyId, {}); }
+        listNotifications:  function(companyId) {
+            return _get('/notification?companyId=' + companyId).then(function(res) {
+                return res.data || res;
+            });
+        },
+        markAllNotifRead:   function(companyId) { return _put('/notification/read-all?companyId=' + companyId, {}); },
+        markNotifRead:      function(notificationId) { return _put('/notification/' + notificationId + '/read', {}); },
+        clearNotifications: function(companyId) { return _delete('/notification?companyId=' + companyId); }
     };
 })();

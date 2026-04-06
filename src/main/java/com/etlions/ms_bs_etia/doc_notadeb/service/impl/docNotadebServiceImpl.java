@@ -1,12 +1,12 @@
 package com.etlions.ms_bs_etia.doc_notadeb.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
-import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notadeb.mapper.NotaDebitoMapper;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoEntity;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoRepository;
 import com.etlions.ms_bs_etia.doc_notadeb.service.DocNotadebService;
-import com.etlions.ms_bs_etia.notification.NotificationService;
+import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

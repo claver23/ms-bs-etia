@@ -1,9 +1,5 @@
-package com.etlions.ms_bs_etia.app_config;
+package com.etlions.ms_bs_etia.app_config.exception;
 
-import com.etlions.ms_bs_etia.app_config.exception.BusinessException;
-import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
-import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
-import com.etlions.ms_bs_etia.app_config.exception.ValidationException;
 import com.etlions.openapicodegen.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

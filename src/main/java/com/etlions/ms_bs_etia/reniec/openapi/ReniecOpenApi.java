@@ -1,38 +1,31 @@
 package com.etlions.ms_bs_etia.reniec.openapi;
 
 import com.etlions.ms_bs_etia.reniec.service.ReniecService;
+import com.etlions.openapicodegen.api.v1.ReniecApi;
+import com.etlions.openapicodegen.dto.ReniecData;
+import com.etlions.openapicodegen.dto.ReniecResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import java.util.Date;
 
-/**
- * REST controller for RENIEC / SUNAT document lookup.
- * Note: this endpoint is not yet defined in the OpenAPI contract;
- * it will be migrated once a schema is added to ms-bs-etia.yaml.
- */
-@RestController
-@RequestMapping("/api/v1/reniec")
+@Controller
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
-public class ReniecOpenApi {
+public class ReniecOpenApi implements ReniecApi {
 
     private final ReniecService reniecService;
 
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> consultar(
-            @RequestParam String tipo,
-            @RequestParam String numero) {
-
-        Map<String, Object> result = reniecService.consultarDocumento(tipo, numero);
-
-        if (result.containsKey("error")) {
-            return ResponseEntity.badRequest().body(result);
-        }
-        return ResponseEntity.ok(result);
+    @Override
+    public ResponseEntity<ReniecResponseDto> consultarDocumento(String tipo, String numero) {
+        ReniecData data = reniecService.consultarDocumento(tipo, numero);
+        return ResponseEntity.ok(new ReniecResponseDto()
+                .isSuccess(true).status("OK")
+                .message("Consulta exitosa")
+                .timestamp(new Date())
+                .data(data));
     }
 }
 

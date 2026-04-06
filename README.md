@@ -30,9 +30,27 @@
 
 ---
 
-## ✨ Novedades (Abril 2026)
+## ✨ Novedades (Abril 2026) — FASE 1 COMPLETADA ✅
 
-> Resumen de las funcionalidades más recientes implementadas en **Fase 1.5** — de wizard demo a **aplicación de facturación completa conforme a SUNAT**.
+> **FASE 1 finalizada oficialmente.** El proyecto pasó de un scaffold básico a una **aplicación de facturación electrónica completa conforme a SUNAT** con arquitectura hexagonal homologada en los 18 dominios.
+
+### ⚡ Performance — Cache inteligente con sessionStorage
+
+| Feature | Detalle |
+|---------|---------|
+| **Cache con TTL** | `ETIA.init()` cachea company, clients, sedes en `sessionStorage` con TTL de 5 minutos. Reduce 8 API calls a 2-3 en navegación normal. |
+| **Stale-while-revalidate** | Muestra datos cacheados inmediatamente y revalida en background (sin bloquear UI). La experiencia se siente instantánea. |
+| **Cache helpers** | `_cacheSet(key, data)`, `_cacheGet(key)`, `_cacheInvalidate(key)` — reutilizables para cualquier dato. |
+| **TC cacheado** | El tipo de cambio del día se cachea y se refresca silenciosamente. |
+
+### 💱 Tipo de Cambio — Live Badge en Header + Widget en Menú
+
+| Feature | Detalle |
+|---------|---------|
+| **Header Live Badge** | Chip `💱 3.7520` visible en el header de **todas** las páginas. Click abre popup con compra/venta/fuente/fecha. |
+| **Popup interactivo** | Mini popup con compra, venta, fuente (SBS/SUNAT) y botón ⟳ Actualizar. Se cierra al hacer click fuera. |
+| **Menu Widget** | Banner horizontal en la página de menú con compra/venta destacados y fuente. |
+| **Auto-fetch** | Se consulta automáticamente al iniciar la app usando la fuente configurada (SBS/SUNAT). |
 
 ### 🛡️ Validaciones SUNAT pre-emisión
 
@@ -78,8 +96,10 @@
 |---------|---------|
 | **Store in-memory** | `ConcurrentLinkedDeque` con notificaciones por empresa (thread-safe). |
 | **Badge en tiempo real** | Contador de no-leídas en el header, actualización automática. |
-| **Acciones REST** | Listar, marcar leída, marcar todas leídas, limpiar por empresa. |
+| **Endpoint REST POST** | `POST /api/v1/notification` — Publicar notificación por REST (OpenAPI). |
+| **Acciones REST** | Listar, publicar, marcar leída, marcar todas leídas, limpiar por empresa. |
 | **Auto-publicación** | Emisión y anulación de cualquier comprobante genera notificación automática. |
+| **Patrón homologado** | `openapi/ → service/ → service/impl/ → persistence/` — idéntico a los otros 17 dominios. |
 
 ### 🖥️ Frontend SUNAT-aware
 
@@ -94,7 +114,7 @@
 
 ## 📐 Arquitectura
 
-El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada módulo de negocio es autónomo con sus propias capas. El contrato OpenAPI genera las interfaces y DTOs, y la aplicación los implementa en capas limpias. El frontend es una **Multi-Page App (MPA)** con Thymeleaf + Vanilla JS modular.
+El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada uno de los **18 dominios** es autónomo con sus propias capas. El contrato OpenAPI genera las interfaces y DTOs, y la aplicación los implementa en capas limpias. El frontend es una **Multi-Page App (MPA)** con Thymeleaf + Vanilla JS modular.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -110,8 +130,8 @@ El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada módulo
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        🌐  API Gateway                              │
-│              /api/v1/*  (REST JSON · 54+ endpoints)                 │
-│        + /api/v1/notifications (in-memory notification store)       │
+│              /api/v1/*  (REST JSON · 59 endpoints)                  │
+│        + /api/v1/notification (OpenAPI — in-memory store)           │
 └────────────────────────────┬────────────────────────────────────────┘
                              │
                              ▼
@@ -230,7 +250,7 @@ GET /wizard?type=FACTURA       ← WizardViewController → wizard/factura.html
 
 ## 📦 Dominios
 
-Cada dominio vive en su propio paquete con **sub-paquetes independientes** (openapi / service / mapper / persistence):
+Cada dominio vive en su propio paquete con **sub-paquetes homologados** (openapi / service / service/impl / mapper / persistence):
 
 ```
 com.etlions.ms_bs_etia
@@ -331,10 +351,10 @@ com.etlions.ms_bs_etia
 │   └── persistence/               UserPreferenceEntity + UserPreferenceRepository
 │
 ├── 🔔 notification/               Notificaciones in-memory (emisión/anulación)
-│   ├── NotificationOpenApi.java   REST controller
-│   ├── NotificationService.java   Publicar notificaciones
-│   ├── NotificationStore.java     Store in-memory (ConcurrentLinkedDeque)
-│   └── NotificationItem.java     Modelo
+│   ├── openapi/                   NotificationOpenApi.java (REST controller)
+│   ├── service/                   NotificationService.java (interface)
+│   ├── service/impl/              NotificationServiceImpl.java
+│   └── persistence/               NotificationStore.java + NotificationItem.java
 │
 ├── 🖥️ view/                       14 View Controllers (Spring MVC + Thymeleaf)
 │   ├── WelcomeViewController.java
@@ -353,20 +373,19 @@ com.etlions.ms_bs_etia
 │   └── WizardViewController.java
 │
 ├── ⚙️ app_config/                 Configuración global
-│   ├── GlobalExceptionHandler.java    @RestControllerAdvice (5+ handlers)
-│   ├── ThymeleafConfig.java           Configuración Thymeleaf
-│   └── exception/
+│   ├── config/                    ThymeleafConfig.java
+│   └── exception/                 Excepciones custom
+│       ├── GlobalExceptionHandler.java    @RestControllerAdvice (5+ handlers)
 │       ├── ResourceNotFoundException.java    404
 │       ├── BusinessException.java            422
 │       ├── ValidationException.java          400
 │       └── SunatValidationException.java     422 (reglas SUNAT)
 │
 ├── 🛠️ app_util/                   Utilidades compartidas
-│   ├── CorrelativoService.java        Interface auto-correlativo
-│   ├── impl/CorrelativoServiceImpl.java
-│   ├── persistence/CorrelativoEntity.java
-│   ├── persistence/CorrelativoRepository.java
-│   └── SunatValidator.java            Validaciones SUNAT
+│   ├── service/                   CorrelativoService.java (interface)
+│   ├── service/impl/              CorrelativoServiceImpl.java
+│   ├── persistence/               CorrelativoEntity.java + CorrelativoRepository.java
+│   └── validation/                SunatValidator.java (reglas SUNAT)
 │
 └── 🚀 MsBsEtiaApplication.java   Entry point
 ```
@@ -454,7 +473,7 @@ com.etlions.ms_bs_etia
 
 ## 🔌 API Endpoints
 
-Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el contrato OpenAPI (`2,945 líneas`). Adicionalmente hay endpoints custom para notificaciones.
+Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el contrato OpenAPI (`~3,300 líneas`). Todas las notificaciones están integradas en el contrato.
 
 ### 🏢 Company — Empresas emisoras
 
@@ -575,15 +594,15 @@ Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el cont
 | `POST` | `/api/v1/libro_electronico` | Generar libro electrónico |
 | `GET` | `/api/v1/libro_electronico` | Listar libros generados |
 
-### 🔔 Notificaciones (custom, no OpenAPI)
+### 🔔 Notificaciones (OpenAPI)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| `GET` | `/api/v1/notifications` | Listar notificaciones por empresa |
-| `PUT` | `/api/v1/notifications/read-all` | Marcar todas como leídas |
-| `PUT` | `/api/v1/notifications/{id}/read` | Marcar una como leída |
-| `DELETE` | `/api/v1/notifications` | Limpiar notificaciones |
-| `PUT` | `/api/v1/notification/annul` | Anular documento (rechazado SUNAT) |
+| `GET` | `/api/v1/notification` | Listar notificaciones por empresa |
+| `POST` | `/api/v1/notification` | Publicar notificación de transmisión |
+| `PUT` | `/api/v1/notification/read-all` | Marcar todas como leídas |
+| `PUT` | `/api/v1/notification/{id}/read` | Marcar una como leída |
+| `DELETE` | `/api/v1/notification` | Limpiar notificaciones |
 
 ### 🖥️ Vistas (Spring MVC)
 
@@ -604,7 +623,7 @@ Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el cont
 | `GET` | `/resumenes-diarios` | `resumenes-diarios.html` |
 | `GET` | `/wizard?type=...` | `wizard/factura.html` |
 
-> **Total: 54 endpoints REST (OpenAPI) + 4 endpoints notificaciones + 14 vistas MVC + consola H2 = 73 rutas**
+> **Total: 59 endpoints REST (OpenAPI — incluye notificaciones) + 14 vistas MVC + consola H2 = 74 rutas**
 
 ### 📋 Formato de respuesta estándar
 
@@ -929,38 +948,43 @@ spring:
                                             Estado actual
                                                  │
                                                  ▼
-────●──────────●──────────●──────────●──────────●──────────●──────────●────►
-    │          │          │          │          │          │          │
-    ▼          ▼          ▼          ▼          ▼          ▼          ▼
+────●──────────────────────────────────────────●──────────●──────────●──────────●────►
+    │                                          │          │          │          │
+    ▼                                          ▼          ▼          ▼          ▼
 
- ✅ Fase 0   ✅ Fase 1   ✅ Fase 1.5  🔲 Fase 2   🔲 Fase 3   🔲 Fase 4   🔲 Fase 5
-  CRUD +      Error       Multi-Page   XML UBL     Firma +     Resumen     Production
-  OpenAPI     Handling    App + Full   2.1 SUNAT   Envío       Diario +    Ready
-  Mappers     Demo UI     Frontend     Catálogos   SUNAT       Com. Baja
-  JPA         Test Data   Dominios     JAXB        CDR         Boletas
-              Thymeleaf   Completos
+ ✅ FASE 1 (Completada)                     🔲 Fase 2   🔲 Fase 3   🔲 Fase 4   🔲 Fase 5
+   CRUD + OpenAPI + MapStruct + JPA           XML UBL     Firma +     Resumen     Production
+   Error Handling + Thymeleaf MPA             2.1 SUNAT   Envío       Diario +    Ready
+   18 dominios homologados                    Catálogos   SUNAT       Com. Baja
+   59 endpoints REST + 14 vistas              JAXB        CDR         Boletas
+   Notificaciones · Validaciones SUNAT
+   Auto-correlativo · Sedes · Series
+   Arquitectura hexagonal completa
 ```
 
-### ✅ Fase 0 — Base (Completada)
+### ✅ FASE 1 — Plataforma Base Completa (Finalizada Abril 2026)
 
-> CRUD completo, OpenAPI codegen, MapStruct, JPA, dominios fundacionales.
+> De scaffold vacío a **aplicación de facturación electrónica completa conforme a SUNAT** con arquitectura hexagonal homologada.
 
-### ✅ Fase 1 — Error Handling + Demo (Completada)
+**Hitos incluidos:**
 
-> `@RestControllerAdvice`, excepciones custom, Thymeleaf wizard, test data, DataLoader.
+| Hito | Descripción |
+|------|-------------|
+| **Base (ex-Fase 0)** | CRUD completo, OpenAPI codegen, MapStruct, JPA, dominios fundacionales |
+| **Error Handling (ex-Fase 1)** | `@RestControllerAdvice`, excepciones custom, Thymeleaf wizard, test data |
+| **MPA + Dominios (ex-Fase 1.5)** | 14 vistas Thymeleaf, 10 nuevos dominios, frontend modular completo |
+| **Homologación arquitectura** | 18 dominios con patrón `openapi/ → service/ → service/impl/ → persistence/` |
 
-### ✅ Fase 1.5 — Multi-Page App + Dominios Completos (Completada)
-
-Esta fue una expansión masiva del proyecto. Se pasó de un wizard demo a una **aplicación completa de facturación**:
+**Entregables finales de FASE 1:**
 
 | Feature | Detalle |
 |---------|---------|
 | **🏪 14 vistas Thymeleaf** | Welcome, Menu, Documents, Facturas, Boletas, Notas C/D, Clients, Products, Employees, Sedes, Tipo Cambio, Resúmenes, Wizard |
 | **🖥️ 14 View Controllers** | Cada vista con su propio `@Controller` Spring MVC |
-| **📦 10 nuevos dominios** | Product, Employee, Sede, SerieConfig, TipoCambio, Ubigeo, UnidadMedida, UserPreference, LibroElectrónico, Notification |
+| **📦 18 dominios homologados** | Todos con patrón `openapi/service/impl/persistence/mapper` |
 | **🔢 Auto-correlativo** | `CorrelativoService` — F001-1, F001-2, etc. por serie |
 | **✅ SunatValidator** | Validaciones de negocio SUNAT pre-emisión |
-| **🔔 Notificaciones** | Sistema in-memory: badge en header, docs rechazados, transmisiones, marcar leídas |
+| **🔔 Notificaciones OpenAPI** | 5 endpoints REST: listar, publicar, marcar leída, marcar todas, limpiar |
 | **🚫 Anulación** | Anular documentos rechazados por SUNAT desde notificaciones |
 | **👤 Client Modal** | Búsqueda + registro inline de clientes con consulta RENIEC/SUNAT |
 | **📦 Product Modal** | Búsqueda live de productos contra API |
@@ -1049,7 +1073,7 @@ Generación del XML electrónico conforme al estándar UBL 2.1 que exige SUNAT:
 ## 📄 Contrato OpenAPI
 
 ```
-src/main/resources/swagger/ms-bs-etia.yaml   (2,945 líneas)
+src/main/resources/swagger/ms-bs-etia.yaml   (~3,300 líneas)
 ```
 
 Se genera automáticamente durante `mvn compile` usando **OpenAPI Generator 7.9.0**:
@@ -1081,23 +1105,22 @@ java -jar target/ms-bs-etia-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 📊 Estadísticas del proyecto
+## 📊 Estadísticas del proyecto (FASE 1 — Final)
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos Java (src) | **124** |
-| Dominios de negocio | **17** |
-| Endpoints REST (OpenAPI) | **54** |
-| Endpoints Notificaciones | **4** |
+| Archivos Java (src) | **~130** |
+| Dominios de negocio | **18** (todos homologados) |
+| Endpoints REST (OpenAPI) | **59** (incluye notificaciones) |
 | View Controllers (MVC) | **14** |
 | Entidades JPA | **15** |
 | Repositorios | **15** |
 | MapStruct Mappers | **14** |
-| Servicios (interface + impl) | **28+** |
+| Servicios (interface + impl) | **30+** |
 | Templates Thymeleaf | **19** (14 vistas + 5 fragments) |
 | Archivos JS | **10** |
 | CSS Design System | **1,606 líneas** |
-| Contrato OpenAPI YAML | **2,945 líneas** |
+| Contrato OpenAPI YAML | **~3,300 líneas** |
 | data.sql (seed) | **168 líneas** (50+ registros) |
 | Sample docs | **4** (XMLs + PDFs reales) |
 
