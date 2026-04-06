@@ -3,8 +3,8 @@ package com.etlions.ms_bs_etia.doc_notacred.mapper;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoEntity;
 import com.etlions.openapicodegen.dto.DetalleItem;
 import com.etlions.openapicodegen.dto.NotaCreditoData;
-import com.etlions.openapicodegen.dto.NotaCreditoEmitirRequest;
-import com.etlions.openapicodegen.dto.NotaCreditoUpdateRequest;
+import com.etlions.openapicodegen.dto.NotaCreditoEmitirDto;
+import com.etlions.openapicodegen.dto.NotaCreditoUpdateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +27,7 @@ public interface NotaCreditoMapper {
     @Mapping(target = "motivo", expression = "java(request.getMotivo() != null ? request.getMotivo().getValue() : null)")
     @Mapping(target = "tipoDocumento", expression = "java(request.getTipoDocumento() != null ? request.getTipoDocumento().getValue() : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
-    NotaCreditoEntity toEntity(NotaCreditoEmitirRequest request);
+    NotaCreditoEntity toEntity(NotaCreditoEmitirDto request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "companyId", ignore = true)
@@ -37,7 +37,7 @@ public interface NotaCreditoMapper {
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
     @Mapping(target = "motivo", expression = "java(request.getMotivo() != null ? request.getMotivo().getValue() : null)")
     @Mapping(target = "tipoDocumento", ignore = true)
-    void updateEntity(NotaCreditoUpdateRequest request, @MappingTarget NotaCreditoEntity entity);
+    void updateEntity(NotaCreditoUpdateDto request, @MappingTarget NotaCreditoEntity entity);
 
     @Mapping(target = "motivo", expression = "java(entity.getMotivo() != null ? NotaCreditoData.MotivoEnum.fromValue(entity.getMotivo()) : null)")
     @Mapping(target = "tipoDocumento", expression = "java(entity.getTipoDocumento() != null ? NotaCreditoData.TipoDocumentoEnum.fromValue(entity.getTipoDocumento()) : null)")

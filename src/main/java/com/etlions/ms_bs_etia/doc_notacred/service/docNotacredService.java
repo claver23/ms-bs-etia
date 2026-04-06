@@ -1,23 +1,26 @@
 package com.etlions.ms_bs_etia.doc_notacred.service;
 
-import com.etlions.openapicodegen.dto.ActualizarNotaCreditoBorrador200Response;
-import com.etlions.openapicodegen.dto.ListarNotasCredito200Response;
-import com.etlions.openapicodegen.dto.NotaCreditoEmitirRequest;
-import com.etlions.openapicodegen.dto.NotaCreditoUpdateRequest;
+import com.etlions.openapicodegen.dto.NotaCreditoResponseDto;
+import com.etlions.openapicodegen.dto.NotaCreditoListResponseDto;
+import com.etlions.openapicodegen.dto.NotaCreditoEmitirDto;
+import com.etlions.openapicodegen.dto.NotaCreditoUpdateDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
 import java.util.Date;
 
-public interface docNotacredService {
+public interface DocNotacredService {
 
-    ActualizarNotaCreditoBorrador200Response emitirNotaCredito(NotaCreditoEmitirRequest request);
+    NotaCreditoResponseDto emitirNotaCredito(NotaCreditoEmitirDto request);
 
-    ActualizarNotaCreditoBorrador200Response actualizarNotaCreditoBorrador(String notaCreditoId,
-                                                                          NotaCreditoUpdateRequest request);
+    NotaCreditoResponseDto actualizarNotaCreditoBorrador(String notaCreditoId,
+                                                                          NotaCreditoUpdateDto request);
 
     SuccessResponse eliminarNotaCreditoBorrador(String notaCreditoId);
 
-    ListarNotasCredito200Response listarNotasCredito(String companyId, String facturaReferenciaId,
+    NotaCreditoListResponseDto listarNotasCredito(String companyId, String facturaReferenciaId,
                                                      Date desdeFecha, Date hastaFecha,
                                                      Integer page, Integer size);
+
+    NotaCreditoResponseDto obtenerNotaCredito(String notaCreditoId);
 }
+

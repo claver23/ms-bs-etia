@@ -3,8 +3,8 @@ package com.etlions.ms_bs_etia.doc_notadeb.mapper;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoEntity;
 import com.etlions.openapicodegen.dto.DetalleItem;
 import com.etlions.openapicodegen.dto.NotaDebitoData;
-import com.etlions.openapicodegen.dto.NotaDebitoEmitirRequest;
-import com.etlions.openapicodegen.dto.NotaDebitoUpdateRequest;
+import com.etlions.openapicodegen.dto.NotaDebitoEmitirDto;
+import com.etlions.openapicodegen.dto.NotaDebitoUpdateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +26,7 @@ public interface NotaDebitoMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "motivo", expression = "java(request.getMotivo() != null ? request.getMotivo().getValue() : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
-    NotaDebitoEntity toEntity(NotaDebitoEmitirRequest request);
+    NotaDebitoEntity toEntity(NotaDebitoEmitirDto request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "companyId", ignore = true)
@@ -35,7 +35,7 @@ public interface NotaDebitoMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
     @Mapping(target = "motivo", expression = "java(request.getMotivo() != null ? request.getMotivo().getValue() : null)")
-    void updateEntity(NotaDebitoUpdateRequest request, @MappingTarget NotaDebitoEntity entity);
+    void updateEntity(NotaDebitoUpdateDto request, @MappingTarget NotaDebitoEntity entity);
 
     @Mapping(target = "motivo", expression = "java(entity.getMotivo() != null ? NotaDebitoData.MotivoEnum.fromValue(entity.getMotivo()) : null)")
     @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? NotaDebitoData.EstadoEnum.fromValue(entity.getEstado()) : null)")

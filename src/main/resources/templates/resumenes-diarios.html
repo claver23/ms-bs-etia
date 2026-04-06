@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Resúmenes Diarios')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>📑 Resúmenes Diarios de Boletas</h2>
+            <p>Consolidación diaria de boletas para envío a SUNAT</p>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <input class="vt-search" id="rd-fecha" type="date" onchange="loadResumenes()" />
+            </div>
+            <div class="vt-actions">
+                <button class="btn btn-accent" onclick="generarResumen()">✨ Generar Resumen del Día</button>
+            </div>
+        </div>
+
+        <!-- Empty state / list -->
+        <div id="rd-list">
+            <div class="warn-banner">
+                ℹ️ Selecciona una fecha para consultar resúmenes diarios, o genera uno nuevo para la fecha de hoy.
+            </div>
+        </div>
+
+        <!-- Resumen cards will render here -->
+        <div class="doc-list-cards" id="rd-cards"></div>
+
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            /* Set default date to today */
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('rd-fecha').value = today;
+            loadResumenes();
+        });
+    });
+
+    function loadResumenes() {
+        var fecha = document.getElementById('rd-fecha').value;
+        var cards = document.getElementById('rd-cards');
+        if (!fecha || !ETIA.companyId) {
+            cards.innerHTML = '';
+            return;
+        }
+        /* Load boletas for the selected date and group them */
+        ApiClient.listarBoletas(ETIA.companyId).then(function(boletas) {
+            var filtered = (boletas || []).filter(function(b) {
+                return b.fechaEmision && b.fechaEmision.startsWith(fecha);
+            });
+            if (filtered.length === 0) {
+                cards.innerHTML = '<div class="pm-empty">No hay boletas emitidas para esta fecha.</div>';
+                return;
+            }
+            var totalMonto = filtered.reduce(function(s, b) { return s + (b.total || 0); }, 0);
+            cards.innerHTML =
+                '<div class="doc-list-item">' +
+                    '<div class="dli-header">' +
+                        '<div class="dli-left">' +
+                            '<span class="dli-serie" style="color:var(--purple);">RC-' + fecha.replace(/-/g,'') + '</span>' +
+                            '<span class="badge badge-blue">' + filtered.length + ' boleta(s)</span>' +
+                            '<span class="badge badge-green">GENERADO</span>' +
+                        '</div>' +
+                        '<div class="dli-right">' +
+                            '<span class="dli-total">S/ ' + totalMonto.toFixed(2) + '</span>' +
+                            '<span class="dli-date">' + fecha + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="doc-item-detail">' +
+                        filtered.map(function(b) {
+                            return '<span class="doc-item-chip">' +
+                                '<span class="dic-desc">' + (b.serie || '') + '-' + (b.numero || '') + '</span>' +
+                                '<span class="dic-amount">S/ ' + (b.total || 0).toFixed(2) + '</span>' +
+                            '</span>';
+                        }).join('') +
+                    '</div>' +
+                '</div>';
+        }).catch(function(err) {
+            cards.innerHTML = '<div class="pm-empty">Error al cargar boletas: ' + err.message + '</div>';
+        });
+    }
+
+    function generarResumen() {
+        var fecha = document.getElementById('rd-fecha').value || new Date().toISOString().split('T')[0];
+        /* For now, just reload the view to show the summary */
+        document.getElementById('rd-fecha').value = fecha;
+        loadResumenes();
+        if (ETIA.showSuccess) {
+            ETIA.showSuccess({ message: 'Resumen diario generado para ' + fecha });
+        }
+    }
+</script>
+</body>
+</html>
+

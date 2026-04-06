@@ -1,11 +1,12 @@
 package com.etlions.ms_bs_etia.doc_notacred.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
-import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notacred.mapper.NotaCreditoMapper;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoEntity;
 import com.etlions.ms_bs_etia.doc_notacred.persistence.NotaCreditoRepository;
-import com.etlions.ms_bs_etia.doc_notacred.service.docNotacredService;
+import com.etlions.ms_bs_etia.doc_notacred.service.DocNotacredService;
+import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,20 +18,24 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class docNotacredServiceImpl implements docNotacredService {
+public class DocNotacredServiceImpl implements DocNotacredService {
 
     private final NotaCreditoRepository notaCreditoRepository;
     private final NotaCreditoMapper notaCreditoMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
-    public ActualizarNotaCreditoBorrador200Response emitirNotaCredito(NotaCreditoEmitirRequest request) {
+    public NotaCreditoResponseDto emitirNotaCredito(NotaCreditoEmitirDto request) {
         NotaCreditoEntity entity = notaCreditoMapper.toEntity(request);
         entity.setEstado("BORRADOR");
         entity.setFechaCreacion(LocalDateTime.now());
         NotaCreditoEntity saved = notaCreditoRepository.save(entity);
         NotaCreditoData data = notaCreditoMapper.toData(saved);
-        return new ActualizarNotaCreditoBorrador200Response()
+        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "NOTA_CREDITO",
+                saved.getId(), saved.getTipoDocumento() != null ? saved.getTipoDocumento() : "",
+                "Nota de crédito emitida");
+        return new NotaCreditoResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Nota de crédito emitida exitosamente")
@@ -40,8 +45,8 @@ public class docNotacredServiceImpl implements docNotacredService {
 
     @Override
     @Transactional
-    public ActualizarNotaCreditoBorrador200Response actualizarNotaCreditoBorrador(String notaCreditoId,
-                                                                                  NotaCreditoUpdateRequest request) {
+    public NotaCreditoResponseDto actualizarNotaCreditoBorrador(String notaCreditoId,
+                                                                                  NotaCreditoUpdateDto request) {
         NotaCreditoEntity entity = notaCreditoRepository.findById(notaCreditoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Nota de crédito", notaCreditoId));
         // — Solo borradores son editables —
@@ -49,7 +54,7 @@ public class docNotacredServiceImpl implements docNotacredService {
         notaCreditoMapper.updateEntity(request, entity);
         NotaCreditoEntity saved = notaCreditoRepository.save(entity);
         NotaCreditoData data = notaCreditoMapper.toData(saved);
-        return new ActualizarNotaCreditoBorrador200Response()
+        return new NotaCreditoResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Nota de crédito actualizada exitosamente")
@@ -73,21 +78,21 @@ public class docNotacredServiceImpl implements docNotacredService {
     }
 
     @Override
-    public ListarNotasCredito200Response listarNotasCredito(String companyId, String facturaReferenciaId,
+    public NotaCreditoListResponseDto listarNotasCredito(String companyId, String facturaReferenciaId,
                                                              Date desdeFecha, Date hastaFecha,
                                                              Integer page, Integer size) {
         List<NotaCreditoEntity> entities = notaCreditoRepository.findByCompanyId(companyId);
         List<NotaCreditoData> dataList = entities.stream()
                 .map(notaCreditoMapper::toData)
                 .toList();
-        ListarNotasCredito200ResponseAllOfData responseData = new ListarNotasCredito200ResponseAllOfData();
+        NotaCreditoListResponseDtoAllOfData responseData = new NotaCreditoListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
                 .currentPage(page)
                 .pageSize(size)
                 .totalElements((long) dataList.size())
                 .totalPages(1));
-        ListarNotasCredito200Response response = new ListarNotasCredito200Response();
+        NotaCreditoListResponseDto response = new NotaCreditoListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
         response.setMessage("Operación exitosa");
@@ -95,4 +100,18 @@ public class docNotacredServiceImpl implements docNotacredService {
         response.setData(responseData);
         return response;
     }
+
+    @Override
+    public NotaCreditoResponseDto obtenerNotaCredito(String notaCreditoId) {
+        NotaCreditoEntity entity = notaCreditoRepository.findById(notaCreditoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nota de crédito", notaCreditoId));
+        NotaCreditoData data = notaCreditoMapper.toData(entity);
+        return new NotaCreditoResponseDto()
+                .isSuccess(true)
+                .status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date())
+                .data(data);
+    }
 }
+

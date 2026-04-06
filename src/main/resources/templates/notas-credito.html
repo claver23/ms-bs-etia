@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Notas de Crédito')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>📉 Mis Notas de Crédito</h2>
+            <p>Anulaciones parciales o totales, descuentos sobre comprobantes emitidos</p>
+        </div>
+
+        <div class="view-toolbar">
+            <div class="vt-actions">
+                <a th:href="@{/wizard-nota(type='NOTA_CREDITO')}" class="btn btn-accent">✨ Crear Nota de Crédito</a>
+            </div>
+        </div>
+
+        <div class="panel active">
+            <div id="doc-content">
+                <p class="pm-empty">⏳ Cargando notas de crédito...</p>
+            </div>
+            <div id="doc-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+<!-- Document Preview Modal -->
+<div th:replace="~{fragments/doc-preview :: docPreviewModal}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script th:src="@{/js/doc-preview.js}"></script>
+<script>
+    var allDocs = [], currentPage = 0, PAGE_SIZE = 10;
+    document.addEventListener('DOMContentLoaded', function() { ETIA.init().then(function() { loadDocs(); }); });
+    function renderItemDetail(detalle) {
+        if (!detalle || detalle.length === 0) return '';
+        var html = '<div class="doc-item-detail">';
+        detalle.forEach(function(it) { html += '<div class="doc-item-chip"><span class="dic-desc">' + (it.descripcion||'—') + '</span><span class="dic-meta">×' + (it.cantidad||1) + '</span><span class="dic-amount">S/ ' + parseFloat(it.subtotal||0).toFixed(2) + '</span></div>'; });
+        return html + '</div>';
+    }
+    function loadDocs() {
+        ApiClient.listarNotasCredito(ETIA.companyId).then(function(docs) { allDocs = docs||[]; currentPage = 0; renderPage(); })
+        .catch(function() { document.getElementById('doc-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando notas de crédito</p>'; });
+    }
+    function renderPage() {
+        var total = allDocs.length, totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE, pageItems = allDocs.slice(start, start + PAGE_SIZE);
+        if (total === 0) { document.getElementById('doc-content').innerHTML = '<p class="pm-empty">📭 No hay notas de crédito emitidas aún</p>'; document.getElementById('doc-pag').style.display = 'none'; return; }
+        var html = '<div class="doc-list-cards">';
+        pageItems.forEach(function(d) {
+            var estado = d.estado||'—', badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ACEPTADA' ? 'badge-green' : estado === 'RECHAZADA' ? 'badge-red' : 'badge-blue';
+            html += '<div class="doc-list-item" onclick="openDocPreview(\'nota_credito\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">NC</strong><span class="badge ' + badgeCls + '">' + estado + '</span><span class="dli-motivo">' + (d.motivo||'—') + '</span></div><div class="dli-right"><span class="dli-total" style="color:var(--danger);">-S/ ' + (parseFloat(d.montoDescuento)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaCreacion) + '</span></div></div><div class="dli-ref">📎 Ref: ' + (d.facturaReferenciaId||'—') + '</div>' + renderItemDetail(d.detalle) + '</div>';
+        });
+        document.getElementById('doc-content').innerHTML = html + '</div>';
+        var bar = document.getElementById('doc-pag'); bar.style.display = 'flex';
+        var s = start + 1, e = Math.min(start + PAGE_SIZE, total);
+        var ph = '<div class="pag-info"><span class="badge badge-green">' + total + ' nota' + (total !== 1 ? 's' : '') + '</span> Mostrando ' + s + '–' + e + '</div><div class="pag-controls">';
+        ph += '<button class="pag-btn" onclick="goToPage(' + (currentPage-1) + ')" ' + (currentPage===0?'disabled':'') + '>‹</button>';
+        for (var i=0;i<totalPages;i++){if(totalPages>7&&Math.abs(i-currentPage)>2&&i!==0&&i!==totalPages-1){if(i===1||i===totalPages-2)ph+='<span class="pag-btn" style="border:none;cursor:default;">…</span>';continue;}ph+='<button class="pag-btn'+(i===currentPage?' pag-active':'')+'" onclick="goToPage('+i+')">'+(i+1)+'</button>';}
+        ph += '<button class="pag-btn" onclick="goToPage(' + (currentPage+1) + ')" ' + (currentPage>=totalPages-1?'disabled':'') + '>›</button></div>';
+        bar.innerHTML = ph;
+    }
+    function goToPage(p) { currentPage = p; renderPage(); }
+</script>
+</body>
+</html>
+
+

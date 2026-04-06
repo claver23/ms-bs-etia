@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Mis Sedes')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>🏢 Mis Sedes</h2>
+            <p>Gestiona tus locales comerciales, sucursales y sus series de documentos</p>
+        </div>
+
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <input type="text" id="sede-search" class="vt-search" placeholder="🔍 Buscar por nombre, código, ubigeo..." oninput="filterSedes(this.value)"/>
+            </div>
+            <button class="btn btn-accent" onclick="openCreateModal()">+ Nueva Sede</button>
+        </div>
+
+        <div class="panel active" id="sede-panel">
+            <div id="sede-content">
+                <p class="pm-empty">⏳ Cargando sedes...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ Modal Crear/Editar Sede ═══════ -->
+<div class="modal-overlay" id="sede-modal">
+    <div class="modal-card" style="max-width:620px;">
+        <h3 id="sm-title">🏢 <span style="color:var(--accent);">Nueva Sede</span></h3>
+        <input type="hidden" id="sm-id"/>
+        <div class="f-row">
+            <div class="f-group f-full"><label>Nombre de la Sede *</label><input id="sm-nombre" placeholder="Ej: Sede Principal San Isidro"/></div>
+        </div>
+        <div class="f-group f-full"><label>Dirección *</label><input id="sm-direccion" placeholder="Av. Javier Prado Este 1234"/></div>
+        <div class="f-row">
+            <div class="f-group"><label>Código Ubigeo *</label><input id="sm-ubigeo" placeholder="150131" maxlength="6"/></div>
+            <div class="f-group"><label>Departamento</label><input id="sm-depto" placeholder="LIMA"/></div>
+        </div>
+        <div class="f-row">
+            <div class="f-group"><label>Provincia</label><input id="sm-prov" placeholder="LIMA"/></div>
+            <div class="f-group"><label>Distrito</label><input id="sm-dist" placeholder="SAN ISIDRO"/></div>
+        </div>
+        <div class="f-row">
+            <div class="f-group"><label>Teléfono</label><input id="sm-tel" placeholder="+51 999 888 777"/></div>
+            <div class="f-group"><label>Email</label><input type="email" id="sm-email" placeholder="sede@empresa.com"/></div>
+        </div>
+        <div class="f-row" id="sm-gen-series-row">
+            <div class="f-group f-full" style="display:flex;align-items:center;gap:0.5rem;">
+                <input type="checkbox" id="sm-gen-series" checked/>
+                <label for="sm-gen-series" style="margin:0;cursor:pointer;">Generar series automáticamente (F, B, FC, FD)</label>
+            </div>
+        </div>
+        <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-accent" id="sm-save-btn" onclick="saveSede()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ Modal Detalle Sede ═══════ -->
+<div class="modal-overlay" id="sede-detail-modal">
+    <div class="modal-card" style="max-width:680px;">
+        <h3>🏢 <span style="color:var(--accent);" id="sd-title">Detalle de Sede</span></h3>
+        <div id="sd-info"></div>
+        <h4 style="margin-top:1.5rem;color:var(--accent);">📋 Series Asignadas</h4>
+        <div id="sd-series"></div>
+        <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+            <button class="btn btn-ghost" onclick="closeDetailModal()">Cerrar</button>
+            <button class="btn btn-accent" id="sd-gen-btn" onclick="regenerarSeries()" style="display:none;">⚡ Generar Series</button>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var allSedes = [], filteredSedes = [];
+    var editingSedeId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() { loadSedes(); });
+    });
+
+    /* ═══════ Load ═══════ */
+    function loadSedes() {
+        ApiClient.listSedes(ETIA.companyId).then(function(sedes) {
+            allSedes = sedes || [];
+            filteredSedes = allSedes;
+            renderSedes(filteredSedes);
+        }).catch(function() {
+            document.getElementById('sede-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando sedes</p>';
+        });
+    }
+
+    function filterSedes(term) {
+        if (!term) { filteredSedes = allSedes; } else {
+            var lower = term.toLowerCase();
+            filteredSedes = allSedes.filter(function(s) {
+                return (s.nombre || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (s.codigo || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (s.codigoUbigeo || '').indexOf(lower) !== -1 ||
+                       (s.distrito || '').toLowerCase().indexOf(lower) !== -1;
+            });
+        }
+        renderSedes(filteredSedes);
+    }
+
+    /* ═══════ Render ═══════ */
+    function renderSedes(sedes) {
+        if (!sedes || sedes.length === 0) {
+            document.getElementById('sede-content').innerHTML = '<p class="pm-empty">📭 No hay sedes registradas. Crea tu primera sede para comenzar.</p>';
+            return;
+        }
+        var activeId = ETIA.config.activeSedeId || '';
+        var html = '';
+        sedes.forEach(function(s) {
+            var isActive = s.id === activeId;
+            var badgeCls = s.estado === 'ACTIVO' ? 'badge-green' : 'badge-gray';
+            var seriesHtml = '';
+            if (s.series && s.series.length > 0) {
+                seriesHtml = s.series.map(function(sr) {
+                    return '<span class="badge badge-blue" style="margin-right:0.3rem;">' + sr.serie + '</span>';
+                }).join('');
+            } else {
+                seriesHtml = '<span style="color:var(--text-secondary);font-size:0.78rem;">Sin series</span>';
+            }
+            html += '<div class="sede-card' + (isActive ? ' sede-card-active' : '') + '" onclick="openDetail(\'' + s.id + '\')">' +
+                '<div class="sede-card-head">' +
+                    '<div class="sede-card-title">' +
+                        '<span class="sede-code">' + (s.codigo || '—') + '</span>' +
+                        '<h3>' + (s.nombre || 'Sin nombre') + '</h3>' +
+                        (s.esDefault ? '<span class="badge badge-gold" style="font-size:0.65rem;">★ PRINCIPAL</span>' : '') +
+                        (isActive ? '<span class="badge badge-green" style="font-size:0.65rem;">📍 ACTIVA</span>' : '') +
+                    '</div>' +
+                    '<span class="badge ' + badgeCls + '">' + (s.estado || '—') + '</span>' +
+                '</div>' +
+                '<div class="sede-card-body">' +
+                    '<div class="sede-meta">📍 ' + (s.direccion || '—') + '</div>' +
+                    '<div class="sede-meta">🗺️ ' + (s.distrito || '') + ', ' + (s.provincia || '') + ' — Ubigeo: ' + (s.codigoUbigeo || '—') + '</div>' +
+                    (s.telefono ? '<div class="sede-meta">📞 ' + s.telefono + '</div>' : '') +
+                    (s.email ? '<div class="sede-meta">📧 ' + s.email + '</div>' : '') +
+                '</div>' +
+                '<div class="sede-card-footer">' +
+                    '<div class="sede-series">' + seriesHtml + '</div>' +
+                    '<div class="sede-actions">' +
+                        (isActive
+                            ? '<span class="btn btn-ghost" style="font-size:0.72rem;padding:0.3rem 0.6rem;color:var(--accent);border-color:var(--accent);cursor:default;pointer-events:none;">📍 Activa</span>'
+                            : '<button class="btn btn-accent" style="font-size:0.72rem;padding:0.3rem 0.7rem;" onclick="event.stopPropagation();activarSede(\'' + s.id + '\')">📍 Emitir aquí</button>'
+                        ) +
+                        '<button class="btn btn-ghost" style="font-size:0.72rem;padding:0.3rem 0.6rem;" onclick="event.stopPropagation();editSede(\'' + s.id + '\')">✏️</button>' +
+                        '<button class="btn btn-ghost" style="font-size:0.72rem;padding:0.3rem 0.6rem;color:var(--danger);" onclick="event.stopPropagation();deleteSede(\'' + s.id + '\',\'' + (s.nombre||'').replace(/'/g,"\\'") + '\')">🗑️</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        document.getElementById('sede-content').innerHTML = html;
+    }
+
+    /* ═══════ Create/Edit Modal ═══════ */
+    function openCreateModal() {
+        editingSedeId = null;
+        document.getElementById('sm-title').innerHTML = '🏢 <span style="color:var(--accent);">Nueva Sede</span>';
+        document.getElementById('sm-id').value = '';
+        document.getElementById('sm-nombre').value = '';
+        document.getElementById('sm-direccion').value = '';
+        document.getElementById('sm-ubigeo').value = '';
+        document.getElementById('sm-depto').value = '';
+        document.getElementById('sm-prov').value = '';
+        document.getElementById('sm-dist').value = '';
+        document.getElementById('sm-tel').value = '';
+        document.getElementById('sm-email').value = '';
+        document.getElementById('sm-gen-series').checked = true;
+        document.getElementById('sm-gen-series-row').style.display = 'flex';
+        document.getElementById('sede-modal').classList.add('show');
+    }
+
+    function editSede(id) {
+        var sede = allSedes.find(function(s) { return s.id === id; });
+        if (!sede) return;
+        editingSedeId = id;
+        document.getElementById('sm-title').innerHTML = '🏢 <span style="color:var(--accent);">Editar Sede</span>';
+        document.getElementById('sm-id').value = id;
+        document.getElementById('sm-nombre').value = sede.nombre || '';
+        document.getElementById('sm-direccion').value = sede.direccion || '';
+        document.getElementById('sm-ubigeo').value = sede.codigoUbigeo || '';
+        document.getElementById('sm-depto').value = sede.departamento || '';
+        document.getElementById('sm-prov').value = sede.provincia || '';
+        document.getElementById('sm-dist').value = sede.distrito || '';
+        document.getElementById('sm-tel').value = sede.telefono || '';
+        document.getElementById('sm-email').value = sede.email || '';
+        document.getElementById('sm-gen-series-row').style.display = 'none';
+        document.getElementById('sede-modal').classList.add('show');
+    }
+
+    function closeModal() { document.getElementById('sede-modal').classList.remove('show'); }
+
+    function saveSede() {
+        var nombre = document.getElementById('sm-nombre').value.trim();
+        var direccion = document.getElementById('sm-direccion').value.trim();
+        var ubigeo = document.getElementById('sm-ubigeo').value.trim();
+        if (!nombre || !direccion || !ubigeo) { alert('Nombre, dirección y ubigeo son obligatorios.'); return; }
+
+        if (editingSedeId) {
+            ApiClient.updateSede(editingSedeId, {
+                nombre: nombre, direccion: direccion,
+                telefono: document.getElementById('sm-tel').value.trim() || null,
+                email: document.getElementById('sm-email').value.trim() || null
+            }).then(function() { closeModal(); loadSedes(); }).catch(function(err) { alert('Error: ' + err.message); });
+        } else {
+            ApiClient.createSede({
+                companyId: ETIA.companyId,
+                nombre: nombre, direccion: direccion,
+                codigoUbigeo: ubigeo,
+                departamento: document.getElementById('sm-depto').value.trim() || null,
+                provincia: document.getElementById('sm-prov').value.trim() || null,
+                distrito: document.getElementById('sm-dist').value.trim() || null,
+                telefono: document.getElementById('sm-tel').value.trim() || null,
+                email: document.getElementById('sm-email').value.trim() || null,
+                generarSeries: document.getElementById('sm-gen-series').checked
+            }).then(function() { closeModal(); loadSedes(); }).catch(function(err) { alert('Error: ' + err.message); });
+        }
+    }
+
+    function deleteSede(id, nombre) {
+        if (!confirm('¿Eliminar sede "' + nombre + '"? Las series asociadas se desactivarán.')) return;
+        ApiClient.deleteSede(id).then(function() { loadSedes(); }).catch(function(err) { alert('Error: ' + err.message); });
+    }
+
+    /* ═══════ Detail Modal ═══════ */
+    var currentDetailSedeId = null;
+    function openDetail(id) {
+        currentDetailSedeId = id;
+        var sede = allSedes.find(function(s) { return s.id === id; });
+        if (!sede) return;
+        document.getElementById('sd-title').textContent = sede.nombre;
+        document.getElementById('sd-info').innerHTML =
+            '<div class="sr"><span class="l">Código:</span><span class="v"><span class="badge badge-blue">' + sede.codigo + '</span></span></div>' +
+            '<div class="sr"><span class="l">Dirección:</span><span class="v">' + (sede.direccion || '—') + '</span></div>' +
+            '<div class="sr"><span class="l">Ubigeo:</span><span class="v">' + (sede.codigoUbigeo || '—') + ' (' + (sede.distrito || '') + ', ' + (sede.provincia || '') + ', ' + (sede.departamento || '') + ')</span></div>' +
+            (sede.telefono ? '<div class="sr"><span class="l">Teléfono:</span><span class="v">' + sede.telefono + '</span></div>' : '') +
+            (sede.email ? '<div class="sr"><span class="l">Email:</span><span class="v">' + sede.email + '</span></div>' : '') +
+            '<div class="sr"><span class="l">Estado:</span><span class="v"><span class="badge ' + (sede.estado === 'ACTIVO' ? 'badge-green' : 'badge-gray') + '">' + sede.estado + '</span></span></div>';
+
+        if (sede.series && sede.series.length > 0) {
+            var shtml = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Serie</th><th>Tipo</th><th>Descripción</th><th>Default</th><th>Activa</th></tr></thead><tbody>';
+            sede.series.forEach(function(sr) {
+                shtml += '<tr>' +
+                    '<td><span class="badge badge-blue" style="font-family:var(--font-mono);">' + sr.serie + '</span></td>' +
+                    '<td>' + (sr.tipoDocumento || '—') + '</td>' +
+                    '<td>' + (sr.descripcion || '—') + '</td>' +
+                    '<td>' + (sr.esDefault ? '✅' : '—') + '</td>' +
+                    '<td>' + (sr.activa ? '✅' : '❌') + '</td>' +
+                '</tr>';
+            });
+            shtml += '</tbody></table></div>';
+            document.getElementById('sd-series').innerHTML = shtml;
+            document.getElementById('sd-gen-btn').style.display = 'none';
+        } else {
+            document.getElementById('sd-series').innerHTML = '<p class="pm-empty">No tiene series asignadas</p>';
+            document.getElementById('sd-gen-btn').style.display = 'inline-flex';
+        }
+        document.getElementById('sede-detail-modal').classList.add('show');
+    }
+
+    function closeDetailModal() { document.getElementById('sede-detail-modal').classList.remove('show'); }
+
+    function regenerarSeries() {
+        if (!currentDetailSedeId) return;
+        ApiClient.generarSeriesSede(currentDetailSedeId).then(function() {
+            closeDetailModal();
+            loadSedes();
+        }).catch(function(err) { alert('Error: ' + err.message); });
+    }
+
+    /* Close modals on overlay click */
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'sede-modal') closeModal();
+        if (e.target.id === 'sede-detail-modal') closeDetailModal();
+    });
+
+    /* ═══════ Activar Sede (Emitir aquí) ═══════ */
+    function activarSede(id) {
+        var sede = allSedes.find(function(s) { return s.id === id; });
+        if (!sede) return;
+        /* Update global state */
+        ETIA.saveConfig('activeSedeId', sede.id);
+        ETIA.activeSede = sede;
+        /* Update series from this sede */
+        if (sede.series && sede.series.length) {
+            sede.series.forEach(function(sr) {
+                if (sr.tipoDocumento === 'FACTURA')      ETIA.saveConfig('serieFac', sr.serie);
+                if (sr.tipoDocumento === 'BOLETA')        ETIA.saveConfig('serieBol', sr.serie);
+                if (sr.tipoDocumento === 'NOTA_CREDITO')  ETIA.saveConfig('serieNC', sr.serie);
+                if (sr.tipoDocumento === 'NOTA_DEBITO')   ETIA.saveConfig('serieND', sr.serie);
+            });
+        }
+        /* Update header selector */
+        var hdrSel = document.getElementById('hdr-sede-select');
+        if (hdrSel) hdrSel.value = sede.id;
+        /* Re-render list to show active badge */
+        renderSedes(filteredSedes);
+    }
+</script>
+</body>
+</html>
+

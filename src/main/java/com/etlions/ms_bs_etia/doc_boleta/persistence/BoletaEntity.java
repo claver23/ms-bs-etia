@@ -45,6 +45,18 @@ public class BoletaEntity {
 
     private String moneda;
 
+    @Column(name = "forma_pago")
+    private String formaPago;
+
+    @Column(name = "tipo_cambio")
+    private BigDecimal tipoCambio;
+
+    @Column(name = "fecha_vencimiento")
+    private LocalDate fechaVencimiento;
+
+    @Column(name = "codigo_ubigeo", length = 6)
+    private String codigoUbigeo;
+
     private BigDecimal gravadas;
 
     private BigDecimal igv;

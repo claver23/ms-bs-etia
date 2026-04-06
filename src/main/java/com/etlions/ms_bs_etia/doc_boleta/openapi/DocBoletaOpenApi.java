@@ -1,6 +1,6 @@
 package com.etlions.ms_bs_etia.doc_boleta.openapi;
 
-import com.etlions.ms_bs_etia.doc_boleta.service.docBoletaService;
+import com.etlions.ms_bs_etia.doc_boleta.service.DocBoletaService;
 import com.etlions.openapicodegen.api.v1.BoletaApi;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +15,15 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class DocBoletaOpenApi implements BoletaApi {
 
-    private final docBoletaService docBoletaService;
+    private final DocBoletaService docBoletaService;
 
     @Override
-    public ResponseEntity<AnularBoleta200Response> emitirBoleta(BoletaEmitirRequest boletaEmitirRequest) {
+    public ResponseEntity<BoletaResponseDto> emitirBoleta(BoletaEmitirDto boletaEmitirRequest) {
         return ResponseEntity.ok(docBoletaService.emitirBoleta(boletaEmitirRequest));
     }
 
     @Override
-    public ResponseEntity<AnularBoleta200Response> anularBoleta(String boletaId, AnularBoletaRequest anularBoletaRequest) {
+    public ResponseEntity<BoletaResponseDto> anularBoleta(String boletaId, AnularBoletaDto anularBoletaRequest) {
         return ResponseEntity.ok(docBoletaService.anularBoleta(boletaId, anularBoletaRequest));
     }
 
@@ -33,7 +33,13 @@ public class DocBoletaOpenApi implements BoletaApi {
     }
 
     @Override
-    public ResponseEntity<ListarBoletas200Response> listarBoletas(String companyId, Date desdeFecha, Date hastaFecha, String serie, Integer numero, Integer page, Integer size) {
+    public ResponseEntity<BoletaListResponseDto> listarBoletas(String companyId, Date desdeFecha, Date hastaFecha, String serie, Integer numero, Integer page, Integer size) {
         return ResponseEntity.ok(docBoletaService.listarBoletas(companyId, desdeFecha, hastaFecha, serie, numero, page, size));
     }
+
+    @Override
+    public ResponseEntity<BoletaResponseDto> obtenerBoleta(String boletaId) {
+        return ResponseEntity.ok(docBoletaService.obtenerBoleta(boletaId));
+    }
 }
+

@@ -10,87 +10,19 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
   h2:
     console:
       enabled: true
       path: /h2-console
   thymeleaf:
     cache: false
-
-test-data:
-  company:
-    ruc: "20601234567"
-    razon-social: "ETLIONS S.A.C."
-    nombre-comercial: "ETLIONS"
-    codigo-ubigeo: "150131"
-    direccion: "Av. Javier Prado Este 1234, Piso 8"
-    urbanizacion: "San Isidro Business Center"
-    departamento: "LIMA"
-    provincia: "LIMA"
-    distrito: "SAN ISIDRO"
-    usuario-sol: "MODDATOS"
-    clave-sol: "MODDATOS"
-    email-contacto: "facturacion@etlions.com"
-    telefono: "+51 999 888 777"
-    regimen: "general"
-  client:
-    tipo-documento: "6"
-    numero-documento: "20505050501"
-    denominacion: "INVERSIONES TECH PERU S.A.C."
-    direccion: "Calle Los Pinos 456, Miraflores"
-    email: "compras@techperu.com"
-    telefono: "+51 998 776 554"
-  products:
-    - descripcion: "Servicio de Consultoría en TI"
-      cantidad: 1
-      valor-unitario: 2500.00
-      precio-unitario: 2950.00
-      igv: 450.00
-      subtotal: 2500.00
-      unidad-medida: "ZZ"
-      codigo-producto: "SRV-001"
-    - descripcion: "Licencia Software ERP Anual"
-      cantidad: 2
-      valor-unitario: 1800.00
-      precio-unitario: 2124.00
-      igv: 648.00
-      subtotal: 3600.00
-      unidad-medida: "ZZ"
-      codigo-producto: "LIC-002"
-    - descripcion: "Soporte Técnico Premium (mensual)"
-      cantidad: 6
-      valor-unitario: 350.00
-      precio-unitario: 413.00
-      igv: 378.00
-      subtotal: 2100.00
-      unidad-medida: "ZZ"
-      codigo-producto: "SPT-003"
-  ubigeos:
-    - codigo: "150101"
-      departamento: "LIMA"
-      provincia: "LIMA"
-      distrito: "LIMA"
-    - codigo: "150131"
-      departamento: "LIMA"
-      provincia: "LIMA"
-      distrito: "SAN ISIDRO"
-    - codigo: "150122"
-      departamento: "LIMA"
-      provincia: "LIMA"
-      distrito: "MIRAFLORES"
-    - codigo: "150132"
-      departamento: "LIMA"
-      provincia: "LIMA"
-      distrito: "SAN BORJA"
-    - codigo: "150140"
-      departamento: "LIMA"
-      provincia: "LIMA"
-      distrito: "SANTIAGO DE SURCO"
-    - codigo: "040101"
-      departamento: "AREQUIPA"
-      provincia: "AREQUIPA"
-      distrito: "AREQUIPA"
-    - codigo: "130101"
-      departamento: "LA LIBERTAD"
-      provincia: "TRUJILLO"
-      distrito: "TRUJILLO"
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
+          no-store: true

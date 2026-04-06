@@ -1,22 +1,25 @@
 package com.etlions.ms_bs_etia.doc_boleta.service;
 
-import com.etlions.openapicodegen.dto.AnularBoleta200Response;
-import com.etlions.openapicodegen.dto.AnularBoletaRequest;
-import com.etlions.openapicodegen.dto.BoletaEmitirRequest;
-import com.etlions.openapicodegen.dto.ListarBoletas200Response;
+import com.etlions.openapicodegen.dto.BoletaResponseDto;
+import com.etlions.openapicodegen.dto.AnularBoletaDto;
+import com.etlions.openapicodegen.dto.BoletaEmitirDto;
+import com.etlions.openapicodegen.dto.BoletaListResponseDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
 import java.util.Date;
 
-public interface docBoletaService {
+public interface DocBoletaService {
 
-    AnularBoleta200Response emitirBoleta(BoletaEmitirRequest request);
+    BoletaResponseDto emitirBoleta(BoletaEmitirDto request);
 
-    AnularBoleta200Response anularBoleta(String boletaId, AnularBoletaRequest request);
+    BoletaResponseDto anularBoleta(String boletaId, AnularBoletaDto request);
 
     SuccessResponse eliminarBoletaBorrador(String boletaId);
 
-    ListarBoletas200Response listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
+    BoletaListResponseDto listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
                                            String serie, Integer numero,
                                            Integer page, Integer size);
+
+    BoletaResponseDto obtenerBoleta(String boletaId);
 }
+
