@@ -2,8 +2,31 @@
 var cmSearchTimeout = null;
 var _allClients = null; /* Cache */
 
+/* ─── Tab toggle ─── */
+function cmShowTab(tab) {
+    var searchPanel = document.getElementById('cm-panel-search');
+    var registerPanel = document.getElementById('cm-panel-register');
+    var footerSearch = document.getElementById('cm-footer-search');
+    var tabSearch = document.getElementById('cm-tab-search');
+    var tabRegister = document.getElementById('cm-tab-register');
+    if (tab === 'register') {
+        searchPanel.style.display = 'none';
+        registerPanel.style.display = 'block';
+        footerSearch.style.display = 'none';
+        tabSearch.className = 'btn btn-ghost';
+        tabRegister.className = 'btn btn-accent';
+    } else {
+        searchPanel.style.display = 'block';
+        registerPanel.style.display = 'none';
+        footerSearch.style.display = '';
+        tabSearch.className = 'btn btn-accent';
+        tabRegister.className = 'btn btn-ghost';
+    }
+}
+
 function openClientModal() {
     document.getElementById('client-modal').classList.add('show');
+    cmShowTab('search');
     var input = document.getElementById('cm-search-input');
     input.value = '';
     document.getElementById('cm-results').innerHTML = '<div class="pm-empty">Cargando clientes...</div>';
@@ -88,5 +111,109 @@ function selectClientFromModal(id, tipo, numDoc, denom, dir, email, tel) {
     document.getElementById('cl-email').value = email || '';
     document.getElementById('cl-tel').value = tel || '';
     closeClientModal();
+}
+
+/* ─── RENIEC / SUNAT Consultation ─── */
+function queryReniec() {
+    var tipo = document.getElementById('cm-reg-tipo').value;
+    var numDoc = document.getElementById('cm-reg-numdoc').value.trim();
+    var statusEl = document.getElementById('cm-reniec-status');
+    var btn = document.getElementById('cm-btn-reniec');
+
+    if (!numDoc) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--warning-bg)';
+        statusEl.style.color = 'var(--warning)';
+        statusEl.textContent = '⚠️ Ingresa un número de documento';
+        return;
+    }
+    if (tipo === 'DNI' && numDoc.length !== 8) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--warning-bg)';
+        statusEl.style.color = 'var(--warning)';
+        statusEl.textContent = '⚠️ El DNI debe tener 8 dígitos';
+        return;
+    }
+    if (tipo === 'RUC' && numDoc.length !== 11) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--warning-bg)';
+        statusEl.style.color = 'var(--warning)';
+        statusEl.textContent = '⚠️ El RUC debe tener 11 dígitos';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Consultando...';
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'var(--accent-glow)';
+    statusEl.style.color = 'var(--accent)';
+    statusEl.textContent = '🔄 Consultando RENIEC/SUNAT...';
+
+    ApiClient.consultarReniec(tipo, numDoc).then(function(data) {
+        btn.disabled = false;
+        btn.textContent = '🔎 Consultar';
+        if (data && (data.denominacion || data.nombre)) {
+            var nombre = data.denominacion || ((data.nombre || '') + ' ' + (data.apellidoPaterno || '') + ' ' + (data.apellidoMaterno || '')).trim();
+            document.getElementById('cm-reg-denom').value = nombre;
+            document.getElementById('cm-reg-dir').value = data.direccion || '';
+            statusEl.style.background = 'rgba(0,255,136,0.1)';
+            statusEl.style.color = 'var(--accent)';
+            statusEl.textContent = '✅ Datos encontrados — ' + nombre;
+        } else {
+            statusEl.style.background = 'var(--warning-bg)';
+            statusEl.style.color = 'var(--warning)';
+            statusEl.textContent = '⚠️ No se encontraron datos para este documento. Completa manualmente.';
+        }
+    }).catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = '🔎 Consultar';
+        statusEl.style.background = 'rgba(248,81,73,0.1)';
+        statusEl.style.color = 'var(--danger)';
+        statusEl.textContent = '❌ Error consultando: ' + (err.message || err);
+    });
+}
+
+/* ─── Register new client and select it ─── */
+function submitNewClient() {
+    var tipo = document.getElementById('cm-reg-tipo').value;
+    var numDoc = document.getElementById('cm-reg-numdoc').value.trim();
+    var denom = document.getElementById('cm-reg-denom').value.trim();
+    var dir = document.getElementById('cm-reg-dir').value.trim();
+    var email = document.getElementById('cm-reg-email').value.trim();
+    var tel = document.getElementById('cm-reg-tel').value.trim();
+
+    if (!numDoc || !denom) {
+        var statusEl = document.getElementById('cm-reniec-status');
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--warning-bg)';
+        statusEl.style.color = 'var(--warning)';
+        statusEl.textContent = '⚠️ Documento y Denominación son obligatorios';
+        return;
+    }
+
+    var payload = {
+        companyId: ETIA.companyId,
+        tipoDocumento: tipo,
+        numeroDocumento: numDoc,
+        denominacion: denom,
+        direccion: dir || null,
+        email: email || null,
+        telefono: tel || null
+    };
+
+    ApiClient.registerClient(payload).then(function(res) {
+        var newClient = res.data || res;
+        var newId = newClient.id || '';
+        /* Invalidate cache */
+        _allClients = null;
+        /* Select newly created client */
+        selectClientFromModal(newId, tipo, numDoc, denom, dir, email, tel);
+    }).catch(function(err) {
+        var statusEl = document.getElementById('cm-reniec-status');
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'rgba(248,81,73,0.1)';
+        statusEl.style.color = 'var(--danger)';
+        statusEl.textContent = '❌ Error registrando cliente: ' + (err.message || err);
+    });
 }
 

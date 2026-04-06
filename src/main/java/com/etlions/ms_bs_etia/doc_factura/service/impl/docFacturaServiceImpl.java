@@ -6,7 +6,8 @@ import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
-import com.etlions.ms_bs_etia.doc_factura.service.docFacturaService;
+import com.etlions.ms_bs_etia.doc_factura.service.DocFacturaService;
+import com.etlions.ms_bs_etia.notification.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,17 +20,18 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class docFacturaServiceImpl implements docFacturaService {
+public class DocFacturaServiceImpl implements DocFacturaService {
 
     private final FacturaRepository facturaRepository;
     private final FacturaMapper facturaMapper;
     private final CorrelativoService correlativoService;
+    private final NotificationService notificationService;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
 
     @Override
     @Transactional
-    public AnularFactura200Response emitirFactura(FacturaEmitirRequest request) {
+    public FacturaResponseDto emitirFactura(FacturaEmitirDto request) {
         // — Validaciones SUNAT —
         String serie = request.getSerie() != null ? request.getSerie().toUpperCase() : DEFAULT_SERIE_FACTURA;
         SunatValidator.validarFormatoSerie(serie);
@@ -46,10 +48,21 @@ public class docFacturaServiceImpl implements docFacturaService {
         if (entity.getFechaEmision() == null) {
             entity.setFechaEmision(LocalDate.now());
         }
+        /* If CONTADO, due date = emission date (date only, no time) */
+        if ("CONTADO".equalsIgnoreCase(entity.getFormaPago()) || entity.getFormaPago() == null) {
+            entity.setFechaVencimiento(entity.getFechaEmision());
+            if (entity.getFormaPago() == null) entity.setFormaPago("CONTADO");
+        }
+        if (entity.getFechaVencimiento() == null) {
+            entity.setFechaVencimiento(entity.getFechaEmision());
+        }
         entity.setFechaCreacion(LocalDateTime.now());
         FacturaEntity saved = facturaRepository.save(entity);
         FacturaData data = facturaMapper.toData(saved);
-        return new AnularFactura200Response()
+        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "FACTURA",
+                saved.getId(), serie + "-" + numero,
+                "Factura " + serie + "-" + numero + " emitida");
+        return new FacturaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Factura emitida exitosamente — " + serie + "-" + numero)
@@ -59,13 +72,16 @@ public class docFacturaServiceImpl implements docFacturaService {
 
     @Override
     @Transactional
-    public AnularFactura200Response anularFactura(String facturaId, AnularFacturaRequest request) {
+    public FacturaResponseDto anularFactura(String facturaId, AnularFacturaDto request) {
         FacturaEntity entity = facturaRepository.findById(facturaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
         entity.setEstado("ANULADA");
         FacturaEntity saved = facturaRepository.save(entity);
         FacturaData data = facturaMapper.toData(saved);
-        return new AnularFactura200Response()
+        notificationService.publicar(saved.getCompanyId(), "ANULADA", "FACTURA",
+                saved.getId(), saved.getSerie() + "-" + saved.getNumero(),
+                "Factura " + saved.getSerie() + "-" + saved.getNumero() + " anulada");
+        return new FacturaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Factura anulada exitosamente")
@@ -89,21 +105,21 @@ public class docFacturaServiceImpl implements docFacturaService {
     }
 
     @Override
-    public ListarFacturas200Response listarFacturas(String companyId, Date desdeFecha, Date hastaFecha,
+    public FacturaListResponseDto listarFacturas(String companyId, Date desdeFecha, Date hastaFecha,
                                                      String serie, Integer numero, String estado,
                                                      Integer page, Integer size) {
         List<FacturaEntity> entities = facturaRepository.findByCompanyId(companyId);
         List<FacturaData> dataList = entities.stream()
                 .map(facturaMapper::toData)
                 .toList();
-        ListarFacturas200ResponseAllOfData responseData = new ListarFacturas200ResponseAllOfData();
+        FacturaListResponseDtoAllOfData responseData = new FacturaListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
                 .currentPage(page)
                 .pageSize(size)
                 .totalElements((long) dataList.size())
                 .totalPages(1));
-        ListarFacturas200Response response = new ListarFacturas200Response();
+        FacturaListResponseDto response = new FacturaListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
         response.setMessage("Operación exitosa");
@@ -113,11 +129,11 @@ public class docFacturaServiceImpl implements docFacturaService {
     }
 
     @Override
-    public AnularFactura200Response obtenerFactura(String facturaId) {
+    public FacturaResponseDto obtenerFactura(String facturaId) {
         FacturaEntity entity = facturaRepository.findById(facturaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
         FacturaData data = facturaMapper.toData(entity);
-        return new AnularFactura200Response()
+        return new FacturaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Operación exitosa")
@@ -125,3 +141,4 @@ public class docFacturaServiceImpl implements docFacturaService {
                 .data(data);
     }
 }
+

@@ -6,58 +6,96 @@
 <header th:replace="~{fragments/header :: header(backUrl=null, backLabel=null)}"></header>
 
 <div class="screen">
-    <div class="container">
+    <div class="container mc-container">
         <div class="menu-title">
             <h2>¿Qué deseas hacer hoy?</h2>
             <p>Selecciona una opción para continuar</p>
         </div>
 
-        <!-- ═══════ Panel-style menu cards (horizontal scroll when overflow) ═══════ -->
-        <div class="hmenu-scroll">
-            <a th:href="@{/documents}" class="hmenu-card">
-                <span class="hmenu-badge"><span class="badge badge-green">Disponible</span></span>
-                <span class="hmenu-icon">🧾</span>
-                <h3>Documentos</h3>
-                <p>Factura, boleta, notas de crédito y débito electrónicos</p>
-                <span class="hmenu-action">Ir a documentos →</span>
-            </a>
-            <a th:href="@{/products}" class="hmenu-card">
-                <span class="hmenu-badge"><span class="badge badge-green">Disponible</span></span>
-                <span class="hmenu-icon">📦</span>
-                <h3>Productos</h3>
-                <p>Gestiona tu catálogo de productos y servicios para facturar</p>
-                <span class="hmenu-action">Ver catálogo →</span>
-            </a>
-            <a th:href="@{/clients}" class="hmenu-card">
-                <span class="hmenu-badge"><span class="badge badge-green">Disponible</span></span>
-                <span class="hmenu-icon">👥</span>
-                <h3>Clientes</h3>
-                <p>Administra tu cartera de adquirientes y contribuyentes</p>
-                <span class="hmenu-action">Ver clientes →</span>
-            </a>
-            <a th:href="@{/employees}" class="hmenu-card">
-                <span class="hmenu-badge"><span class="badge badge-blue">Consulta</span></span>
-                <span class="hmenu-icon">🧑‍💼</span>
-                <h3>Empleados</h3>
-                <p>Operadores y personal registrado en el sistema</p>
-                <span class="hmenu-action">Ver empleados →</span>
-            </a>
-            <div class="hmenu-card hmenu-disabled">
-                <span class="hmenu-badge"><span class="badge badge-gray">Próximamente</span></span>
-                <span class="hmenu-icon">🛒</span>
-                <h3>Punto de Venta</h3>
-                <p>Terminal de venta rápida con asignación de cajero y ticket</p>
-                <span class="hmenu-action hmenu-action-muted">🔧 En construcción</span>
-            </div>
-            <div class="hmenu-card hmenu-disabled">
-                <span class="hmenu-badge"><span class="badge badge-gray">Próximamente</span></span>
-                <span class="hmenu-icon">📊</span>
-                <h3>Reportes</h3>
-                <p>Libros electrónicos, dashboards y analítica contable</p>
-                <span class="hmenu-action hmenu-action-muted">🔧 En construcción</span>
-            </div>
-        </div>
+        <div class="mc-grid">
 
+            <!-- DOCUMENTOS -->
+            <a th:href="@{/documents}" class="mc-card mc-green">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-green">🧾</div>
+                <h3 class="mc-title">Documentos</h3>
+                <p class="mc-desc">Factura, boleta, notas de crédito y débito electrónicos</p>
+                <span class="mc-go">Ir a documentos <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- RESÚMENES DIARIOS -->
+            <a th:href="@{/resumenes-diarios}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-purple">📑</div>
+                <h3 class="mc-title">Resúmenes Diarios</h3>
+                <p class="mc-desc">Consolidación diaria de boletas para envío a SUNAT</p>
+                <span class="mc-go">Ver resúmenes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- PRODUCTOS -->
+            <a th:href="@{/products}" class="mc-card mc-blue">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-blue">📦</div>
+                <h3 class="mc-title">Productos</h3>
+                <p class="mc-desc">Gestiona tu catálogo de productos y servicios para facturar</p>
+                <span class="mc-go">Abrir catálogo <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- CLIENTES -->
+            <a th:href="@{/clients}" class="mc-card mc-gold">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-gold">👥</div>
+                <h3 class="mc-title">Clientes</h3>
+                <p class="mc-desc">Administra tu cartera de adquirientes y contribuyentes</p>
+                <span class="mc-go">Ver clientes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- MIS SEDES -->
+            <a th:href="@{/sedes}" class="mc-card mc-green">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-green">🏢</div>
+                <h3 class="mc-title">Mis Sedes</h3>
+                <p class="mc-desc">Locales comerciales, sucursales y series por punto de venta</p>
+                <span class="mc-go">Gestionar sedes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- EMPLEADOS -->
+            <a th:href="@{/employees}" class="mc-card mc-blue">
+                <span class="mc-chip mc-chip-info"><span class="mc-dot"></span> Consulta</span>
+                <div class="mc-orb mc-orb-blue">🧑‍💼</div>
+                <h3 class="mc-title">Empleados</h3>
+                <p class="mc-desc">Operadores y personal registrado en el sistema</p>
+                <span class="mc-go">Ver empleados <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- TIPO DE CAMBIO -->
+            <a th:href="@{/tipo-cambio}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-purple">💱</div>
+                <h3 class="mc-title">Tipo de Cambio</h3>
+                <p class="mc-desc">Consulta tasas de cambio SBS y SUNAT del día</p>
+                <span class="mc-go">Ver tasas <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- PUNTO DE VENTA -->
+            <div class="mc-card mc-gold mc-disabled">
+                <span class="mc-chip mc-chip-soon">Próximamente</span>
+                <div class="mc-orb mc-orb-gold">🛒</div>
+                <h3 class="mc-title">Punto de Venta</h3>
+                <p class="mc-desc">Terminal de venta rápida con asignación de cajero</p>
+                <span class="mc-go mc-go-muted">En construcción</span>
+            </div>
+
+            <!-- REPORTES -->
+            <div class="mc-card mc-purple mc-disabled">
+                <span class="mc-chip mc-chip-soon">Próximamente</span>
+                <div class="mc-orb mc-orb-purple">📊</div>
+                <h3 class="mc-title">Reportes</h3>
+                <p class="mc-desc">Libros electrónicos, dashboards y analítica contable</p>
+                <span class="mc-go mc-go-muted">En construcción</span>
+            </div>
+
+        </div>
 
     </div>
 </div>

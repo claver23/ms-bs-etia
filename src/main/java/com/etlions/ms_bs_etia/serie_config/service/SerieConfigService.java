@@ -6,5 +6,6 @@ import java.util.List;
 public interface SerieConfigService {
     List<SerieConfigEntity> listarPorCompany(String companyId);
     List<SerieConfigEntity> listarPorTipo(String companyId, String tipoDocumento);
+    List<SerieConfigEntity> listarPorSede(String sedeId);
 }
 

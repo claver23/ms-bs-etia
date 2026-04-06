@@ -27,6 +27,11 @@
                     <span class="cfg-label">Sede</span>
                     <span class="cfg-arrow">›</span>
                 </div>
+                <div class="cfg-sidebar-item" data-tab="tipo-cambio" onclick="switchConfigTab('tipo-cambio')">
+                    <span class="cfg-icon">💱</span>
+                    <span class="cfg-label">Tipo de Cambio</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
             </nav>
 
             <!-- ─── Content ─── -->
@@ -113,42 +118,61 @@
 
                 <!-- ══ PANEL: Series ══ -->
                 <div class="cfg-panel" id="cfg-panel-series">
-                    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
-                        Configura la serie por defecto para cada tipo de documento electrónico.
-                    </p>
-                    <div class="cfg-row">
-                        <div class="cfg-field">
-                            <span class="cfg-field-label">🧾 Factura</span>
-                            <input id="cfg-serie-fac" value="F001" placeholder="F001" maxlength="4"/>
-                            <p class="cfg-field-hint">Series: F001, F002...</p>
-                        </div>
-                        <div class="cfg-field">
-                            <span class="cfg-field-label">🎫 Boleta</span>
-                            <input id="cfg-serie-bol" value="B001" placeholder="B001" maxlength="4"/>
-                            <p class="cfg-field-hint">Series: B001, B002...</p>
+                    <!-- Active Sede Hero -->
+                    <div class="cfg-sede-hero" id="cfg-sede-hero">
+                        <div class="cfg-sede-hero-icon">🏢</div>
+                        <div class="cfg-sede-hero-info">
+                            <h2 id="cfg-sede-hero-name">—</h2>
+                            <span class="cfg-sede-hero-code" id="cfg-sede-hero-code">—</span>
+                            <span class="cfg-sede-hero-addr" id="cfg-sede-hero-addr">—</span>
                         </div>
                     </div>
-                    <div class="cfg-row">
-                        <div class="cfg-field">
-                            <span class="cfg-field-label">📉 Nota de Crédito</span>
-                            <input id="cfg-serie-nc" value="FC01" placeholder="FC01" maxlength="4"/>
-                            <p class="cfg-field-hint">Series: FC01, BC01...</p>
+
+                    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.8rem 0 1rem;">
+                        Series asignadas a la sede activa. Para cambiar de sede, usa el selector del header o la página <strong>Mis Sedes</strong>.
+                    </p>
+
+                    <!-- Series table populated by JS -->
+                    <div id="cfg-sede-series-table">
+                        <p class="pm-empty">Cargando series...</p>
+                    </div>
+
+                    <!-- Fallback manual inputs (hidden unless no sede) -->
+                    <div id="cfg-series-manual" style="display:none;">
+                        <div class="warn-banner" style="margin-bottom:1rem;max-width:100%;">
+                            ⚠️ No hay sede activa. Configura series manualmente:
                         </div>
-                        <div class="cfg-field">
-                            <span class="cfg-field-label">📈 Nota de Débito</span>
-                            <input id="cfg-serie-nd" value="FD01" placeholder="FD01" maxlength="4"/>
-                            <p class="cfg-field-hint">Series: FD01, BD01...</p>
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">🧾 Factura</span>
+                                <input id="cfg-serie-fac" value="F001" placeholder="F001" maxlength="4"/>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">🎫 Boleta</span>
+                                <input id="cfg-serie-bol" value="B001" placeholder="B001" maxlength="4"/>
+                            </div>
+                        </div>
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">📉 Nota de Crédito</span>
+                                <input id="cfg-serie-nc" value="FC01" placeholder="FC01" maxlength="4"/>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">📈 Nota de Débito</span>
+                                <input id="cfg-serie-nd" value="FD01" placeholder="FD01" maxlength="4"/>
+                            </div>
                         </div>
                     </div>
 
                     <div class="cfg-save-bar">
-                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cerrar</button>
                         <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
                     </div>
                 </div>
 
                 <!-- ══ PANEL: Sede ══ -->
                 <div class="cfg-panel" id="cfg-panel-sede">
+                    <!-- ...existing sede panel content... -->
                     <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
                         Selecciona la sede o sucursal desde la cual se emiten los documentos.
                         Busca una dirección o haz clic en el mapa para ubicar tu sede.
@@ -193,6 +217,32 @@
                             <span class="cfg-field-label">Longitud</span>
                             <input id="cfg-sede-lng" readonly style="opacity:0.7;cursor:default;font-family:var(--font-mono);font-size:0.82rem;" placeholder="—"/>
                         </div>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Tipo de Cambio ══ -->
+                <div class="cfg-panel" id="cfg-panel-tipo-cambio">
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
+                        Configura la fuente predeterminada para consultar el tipo de cambio en tus documentos.
+                    </p>
+
+                    <div class="cfg-field">
+                        <span class="cfg-field-label">💱 Fuente del Tipo de Cambio</span>
+                        <select id="cfg-tc-fuente-select">
+                            <option value="SBS">SBS — Superintendencia de Banca y Seguros</option>
+                            <option value="SUNAT">SUNAT — Superintendencia Nacional</option>
+                        </select>
+                        <p class="cfg-field-hint">Se usará esta fuente al consultar el tipo de cambio en el formulario de emisión de documentos</p>
+                    </div>
+
+                    <div class="warn-banner" style="margin-top:1rem;max-width:100%;">
+                        💡 Puedes ver el historial completo de tipos de cambio registrados en la sección
+                        <strong>💱 Tipo de Cambio</strong> del menú principal.
                     </div>
 
                     <div class="cfg-save-bar">

@@ -1,25 +1,26 @@
 package com.etlions.ms_bs_etia.doc_notadeb.service;
 
-import com.etlions.openapicodegen.dto.ActualizarNotaDebitoBorrador200Response;
-import com.etlions.openapicodegen.dto.ListarNotasDebito200Response;
-import com.etlions.openapicodegen.dto.NotaDebitoEmitirRequest;
-import com.etlions.openapicodegen.dto.NotaDebitoUpdateRequest;
+import com.etlions.openapicodegen.dto.NotaDebitoResponseDto;
+import com.etlions.openapicodegen.dto.NotaDebitoListResponseDto;
+import com.etlions.openapicodegen.dto.NotaDebitoEmitirDto;
+import com.etlions.openapicodegen.dto.NotaDebitoUpdateDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
 import java.util.Date;
 
-public interface docNotadebService {
+public interface DocNotadebService {
 
-    ActualizarNotaDebitoBorrador200Response emitirNotaDebito(NotaDebitoEmitirRequest request);
+    NotaDebitoResponseDto emitirNotaDebito(NotaDebitoEmitirDto request);
 
-    ActualizarNotaDebitoBorrador200Response actualizarNotaDebitoBorrador(String notaDebitoId,
-                                                                        NotaDebitoUpdateRequest request);
+    NotaDebitoResponseDto actualizarNotaDebitoBorrador(String notaDebitoId,
+                                                                        NotaDebitoUpdateDto request);
 
     SuccessResponse eliminarNotaDebitoBorrador(String notaDebitoId);
 
-    ListarNotasDebito200Response listarNotasDebito(String companyId, String facturaReferenciaId,
+    NotaDebitoListResponseDto listarNotasDebito(String companyId, String facturaReferenciaId,
                                                    Date desdeFecha, Date hastaFecha,
                                                    Integer page, Integer size);
 
-    ActualizarNotaDebitoBorrador200Response obtenerNotaDebito(String notaDebitoId);
+    NotaDebitoResponseDto obtenerNotaDebito(String notaDebitoId);
 }
+

@@ -1,9 +1,10 @@
 package com.etlions.ms_bs_etia.client.service.impl;
 
+import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.client.mapper.ClientMapper;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
-import com.etlions.ms_bs_etia.client.service.clientService;
+import com.etlions.ms_bs_etia.client.service.ClientService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,18 +15,18 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class clienteServiceImpl implements clientService {
+public class ClientServiceImpl implements ClientService {
 
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
 
     @Override
-    public ActualizarCliente200Response registrarCliente(ClientRegisterRequest request) {
+    public ClientResponseDto registrarCliente(ClientRegisterDto request) {
         ClientEntity entity = clientMapper.toEntity(request);
         entity.setFechaCreacion(LocalDateTime.now());
         ClientEntity saved = clientRepository.save(entity);
         ClientData data = clientMapper.toData(saved);
-        return new ActualizarCliente200Response()
+        return new ClientResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Cliente registrado exitosamente")
@@ -34,13 +35,13 @@ public class clienteServiceImpl implements clientService {
     }
 
     @Override
-    public ActualizarCliente200Response actualizarCliente(String clientId, ClientUpdateRequest request) {
+    public ClientResponseDto actualizarCliente(String clientId, ClientUpdateDto request) {
         ClientEntity entity = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + clientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + clientId));
         clientMapper.updateEntity(request, entity);
         ClientEntity saved = clientRepository.save(entity);
         ClientData data = clientMapper.toData(saved);
-        return new ActualizarCliente200Response()
+        return new ClientResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Cliente actualizado exitosamente")
@@ -59,21 +60,21 @@ public class clienteServiceImpl implements clientService {
     }
 
     @Override
-    public ListarClientes200Response listarClientes(String companyId, String tipoDocumento,
+    public ClientListResponseDto listarClientes(String companyId, String tipoDocumento,
                                                      String numeroDocumento, String denominacion,
                                                      Integer page, Integer size) {
         List<ClientEntity> entities = clientRepository.findByCompanyId(companyId);
         List<ClientData> dataList = entities.stream()
                 .map(clientMapper::toData)
                 .toList();
-        ListarClientes200ResponseAllOfData responseData = new ListarClientes200ResponseAllOfData();
+        ClientListResponseDtoAllOfData responseData = new ClientListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
                 .currentPage(page)
                 .pageSize(size)
                 .totalElements((long) dataList.size())
                 .totalPages(1));
-        ListarClientes200Response response = new ListarClientes200Response();
+        ClientListResponseDto response = new ClientListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
         response.setMessage("Operación exitosa");
@@ -82,3 +83,4 @@ public class clienteServiceImpl implements clientService {
         return response;
     }
 }
+

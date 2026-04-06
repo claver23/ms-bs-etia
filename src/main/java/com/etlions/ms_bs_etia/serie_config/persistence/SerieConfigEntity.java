@@ -17,6 +17,9 @@ public class SerieConfigEntity {
     @Column(name = "company_id", nullable = false)
     private String companyId;
 
+    @Column(name = "sede_id")
+    private String sedeId;
+
     @Column(name = "tipo_documento", nullable = false)
     private String tipoDocumento; // FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO
 

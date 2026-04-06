@@ -9,10 +9,22 @@
     <div class="container">
 
         <div class="wiz-steps">
-            <div class="wiz-step active" onclick="wizGo(1)"><span class="wn">1</span><span>🏢 Emisor</span></div>
-            <div class="wiz-step" onclick="wizGo(2)"><span class="wn">2</span><span>👤 Cliente</span></div>
-            <div class="wiz-step" onclick="wizGo(3)"><span class="wn">3</span><span>📦 Detalle</span></div>
-            <div class="wiz-step" onclick="wizGo(4)"><span class="wn">4</span><span>✅ Emitir</span></div>
+            <div class="wiz-step active" onclick="wizGo(1)" data-icon="🏢">
+                <span class="wn">🏢</span>
+                <span class="wiz-label">Emisor</span>
+            </div>
+            <div class="wiz-step" onclick="wizGo(2)" data-icon="👤">
+                <span class="wn">👤</span>
+                <span class="wiz-label">Cliente</span>
+            </div>
+            <div class="wiz-step" onclick="wizGo(3)" data-icon="📦">
+                <span class="wn">📦</span>
+                <span class="wiz-label">Detalle</span>
+            </div>
+            <div class="wiz-step" onclick="wizGo(4)" data-icon="🚀">
+                <span class="wn">🚀</span>
+                <span class="wiz-label">Emitir</span>
+            </div>
         </div>
 
         <div id="wizard-panels">
@@ -79,14 +91,32 @@
                     <div><h2 id="wiz-detail-title">Detalle de la Factura</h2><p>Agrega productos o servicios desde el catálogo</p></div>
                 </div>
 
-                <div class="f-row" style="margin-bottom:1rem;">
+                <div class="f-row" style="margin-bottom:0.5rem;">
+                    <div class="f-group"><label>Fecha Emisión</label><input type="date" id="fac-fecha" /></div>
                     <div class="f-group"><label>Serie</label><input id="fac-serie" value="F001"/></div>
                     <div class="f-group"><label>Moneda</label>
-                        <select id="fac-moneda" onchange="recalcTotals()">
+                        <select id="fac-moneda" onchange="onMonedaChange()">
                             <option value="PEN">PEN — Sol</option>
                             <option value="USD">USD — Dólar</option>
                         </select>
                     </div>
+                </div>
+                <div class="f-row" style="margin-bottom:1rem;">
+                    <div class="f-group" id="fac-tc-group" style="display:none;">
+                        <label>Tipo de Cambio</label>
+                        <div style="display:flex;gap:0.4rem;align-items:center;">
+                            <input id="fac-tipo-cambio" readonly style="flex:1;" placeholder="—"/>
+                            <button class="btn btn-ghost" onclick="fetchTipoCambio()" style="font-size:0.7rem;padding:0.35rem 0.6rem;" title="Consultar tipo de cambio">🔄</button>
+                        </div>
+                        <span style="font-size:0.65rem;color:var(--text-muted);" id="fac-tc-fuente"></span>
+                    </div>
+                    <div class="f-group"><label>Forma de Pago</label>
+                        <select id="fac-forma-pago" onchange="onFormaPagoChange()">
+                            <option value="CONTADO">Contado</option>
+                            <option value="CREDITO">Crédito</option>
+                        </select>
+                    </div>
+                    <div class="f-group"><label>Fecha Vencimiento</label><input type="date" id="fac-fecha-venc" /></div>
                     <div class="f-group"><label>Leyenda</label><input id="fac-leyenda" value=""/></div>
                 </div>
 
@@ -192,7 +222,12 @@
                     <h3>🧾 Comprobante</h3>
                     <div class="sr"><span class="l">Tipo:</span><span class="v" id="r-tipo"></span></div>
                     <div class="sr"><span class="l">Serie:</span><span class="v" id="r-serie"></span></div>
+                    <div class="sr"><span class="l">Fecha Emisión:</span><span class="v" id="r-fecha"></span></div>
                     <div class="sr"><span class="l">Moneda:</span><span class="v" id="r-moneda"></span></div>
+                    <div class="sr" id="r-tc-row" style="display:none;"><span class="l">Tipo de Cambio:</span><span class="v" id="r-tipo-cambio"></span></div>
+                    <div class="sr"><span class="l">Forma de Pago:</span><span class="v" id="r-forma-pago"></span></div>
+                    <div class="sr"><span class="l">Fecha Vencimiento:</span><span class="v" id="r-fecha-venc"></span></div>
+                    <div class="sr"><span class="l">Ubigeo Sede:</span><span class="v" id="r-ubigeo"></span></div>
                     <div class="sr"><span class="l">Ítems:</span><span class="v" id="r-items"></span></div>
                     <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="r-grav"></span></div>
                     <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="r-igv"></span></div>

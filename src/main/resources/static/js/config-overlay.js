@@ -28,6 +28,62 @@ function switchConfigTab(tab) {
     if (tab === 'sede') {
         setTimeout(initSedeMap, 150);
     }
+    /* Populate series panel with active sede info */
+    if (tab === 'series') {
+        _renderSeriesPanel();
+    }
+}
+
+/* ─── Render active sede + series in config panel ─── */
+function _renderSeriesPanel() {
+    var sede = ETIA.activeSede;
+    var heroEl = document.getElementById('cfg-sede-hero');
+    var tableEl = document.getElementById('cfg-sede-series-table');
+    var manualEl = document.getElementById('cfg-series-manual');
+
+    if (!sede) {
+        /* No active sede — show manual inputs */
+        if (heroEl) heroEl.style.display = 'none';
+        if (tableEl) tableEl.style.display = 'none';
+        if (manualEl) manualEl.style.display = '';
+        return;
+    }
+
+    /* Show hero */
+    if (heroEl) heroEl.style.display = '';
+    if (manualEl) manualEl.style.display = 'none';
+
+    var nameEl = document.getElementById('cfg-sede-hero-name');
+    var codeEl = document.getElementById('cfg-sede-hero-code');
+    var addrEl = document.getElementById('cfg-sede-hero-addr');
+    if (nameEl) nameEl.textContent = sede.nombre || '—';
+    if (codeEl) codeEl.textContent = sede.codigo || '—';
+    if (addrEl) addrEl.textContent = (sede.direccion || '') + ' · ' + (sede.distrito || '') + ' · Ubigeo ' + (sede.codigoUbigeo || '');
+
+    /* Show series table */
+    if (tableEl) {
+        if (sede.series && sede.series.length > 0) {
+            var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+                '<th>Serie</th><th>Tipo Documento</th><th>Descripción</th><th>Default</th><th>Activa</th>' +
+                '</tr></thead><tbody>';
+            sede.series.forEach(function(sr) {
+                var tdoc = {FACTURA:'🧾 Factura', BOLETA:'🎫 Boleta', NOTA_CREDITO:'📉 Nota Crédito', NOTA_DEBITO:'📈 Nota Débito'}[sr.tipoDocumento] || sr.tipoDocumento;
+                html += '<tr>' +
+                    '<td><span class="badge badge-blue" style="font-family:var(--font-mono);font-weight:700;">' + sr.serie + '</span></td>' +
+                    '<td>' + tdoc + '</td>' +
+                    '<td style="font-size:0.75rem;color:var(--text-secondary);">' + (sr.descripcion || '—') + '</td>' +
+                    '<td>' + (sr.esDefault ? '✅' : '—') + '</td>' +
+                    '<td>' + (sr.activa ? '✅' : '❌') + '</td>' +
+                '</tr>';
+            });
+            html += '</tbody></table></div>';
+            tableEl.innerHTML = html;
+            tableEl.style.display = '';
+        } else {
+            tableEl.innerHTML = '<p class="pm-empty" style="margin:1rem 0;">Esta sede no tiene series asignadas. Ve a <strong>Mis Sedes</strong> para generarlas.</p>';
+            tableEl.style.display = '';
+        }
+    }
 }
 
 /* ─── Load current config into form ─── */
@@ -56,6 +112,10 @@ function loadConfigValues() {
     document.querySelectorAll('.cfg-theme-option').forEach(function(el) {
         el.classList.toggle('active', el.dataset.theme === c.theme);
     });
+
+    /* Tipo de Cambio fuente */
+    var tcFuenteSel = document.getElementById('cfg-tc-fuente-select');
+    if (tcFuenteSel) tcFuenteSel.value = c.tipoCambioFuente || 'SBS';
 
     /* Series */
     var serieFac = document.getElementById('cfg-serie-fac');
@@ -119,6 +179,10 @@ function saveConfig() {
 
     var itemTypeSel = document.getElementById('cfg-item-type');
     if (itemTypeSel) ETIA.saveConfig('defaultItemType', itemTypeSel.value);
+
+    /* Tipo de Cambio fuente */
+    var tcFuenteSel = document.getElementById('cfg-tc-fuente-select');
+    if (tcFuenteSel) ETIA.saveConfig('tipoCambioFuente', tcFuenteSel.value);
 
     /* Series */
     var serieFac = document.getElementById('cfg-serie-fac');

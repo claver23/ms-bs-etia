@@ -8,5 +8,6 @@ public interface SerieConfigRepository extends JpaRepository<SerieConfigEntity, 
     List<SerieConfigEntity> findByCompanyId(String companyId);
     List<SerieConfigEntity> findByCompanyIdAndTipoDocumento(String companyId, String tipoDocumento);
     Optional<SerieConfigEntity> findByCompanyIdAndTipoDocumentoAndEsDefaultTrue(String companyId, String tipoDocumento);
+    List<SerieConfigEntity> findBySedeId(String sedeId);
 }
 

@@ -33,17 +33,54 @@
 
 <div th:fragment="clientSearchModal" xmlns:th="http://www.thymeleaf.org">
     <div class="modal-overlay" id="client-modal" onclick="if(event.target===this)closeClientModal()">
-        <div class="modal-card" style="max-width:550px;">
-            <h3 style="margin-bottom:0.75rem;">🔍 <span style="color:var(--accent);">Buscar Cliente</span></h3>
-            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;">Selecciona un cliente registrado o busca por nombre, RUC, DNI...</p>
-            <input class="pm-search" id="cm-search-input"
-                   placeholder="Buscar por nombre, RUC, DNI..."
-                   autocomplete="off"
-                   oninput="onModalClientSearch(this.value)"/>
-            <div class="pm-list" id="cm-results">
-                <div class="pm-empty">Cargando clientes...</div>
+        <div class="modal-card" style="max-width:580px;">
+            <!-- Tab toggle: Search / Register -->
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                <button class="btn btn-accent" id="cm-tab-search" onclick="cmShowTab('search')" style="flex:1;font-size:0.78rem;">🔍 Buscar Cliente</button>
+                <button class="btn btn-ghost" id="cm-tab-register" onclick="cmShowTab('register')" style="flex:1;font-size:0.78rem;">➕ Nuevo Cliente</button>
             </div>
-            <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+
+            <!-- SEARCH TAB -->
+            <div id="cm-panel-search">
+                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.75rem;">Selecciona un cliente registrado o busca por nombre, RUC, DNI...</p>
+                <input class="pm-search" id="cm-search-input"
+                       placeholder="Buscar por nombre, RUC, DNI..."
+                       autocomplete="off"
+                       oninput="onModalClientSearch(this.value)"/>
+                <div class="pm-list" id="cm-results">
+                    <div class="pm-empty">Cargando clientes...</div>
+                </div>
+            </div>
+
+            <!-- REGISTER TAB (hidden by default) -->
+            <div id="cm-panel-register" style="display:none;">
+                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.75rem;">Ingresa el documento del cliente y consulta RENIEC/SUNAT para autocompletar datos.</p>
+                <div style="display:grid;grid-template-columns:auto 1fr auto;gap:0.5rem;margin-bottom:0.75rem;">
+                    <select id="cm-reg-tipo" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;">
+                        <option value="DNI">DNI</option>
+                        <option value="RUC">RUC</option>
+                        <option value="CE">C.E.</option>
+                        <option value="PASAPORTE">Pasaporte</option>
+                    </select>
+                    <input id="cm-reg-numdoc" placeholder="N° documento" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;"/>
+                    <button class="btn btn-accent" onclick="queryReniec()" style="font-size:0.75rem;white-space:nowrap;" id="cm-btn-reniec">🔎 Consultar</button>
+                </div>
+                <div id="cm-reniec-status" style="display:none;margin-bottom:0.75rem;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);font-size:0.75rem;"></div>
+                <div style="display:grid;gap:0.5rem;">
+                    <input id="cm-reg-denom" placeholder="Denominación / Razón Social" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;"/>
+                    <input id="cm-reg-dir" placeholder="Dirección" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;"/>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                        <input id="cm-reg-email" placeholder="Email" type="email" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;"/>
+                        <input id="cm-reg-tel" placeholder="Teléfono" style="padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.82rem;"/>
+                    </div>
+                </div>
+                <div class="btn-row" style="justify-content:flex-end;margin-top:1rem;">
+                    <button class="btn btn-ghost" onclick="cmShowTab('search')">← Volver</button>
+                    <button class="btn btn-accent" onclick="submitNewClient()">💾 Registrar y Seleccionar</button>
+                </div>
+            </div>
+
+            <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;" id="cm-footer-search">
                 <button class="btn btn-ghost" onclick="closeClientModal()">Cancelar</button>
             </div>
         </div>

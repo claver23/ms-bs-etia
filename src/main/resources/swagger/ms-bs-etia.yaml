@@ -1,4 +1,4 @@
-openapi: 3.0.3
+﻿openapi: 3.0.3
 info:
   title: ETIA - Facturación Electrónica Perú
   version: 1.1.0
@@ -31,8 +31,12 @@ tags:
     description: Catálogo de unidades de medida SUNAT
   - name: serie_config
     description: Configuración de series por tipo de documento
+  - name: sede
+    description: Sedes y sucursales de la empresa
   - name: user_preference
     description: Preferencias de usuario por empresa
+  - name: tipo_cambio
+    description: Tipos de cambio (SBS / SUNAT)
 
 paths:
   # ==================== COMPANY ====================
@@ -48,19 +52,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompanyRegisterRequest'
+              $ref: '#/components/schemas/CompanyRegisterDto'
       responses:
         "200":
           description: Empresa registrada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompanyData'
+                $ref: '#/components/schemas/CompanyResponseDto'
         "400":
           description: Bad Request
           content:
@@ -105,19 +104,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/CompanyData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/CompanyListResponseDto'
         "401":
           description: Unauthorized
         "500":
@@ -140,19 +127,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompanyUpdateRequest'
+              $ref: '#/components/schemas/CompanyUpdateDto'
       responses:
         "200":
           description: Empresa actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompanyData'
+                $ref: '#/components/schemas/CompanyResponseDto'
         "400":
           description: Bad Request
         "404":
@@ -201,19 +183,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientRegisterRequest'
+              $ref: '#/components/schemas/ClientRegisterDto'
       responses:
         "200":
           description: Cliente registrado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ClientData'
+                $ref: '#/components/schemas/ClientResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -259,19 +236,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/ClientData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/ClientListResponseDto'
         "401":
           description: Unauthorized
 
@@ -291,19 +256,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientUpdateRequest'
+              $ref: '#/components/schemas/ClientUpdateDto'
       responses:
         "200":
           description: Cliente actualizado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ClientData'
+                $ref: '#/components/schemas/ClientResponseDto'
         "404":
           description: Cliente no encontrado
 
@@ -340,19 +300,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FacturaEmitirRequest'
+              $ref: '#/components/schemas/FacturaEmitirDto'
       responses:
         "200":
           description: Factura emitida exitosamente (incluye CDR y resumen)
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FacturaData'
+                $ref: '#/components/schemas/FacturaResponseDto'
         "400":
           description: Error de validación SUNAT
         "500":
@@ -408,19 +363,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/FacturaData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/FacturaListResponseDto'
 
     put:
       summary: Anular factura (nota de crédito automática)
@@ -438,30 +381,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - motivoAnulacion
-              properties:
-                motivoAnulacion:
-                  type: string
-                  description: Motivo de la anulación
-                  example: "Error en el monto total"
-                generarNotaCredito:
-                  type: boolean
-                  default: true
-                  description: Si genera automáticamente nota de crédito
+              $ref: '#/components/schemas/AnularFacturaDto'
       responses:
         "200":
           description: Factura anulada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FacturaData'
+                $ref: '#/components/schemas/FacturaResponseDto'
         "400":
           description: No se puede anular la factura
         "404":
@@ -508,12 +435,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FacturaData'
+                $ref: '#/components/schemas/FacturaResponseDto'
         "404":
           description: Factura no encontrada
 
@@ -529,19 +451,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BoletaEmitirRequest'
+              $ref: '#/components/schemas/BoletaEmitirDto'
       responses:
         "200":
           description: Boleta emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BoletaData'
+                $ref: '#/components/schemas/BoletaResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -592,19 +509,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/BoletaData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/BoletaListResponseDto'
 
     put:
       tags:
@@ -622,22 +527,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                motivoAnulacion:
-                  type: string
+              $ref: '#/components/schemas/AnularBoletaDto'
       responses:
         "200":
           description: Boleta anulada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BoletaData'
+                $ref: '#/components/schemas/BoletaResponseDto'
 
     delete:
       tags:
@@ -678,12 +575,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BoletaData'
+                $ref: '#/components/schemas/BoletaResponseDto'
         "404":
           description: Boleta no encontrada
 
@@ -699,19 +591,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaCreditoEmitirRequest'
+              $ref: '#/components/schemas/NotaCreditoEmitirDto'
       responses:
         "200":
           description: Nota de crédito emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaCreditoData'
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -758,19 +645,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/NotaCreditoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/NotaCreditoListResponseDto'
 
     put:
       tags:
@@ -788,19 +663,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaCreditoUpdateRequest'
+              $ref: '#/components/schemas/NotaCreditoUpdateDto'
       responses:
         "200":
           description: Nota de crédito actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaCreditoData'
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
         "400":
           description: Solo se pueden actualizar notas no enviadas a SUNAT
         "404":
@@ -843,12 +713,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaCreditoData'
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
         "404":
           description: Nota de crédito no encontrada
 
@@ -864,19 +729,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaDebitoEmitirRequest'
+              $ref: '#/components/schemas/NotaDebitoEmitirDto'
       responses:
         "200":
           description: Nota de débito emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaDebitoData'
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -923,19 +783,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/NotaDebitoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/NotaDebitoListResponseDto'
 
     put:
       tags:
@@ -953,19 +801,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaDebitoUpdateRequest'
+              $ref: '#/components/schemas/NotaDebitoUpdateDto'
       responses:
         "200":
           description: Nota de débito actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaDebitoData'
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
 
     delete:
       tags:
@@ -1004,12 +847,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaDebitoData'
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
         "404":
           description: Nota de débito no encontrada
 
@@ -1025,19 +863,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LibroGenerarRequest'
+              $ref: '#/components/schemas/LibroGenerarDto'
       responses:
         "200":
           description: Archivo TXT/XML generado exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/LibroElectronicoData'
+                $ref: '#/components/schemas/LibroElectronicoResponseDto'
         "400":
           description: Error en la generación
         "500":
@@ -1081,19 +914,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/LibroElectronicoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/LibroElectronicoListResponseDto'
 
   # ==================== PRODUCT ====================
   /product:
@@ -1136,19 +957,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/ProductData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/ProductListResponseDto'
 
     post:
       tags:
@@ -1160,19 +969,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductCreateRequest'
+              $ref: '#/components/schemas/ProductCreateDto'
       responses:
         "200":
           description: Producto creado exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ProductData'
+                $ref: '#/components/schemas/ProductResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -1194,19 +998,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductUpdateRequest'
+              $ref: '#/components/schemas/ProductUpdateDto'
       responses:
         "200":
           description: Producto actualizado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ProductData'
+                $ref: '#/components/schemas/ProductResponseDto'
         "404":
           description: Producto no encontrado
 
@@ -1232,8 +1031,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/SuccessResponse'
         "404":
           description: Producto no encontrado
 
@@ -1255,12 +1053,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ProductData'
+                $ref: '#/components/schemas/ProductResponseDto'
         "404":
           description: Producto no encontrado
 
@@ -1289,14 +1082,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/EmployeeData'
+                $ref: '#/components/schemas/EmployeeListResponseDto'
 
     post:
       tags:
@@ -1308,19 +1094,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeCreateRequest'
+              $ref: '#/components/schemas/EmployeeCreateDto'
       responses:
         "200":
           description: Empleado registrado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/EmployeeData'
+                $ref: '#/components/schemas/EmployeeResponseDto'
 
     put:
       tags:
@@ -1338,19 +1119,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmployeeUpdateRequest'
+              $ref: '#/components/schemas/EmployeeUpdateDto'
       responses:
         "200":
           description: Empleado actualizado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/EmployeeData'
+                $ref: '#/components/schemas/EmployeeResponseDto'
         "404":
           description: Empleado no encontrado
 
@@ -1376,8 +1152,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/SuccessResponse'
         "404":
           description: Empleado no encontrado
 
@@ -1399,12 +1174,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/EmployeeData'
+                $ref: '#/components/schemas/EmployeeResponseDto'
         "404":
           description: Empleado no encontrado
 
@@ -1471,6 +1241,147 @@ paths:
                 items:
                   $ref: '#/components/schemas/SerieConfigData'
 
+  # ==================== SEDE ====================
+  /sede:
+    get:
+      tags:
+        - sede
+      summary: Listar sedes por empresa
+      operationId: listarSedes
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+      responses:
+        "200":
+          description: Lista de sedes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeListResponseDto'
+
+    post:
+      tags:
+        - sede
+      summary: Crear nueva sede
+      operationId: crearSede
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SedeCreateDto'
+      responses:
+        "200":
+          description: Sede creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "400":
+          description: Error de validación
+
+    put:
+      tags:
+        - sede
+      summary: Actualizar sede
+      operationId: actualizarSede
+      parameters:
+        - name: sedeId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SedeUpdateDto'
+      responses:
+        "200":
+          description: Sede actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "404":
+          description: Sede no encontrada
+
+    delete:
+      tags:
+        - sede
+      summary: Eliminar sede (soft delete)
+      operationId: eliminarSede
+      parameters:
+        - name: sedeId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sede eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Sede no encontrada
+
+  /sede/{sedeId}:
+    get:
+      tags:
+        - sede
+      summary: Obtener sede por ID
+      operationId: obtenerSede
+      parameters:
+        - name: sedeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sede encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "404":
+          description: Sede no encontrada
+
+  /sede/{sedeId}/generar_series:
+    post:
+      tags:
+        - sede
+      summary: Generar series automáticas para una sede (F, B, FC, FD)
+      operationId: generarSeriesSede
+      parameters:
+        - name: sedeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Series generadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeSeriesResponseDto'
+        "400":
+          description: La sede ya tiene series asignadas
+        "404":
+          description: Sede no encontrada
+
   # ==================== USER PREFERENCE ====================
   /user_preference:
     get:
@@ -1504,7 +1415,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserPreferenceSaveRequest'
+              $ref: '#/components/schemas/UserPreferenceSaveDto'
       responses:
         "200":
           description: Preferencia guardada
@@ -1512,6 +1423,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserPreferenceData'
+
+  # ==================== TIPO DE CAMBIO ====================
+  /tipo_cambio:
+    get:
+      summary: Obtener tipo de cambio por fecha y moneda
+      operationId: obtenerTipoCambio
+      tags:
+        - tipo_cambio
+      parameters:
+        - name: fecha
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha del tipo de cambio (YYYY-MM-DD)
+        - name: moneda
+          in: query
+          schema:
+            type: string
+            default: USD
+          description: Moneda origen (ej. USD)
+        - name: fuente
+          in: query
+          schema:
+            type: string
+          description: Fuente del tipo de cambio (SBS o SUNAT)
+      responses:
+        "200":
+          description: Tipo de cambio encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioResponseDto'
+
+    post:
+      summary: Registrar tipo de cambio
+      operationId: registrarTipoCambio
+      tags:
+        - tipo_cambio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoCambioCreateDto'
+      responses:
+        "200":
+          description: Tipo de cambio registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioResponseDto'
+
+  /tipo_cambio/list:
+    get:
+      summary: Listar todos los tipos de cambio
+      operationId: listarTiposCambio
+      tags:
+        - tipo_cambio
+      parameters:
+        - name: fuente
+          in: query
+          schema:
+            type: string
+          description: Filtrar por fuente (SBS o SUNAT)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Lista de tipos de cambio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioListResponseDto'
 
 components:
   schemas:
@@ -1554,7 +1548,7 @@ components:
           example: ["El campo ruc es requerido", "Formato de RUC inválido"]
 
     # ===== COMPANY =====
-    CompanyRegisterRequest:
+    CompanyRegisterDto:
       type: object
       required:
         - ruc
@@ -1640,7 +1634,7 @@ components:
           default: general
           example: "general"
 
-    CompanyUpdateRequest:
+    CompanyUpdateDto:
       type: object
       properties:
         nombreComercial:
@@ -1669,7 +1663,7 @@ components:
           example: "NuevoCertPass"
 
     # ===== CLIENT =====
-    ClientRegisterRequest:
+    ClientRegisterDto:
       type: object
       required:
         - companyId
@@ -1702,7 +1696,7 @@ components:
           type: string
           example: "51987654321"
 
-    ClientUpdateRequest:
+    ClientUpdateDto:
       type: object
       properties:
         denominacion:
@@ -1720,7 +1714,7 @@ components:
           example: "51999999999"
 
     # ===== FACTURA =====
-    FacturaEmitirRequest:
+    FacturaEmitirDto:
       type: object
       required:
         - companyId
@@ -1769,9 +1763,27 @@ components:
         leyenda:
           type: string
           example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          description: Tipo de cambio del día (solo si moneda != PEN)
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento. Si CONTADO = fechaEmision
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
 
     # ===== BOLETA =====
-    BoletaEmitirRequest:
+    BoletaEmitirDto:
       type: object
       required:
         - companyId
@@ -1816,9 +1828,25 @@ components:
         leyenda:
           type: string
           example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          description: Tipo de cambio (solo si moneda != PEN)
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
 
     # ===== NOTA CRÉDITO =====
-    NotaCreditoEmitirRequest:
+    NotaCreditoEmitirDto:
       type: object
       required:
         - companyId
@@ -1851,7 +1879,7 @@ components:
           items:
             $ref: '#/components/schemas/DetalleItem'
 
-    NotaCreditoUpdateRequest:
+    NotaCreditoUpdateDto:
       type: object
       properties:
         motivo:
@@ -1867,7 +1895,7 @@ components:
             $ref: '#/components/schemas/DetalleItem'
 
     # ===== NOTA DÉBITO =====
-    NotaDebitoEmitirRequest:
+    NotaDebitoEmitirDto:
       type: object
       required:
         - companyId
@@ -1896,7 +1924,7 @@ components:
           items:
             $ref: '#/components/schemas/DetalleItem'
 
-    NotaDebitoUpdateRequest:
+    NotaDebitoUpdateDto:
       type: object
       properties:
         motivo:
@@ -1912,7 +1940,7 @@ components:
             $ref: '#/components/schemas/DetalleItem'
 
     # ===== LIBRO ELECTRÓNICO =====
-    LibroGenerarRequest:
+    LibroGenerarDto:
       type: object
       required:
         - companyId
@@ -2143,6 +2171,21 @@ components:
         leyenda:
           type: string
           example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
         detalle:
           type: array
           items:
@@ -2194,6 +2237,20 @@ components:
         leyenda:
           type: string
           example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          example: "150101"
         detalle:
           type: array
           items:
@@ -2314,7 +2371,7 @@ components:
           example: "2026-04-04T10:30:00Z"
 
     # ===== PRODUCT =====
-    ProductCreateRequest:
+    ProductCreateDto:
       type: object
       required:
         - companyId
@@ -2340,7 +2397,7 @@ components:
           description: Valor unitario sin IGV
           example: 2500.00
 
-    ProductUpdateRequest:
+    ProductUpdateDto:
       type: object
       properties:
         descripcion:
@@ -2387,7 +2444,7 @@ components:
           example: "ACTIVO"
 
     # ===== EMPLOYEE =====
-    EmployeeCreateRequest:
+    EmployeeCreateDto:
       type: object
       required:
         - companyId
@@ -2411,7 +2468,7 @@ components:
           type: string
           example: "EMP-001"
 
-    EmployeeUpdateRequest:
+    EmployeeUpdateDto:
       type: object
       properties:
         nombre:
@@ -2493,6 +2550,9 @@ components:
         companyId:
           type: string
           example: "cmp_20601234567"
+        sedeId:
+          type: string
+          example: "sede-001"
         tipoDocumento:
           type: string
           enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
@@ -2513,8 +2573,118 @@ components:
           type: string
           format: date-time
 
+    # ===== SEDE =====
+    SedeCreateDto:
+      type: object
+      required:
+        - companyId
+        - nombre
+        - direccion
+        - codigoUbigeo
+      properties:
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        nombre:
+          type: string
+          example: "Sede Principal San Isidro"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234, Piso 8"
+        codigoUbigeo:
+          type: string
+          pattern: "^[0-9]{6}$"
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        telefono:
+          type: string
+          example: "+51 999 888 777"
+        email:
+          type: string
+          format: email
+          example: "sede.principal@etlions.com"
+        generarSeries:
+          type: boolean
+          default: true
+          description: Si es true, genera automáticamente las 4 series (F, B, FC, FD)
+
+    SedeUpdateDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+          format: email
+
+    SedeData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sede-001"
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        codigo:
+          type: string
+          description: Código correlativo de 3 dígitos auto-generado
+          example: "001"
+        nombre:
+          type: string
+          example: "Sede Principal San Isidro"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234, Piso 8"
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        telefono:
+          type: string
+          example: "+51 999 888 777"
+        email:
+          type: string
+          format: email
+          example: "sede.principal@etlions.com"
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        esDefault:
+          type: boolean
+          example: true
+        series:
+          type: array
+          description: Series de documentos asignadas a esta sede
+          items:
+            $ref: '#/components/schemas/SerieConfigData'
+        fechaCreacion:
+          type: string
+          format: date-time
+
     # ===== USER PREFERENCE =====
-    UserPreferenceSaveRequest:
+    UserPreferenceSaveDto:
       type: object
       required:
         - companyId
@@ -2548,4 +2718,348 @@ components:
         fechaActualizacion:
           type: string
           format: date-time
+
+    # ===== TIPO DE CAMBIO =====
+    TipoCambioCreateDto:
+      type: object
+      required:
+        - fecha
+        - tasaCompra
+        - tasaVenta
+        - fuente
+      properties:
+        fecha:
+          type: string
+          format: date
+          example: "2026-04-06"
+        monedaOrigen:
+          type: string
+          default: USD
+          example: "USD"
+        monedaDestino:
+          type: string
+          default: PEN
+          example: "PEN"
+        tasaCompra:
+          type: number
+          format: double
+          example: 3.7100
+        tasaVenta:
+          type: number
+          format: double
+          example: 3.7520
+        fuente:
+          type: string
+          example: "SBS"
+          description: Fuente del tipo de cambio (SBS o SUNAT)
+
+    TipoCambioData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "tc-001"
+        fecha:
+          type: string
+          format: date
+          example: "2026-04-06"
+        monedaOrigen:
+          type: string
+          example: "USD"
+        monedaDestino:
+          type: string
+          example: "PEN"
+        tasaCompra:
+          type: number
+          format: double
+          example: 3.7100
+        tasaVenta:
+          type: number
+          format: double
+          example: 3.7520
+        fuente:
+          type: string
+          example: "SBS"
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ========== RESPONSE WRAPPER DTOs ==========
+
+    # --- Single Entity Response DTOs ---
+    CompanyResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CompanyData'
+
+    ClientResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClientData'
+
+    FacturaResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FacturaData'
+
+    BoletaResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BoletaData'
+
+    NotaCreditoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotaCreditoData'
+
+    NotaDebitoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotaDebitoData'
+
+    LibroElectronicoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LibroElectronicoData'
+
+    ProductResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductData'
+
+    EmployeeResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/EmployeeData'
+
+    SedeResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SedeData'
+
+    TipoCambioResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TipoCambioData'
+
+    # --- Paginated List Response DTOs ---
+    CompanyListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CompanyData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ClientListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ClientData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    FacturaListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FacturaData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    BoletaListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/BoletaData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    NotaCreditoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotaCreditoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    NotaDebitoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotaDebitoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    LibroElectronicoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LibroElectronicoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ProductListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProductData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    TipoCambioListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TipoCambioData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    # --- Array List Response DTOs ---
+    EmployeeListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/EmployeeData'
+
+    SedeListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/SedeData'
+
+    SedeSeriesResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/SerieConfigData'
+
+    # --- Inline Request Body DTOs ---
+    AnularFacturaDto:
+      type: object
+      required:
+        - motivoAnulacion
+      properties:
+        motivoAnulacion:
+          type: string
+          description: Motivo de la anulación
+          example: "Error en el monto total"
+        generarNotaCredito:
+          type: boolean
+          default: true
+          description: Si genera automáticamente nota de crédito
+
+    AnularBoletaDto:
+      type: object
+      properties:
+        motivoAnulacion:
+          type: string
 

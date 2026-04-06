@@ -65,12 +65,27 @@ INSERT INTO unidades_medida (id, codigo, descripcion) VALUES
 ('um-013', 'DZN', 'Docena'),
 ('um-014', 'PK', 'Paquete');
 
--- ══════ SERIES CONFIG ══════
-INSERT INTO series_config (id, company_id, tipo_documento, serie, descripcion, es_default, activa, fecha_creacion) VALUES
-('ser-001', 'cmp-demo-001', 'FACTURA',       'F001', 'Serie principal Factura',        TRUE,  TRUE, CURRENT_TIMESTAMP),
-('ser-002', 'cmp-demo-001', 'BOLETA',        'B001', 'Serie principal Boleta',         TRUE,  TRUE, CURRENT_TIMESTAMP),
-('ser-003', 'cmp-demo-001', 'NOTA_CREDITO',  'FC01', 'Serie principal Nota Crédito',   TRUE,  TRUE, CURRENT_TIMESTAMP),
-('ser-004', 'cmp-demo-001', 'NOTA_DEBITO',   'FD01', 'Serie principal Nota Débito',    TRUE,  TRUE, CURRENT_TIMESTAMP);
+-- ══════ SEDES ══════
+INSERT INTO sedes (id, company_id, codigo, nombre, direccion, codigo_ubigeo, departamento, provincia, distrito, telefono, email, estado, es_default, fecha_creacion) VALUES
+('sede-001', 'cmp-demo-001', '001', 'Sede Principal San Isidro',
+    'Av. Javier Prado Este 1234, Piso 8', '150131', 'LIMA', 'LIMA', 'SAN ISIDRO',
+    '+51 999 888 777', 'sede.principal@etlions.com', 'ACTIVO', TRUE, CURRENT_TIMESTAMP),
+('sede-002', 'cmp-demo-001', '002', 'Sucursal Miraflores',
+    'Calle Berlín 567, Oficina 201', '150122', 'LIMA', 'LIMA', 'MIRAFLORES',
+    '+51 955 444 333', 'miraflores@etlions.com', 'ACTIVO', FALSE, CURRENT_TIMESTAMP);
+
+-- ══════ SERIES CONFIG (vinculadas a sedes) ══════
+INSERT INTO series_config (id, company_id, sede_id, tipo_documento, serie, descripcion, es_default, activa, fecha_creacion) VALUES
+-- Sede Principal (001)
+('ser-001', 'cmp-demo-001', 'sede-001', 'FACTURA',       'F001', 'Factura — Sede Principal San Isidro',       TRUE,  TRUE, CURRENT_TIMESTAMP),
+('ser-002', 'cmp-demo-001', 'sede-001', 'BOLETA',        'B001', 'Boleta — Sede Principal San Isidro',        TRUE,  TRUE, CURRENT_TIMESTAMP),
+('ser-003', 'cmp-demo-001', 'sede-001', 'NOTA_CREDITO',  'FC01', 'Nota Crédito — Sede Principal San Isidro',  TRUE,  TRUE, CURRENT_TIMESTAMP),
+('ser-004', 'cmp-demo-001', 'sede-001', 'NOTA_DEBITO',   'FD01', 'Nota Débito — Sede Principal San Isidro',   TRUE,  TRUE, CURRENT_TIMESTAMP),
+-- Sucursal Miraflores (002)
+('ser-005', 'cmp-demo-001', 'sede-002', 'FACTURA',       'F002', 'Factura — Sucursal Miraflores',       FALSE, TRUE, CURRENT_TIMESTAMP),
+('ser-006', 'cmp-demo-001', 'sede-002', 'BOLETA',        'B002', 'Boleta — Sucursal Miraflores',        FALSE, TRUE, CURRENT_TIMESTAMP),
+('ser-007', 'cmp-demo-001', 'sede-002', 'NOTA_CREDITO',  'FC02', 'Nota Crédito — Sucursal Miraflores',  FALSE, TRUE, CURRENT_TIMESTAMP),
+('ser-008', 'cmp-demo-001', 'sede-002', 'NOTA_DEBITO',   'FD02', 'Nota Débito — Sucursal Miraflores',   FALSE, TRUE, CURRENT_TIMESTAMP);
 
 -- ══════ FACTURAS (documentos de prueba) ══════
 INSERT INTO facturas (id, company_id, client_id, serie, numero, fecha_emision, moneda, gravadas, igv, total, estado, leyenda, detalle_json, fecha_creacion) VALUES
@@ -123,11 +138,30 @@ INSERT INTO notas_debito (id, company_id, factura_referencia_id, motivo, monto_i
 -- ══════ CORRELATIVOS (sincronizar con facturas/boletas seed) ══════
 INSERT INTO correlativos (id, company_id, serie, ultimo_numero) VALUES
 ('cor-001', 'cmp-demo-001', 'F001', 3),
-('cor-002', 'cmp-demo-001', 'B001', 2);
+('cor-002', 'cmp-demo-001', 'B001', 2),
+('cor-003', 'cmp-demo-001', 'F002', 0),
+('cor-004', 'cmp-demo-001', 'B002', 0);
 
 -- ══════ USER PREFERENCES ══════
 INSERT INTO user_preferences (id, company_id, clave, valor, fecha_actualizacion) VALUES
 ('pref-001', 'cmp-demo-001', 'moneda', 'PEN', CURRENT_TIMESTAMP),
 ('pref-002', 'cmp-demo-001', 'tema', 'dark', CURRENT_TIMESTAMP),
-('pref-003', 'cmp-demo-001', 'defaultItemType', 'servicio', CURRENT_TIMESTAMP);
+('pref-003', 'cmp-demo-001', 'defaultItemType', 'servicio', CURRENT_TIMESTAMP),
+('pref-004', 'cmp-demo-001', 'tipoCambioFuente', 'SBS', CURRENT_TIMESTAMP);
+
+-- ══════ TIPO DE CAMBIO (seed últimos días) ══════
+INSERT INTO tipo_cambio (id, fecha, moneda_origen, moneda_destino, tasa_compra, tasa_venta, fuente, fecha_creacion) VALUES
+('tc-001', '2026-04-06', 'USD', 'PEN', 3.7100, 3.7520, 'SBS', CURRENT_TIMESTAMP),
+('tc-002', '2026-04-05', 'USD', 'PEN', 3.7050, 3.7480, 'SBS', CURRENT_TIMESTAMP),
+('tc-003', '2026-04-04', 'USD', 'PEN', 3.7080, 3.7500, 'SBS', CURRENT_TIMESTAMP),
+('tc-004', '2026-04-03', 'USD', 'PEN', 3.7120, 3.7540, 'SBS', CURRENT_TIMESTAMP),
+('tc-005', '2026-04-02', 'USD', 'PEN', 3.7090, 3.7510, 'SBS', CURRENT_TIMESTAMP),
+('tc-006', '2026-04-06', 'USD', 'PEN', 3.7110, 3.7530, 'SUNAT', CURRENT_TIMESTAMP),
+('tc-007', '2026-04-05', 'USD', 'PEN', 3.7060, 3.7490, 'SUNAT', CURRENT_TIMESTAMP);
+
+-- ══════ LIBROS ELECTRÓNICOS (seed) ══════
+INSERT INTO libros_electronicos (id, company_id, tipo, periodo, formato, estado, archivo_url, total_registros, fecha_generacion, fecha_creacion) VALUES
+('lib-001', 'cmp-demo-001', 'ventas', '2026-03', 'TXT', 'GENERADO', '/libros/cmp-demo-001/ventas-2026-03.txt', 45, TIMESTAMP '2026-04-01 08:00:00', CURRENT_TIMESTAMP),
+('lib-002', 'cmp-demo-001', 'compras', '2026-03', 'TXT', 'GENERADO', '/libros/cmp-demo-001/compras-2026-03.txt', 32, TIMESTAMP '2026-04-01 08:15:00', CURRENT_TIMESTAMP),
+('lib-003', 'cmp-demo-001', 'ventas', '2026-02', 'TXT', 'GENERADO', '/libros/cmp-demo-001/ventas-2026-02.txt', 38, TIMESTAMP '2026-03-01 09:00:00', CURRENT_TIMESTAMP);
 

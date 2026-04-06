@@ -1,29 +1,49 @@
 <!-- ═══════ ETIA — Header Fragment ═══════ -->
 <header th:fragment="header(backUrl, backLabel)" class="g-header"
         xmlns:th="http://www.thymeleaf.org">
+
+    <!-- ═══ LEFT: Logo + Back nav ═══ -->
     <div class="g-header-left">
-        <a th:href="@{/menu}" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:inherit;">
+        <a th:href="@{/menu}" class="g-brand-link">
             <span class="g-logo">🧾</span>
             <div class="g-brand">
                 <h1>ETIA</h1>
                 <sub>Facturación Electrónica · v0.1.0</sub>
             </div>
         </a>
-    </div>
-    <div class="g-header-right">
-        <span class="g-chip"><span class="dot" style="background:var(--info);"></span> DEMO</span>
-        <span class="g-chip" id="hdr-location-chip">
-            <span class="dot"></span>
-            <span id="hdr-location">Cargando...</span>
-        </span>
-        <!-- ⚙️ Config gear -->
-        <button class="g-config-btn" onclick="openConfigOverlay()" title="Configuración">⚙️</button>
-        <div class="g-session">
-            <span class="g-company-name" id="hdr-company">EMPRESA</span>
-            <a th:href="@{/}" class="g-logout">🔓 Salir</a>
-        </div>
         <a th:if="${backUrl != null}" th:href="@{__${backUrl}__}" class="g-back">
             ← <span th:text="${backLabel} ?: 'Atrás'">Atrás</span>
         </a>
+    </div>
+
+    <!-- ═══ RIGHT: Company · Sede · 🔔 · ⚙️ · Logout ═══ -->
+    <div class="g-header-right">
+        <span class="g-company-name" id="hdr-company">EMPRESA</span>
+        <div class="g-sede-wrap">
+            <select class="g-sede-select" id="hdr-sede-select" title="Sede activa">
+                <option value="">Cargando sedes…</option>
+            </select>
+        </div>
+        <button class="g-notif-btn" id="hdr-notif-btn" onclick="toggleNotifPanel()" title="Notificaciones">
+            🔔 <span class="g-notif-count" id="hdr-notif-count" style="display:none;">0</span>
+        </button>
+        <button class="g-config-btn" onclick="openConfigOverlay()" title="Configuración">⚙️</button>
+        <a th:href="@{/}" class="g-logout" title="Cerrar sesión">🔓 Salir</a>
+    </div>
+
+    <!-- ═══ Notification Panel (hidden by default) ═══ -->
+    <div class="g-notif-panel" id="hdr-notif-panel" style="display:none;">
+        <div class="g-notif-header">
+            <span>🔔 Notificaciones</span>
+            <button class="g-notif-close" onclick="toggleNotifPanel()">✕</button>
+        </div>
+        <div class="g-notif-section" id="hdr-notif-transmissions">
+            <div class="g-notif-section-title">📤 Transmisiones recientes</div>
+            <div class="g-notif-list" id="hdr-notif-tx-list"></div>
+        </div>
+        <div class="g-notif-section" id="hdr-notif-rejected">
+            <div class="g-notif-section-title">⚠️ Comprobantes rechazados</div>
+            <div class="g-notif-list" id="hdr-notif-list"></div>
+        </div>
     </div>
 </header>

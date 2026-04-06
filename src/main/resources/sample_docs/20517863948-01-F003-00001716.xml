@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:conastec="urn:conastec:names:specification:ubl:schema:xsd:ConastecAggregateComponents-1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent><ds:Signature Id="COF003-00001716-27259303"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>63aBD3ZFEDv0nBBojM/8OPJgm18=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>kBHI4hgnpYd0TFdbp32Orwyqz1cM6iKpaQj69yl6CjL9M8+lh8j1Tx9DibNYTgsidUdiP/4Cjpk/&#13;
+JzmM23626IuEpyQzUGuVUoVf8HO9ZQwPIle/2SCajFIUFxV5rHzeiCm6Vs/f4DcBlrKtzy/wkE2k&#13;
+iEMeZ09qCCCNmx0Q2Ss2+gKMvj387oA873U9yI6IqIBbXq2GtJt4AiY+VfUvBwLotlMr0bNO/2u7&#13;
+qfF8bF4gqLvf+o9wKyRp1c2QEkw1yhqhAPevje53jyCwwInHDFcATOywcnRZy+udTGzLPfGs3LVj&#13;
+GQsC7FBv3DEwPSEgGlpYbQSl9EG5BUNhB2HbKQ==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509SubjectName>2.5.4.13=#0c2a436572746966696361646f207061726120466163747572616369c3b36e20456c65637472c3b36e696361,1.3.6.1.4.1.47286.30.2=#0c03525543,1.3.6.1.4.1.47286.30.3=#0c0b3230353038333136393835,1.3.6.1.4.1.47286.30.4=#0c03444e49,1.2.840.113549.1.9.1=#16174553454755524140434f4e41535445432e434f4d2e5045,CN=ELÍ RÓNAL SEGURA SALAS,2.5.4.5=#13083130323031343035,2.5.4.42=#0c0b454cc38d2052c3934e414c,2.5.4.4=#0c0c5345475552412053414c4153,2.5.4.12=#0c0f474552454e54452047454e4552414c,OU=GERENCIA,OU=20508316985,O=CONSULTORIA Y ASESORIA EN TECNOLOGIA CONASTEC S.R.L.,L=LIMA,C=PE</ds:X509SubjectName><ds:X509Certificate>MIIIhzCCBm+gAwIBAgIIfc6ekpq6DpswDQYJKoZIhvcNAQELBQAwgbgxCzAJBgNVBAYTAkVTMUQw&#13;
+QgYDVQQHDDtCYXJjZWxvbmEgKHNlZSBjdXJyZW50IGFkZHJlc3MgYXQgd3d3LnVhbmF0YWNhLmNv&#13;
+bS9hZGRyZXNzKTEWMBQGA1UECgwNVUFOQVRBQ0EgUy5BLjEVMBMGA1UECwwMVFNQLVVBTkFUQUNB&#13;
+MRowGAYDVQQDDBFVQU5BVEFDQSBDQTEgMjAxNjEYMBYGA1UEYQwPVkFURVMtQTY2NzIxNDk5MB4X&#13;
+DTI1MDUyNjE5MzkwMFoXDTI4MDUyNTE5MzkwMFowggGlMQswCQYDVQQGEwJQRTENMAsGA1UEBwwE&#13;
+TElNQTE9MDsGA1UECgw0Q09OU1VMVE9SSUEgWSBBU0VTT1JJQSBFTiBURUNOT0xPR0lBIENPTkFT&#13;
+VEVDIFMuUi5MLjEUMBIGA1UECwwLMjA1MDgzMTY5ODUxETAPBgNVBAsMCEdFUkVOQ0lBMRgwFgYD&#13;
+VQQMDA9HRVJFTlRFIEdFTkVSQUwxFTATBgNVBAQMDFNFR1VSQSBTQUxBUzEUMBIGA1UEKgwLRUzD&#13;
+jSBSw5NOQUwxETAPBgNVBAUTCDEwMjAxNDA1MSEwHwYDVQQDDBhFTMONIFLDk05BTCBTRUdVUkEg&#13;
+U0FMQVMxJjAkBgkqhkiG9w0BCQEWF0VTRUdVUkFAQ09OQVNURUMuQ09NLlBFMRMwEQYKKwYBBAGC&#13;
+8TYeBAwDRE5JMRswGQYKKwYBBAGC8TYeAwwLMjA1MDgzMTY5ODUxEzARBgorBgEEAYLxNh4CDANS&#13;
+VUMxMzAxBgNVBA0MKkNlcnRpZmljYWRvIHBhcmEgRmFjdHVyYWNpw7NuIEVsZWN0csOzbmljYTCC&#13;
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMtmTHmBgrDXJqWNufB3881DdqRY2+PLryK&#13;
+c31/Ny3c5XXwMOSp4pu2FQXyBzGsUj4FOHWiwN3svUbxOuGFIMkbvrXBEUIqCIMcp9A5XlblAPG4&#13;
+yu8l2PvZFZ7+Vgt6+ScT4ueJw+uxNAY2AfYMycPq1RyOCoGyMG/PZV3m9Hd9DA+Dtr1uVnAQQC9x&#13;
+Wjc/rRHrVnwBe/qZrDn6PUlrupQEviEg7DFkp23aLTxZdDCgk4bguXrrP1Roj4NuMOHcP4T329lc&#13;
+hZWeBk4QCXQyYX5BfmDZyuTeo28cicFGKgsEQ6AGX3QHEfAtcLXs0m58vVR/eF0IaH7xJkQQvd++&#13;
+GmUCAwEAAaOCAqMwggKfMIHWBggrBgEFBQcBAQSByTCBxjBUBggrBgEFBQcwAoZIaHR0cDovL3d3&#13;
+dy51YW5hdGFjYS5jb20vcHVibGljL2Rvd25sb2FkL3RzcF9jZXJ0aWZpY2F0ZXMvdHJ1c3RlZFJv&#13;
+b3QucDdjMDYGCCsGAQUFBzABhipodHRwOi8vb2NzcDEudWFuYXRhY2EuY29tL3B1YmxpYy9wa2kv&#13;
+b2NzcC8wNgYIKwYBBQUHMAGGKmh0dHA6Ly9vY3NwMi51YW5hdGFjYS5jb20vcHVibGljL3BraS9v&#13;
+Y3NwLzAdBgNVHQ4EFgQUfGWdgj9+w45ltch5+TQZvqFlcKowDAYDVR0TAQH/BAIwADAfBgNVHSME&#13;
+GDAWgBQtce+wY3/1/eCDIkR/RBAwgU9N5TCBkAYDVR0gBIGIMIGFMIGCBgwrBgEEAYLxNgICAgIw&#13;
+cjA2BggrBgEFBQcCARYqaHR0cDovL3d3dy51YW5hdGFjYS5jb20vcHVibGljL3BraS9kcGMtcGUv&#13;
+MDgGCCsGAQUFBwICMCwMKkNlcnRpZmljYWRvIHBhcmEgRmFjdHVyYWNpw7NuIEVsZWN0csOzbmlj&#13;
+YTCBjwYDVR0fBIGHMIGEMECgPqA8hjpodHRwOi8vY3JsMS51YW5hdGFjYS5jb20vcHVibGljL3Br&#13;
+aS9jcmwvQ0Exc3Vib3JkaW5hZGEuY3JsMECgPqA8hjpodHRwOi8vY3JsMi51YW5hdGFjYS5jb20v&#13;
+cHVibGljL3BraS9jcmwvQ0Exc3Vib3JkaW5hZGEuY3JsMA4GA1UdDwEB/wQEAwIGwDAdBgNVHSUE&#13;
+FjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwIgYDVR0RBBswGYEXRVNFR1VSQUBDT05BU1RFQy5DT00u&#13;
+UEUwDQYJKoZIhvcNAQELBQADggIBAGu9JLrYm+kCdoe5MW4CU4YxFBLC30nkBeEjLZP4LSpz9dMY&#13;
+z3c4yhwVMo7vaj4Oid3m0Z1C+oyXFQC8OvZN38+ix6jvYiALKd8e0jnJPyKQdHaERoHIfc+GzaYL&#13;
+gyBjMnYH3Ihuz1W65jxOr9ZzIgZfw5r4WRV8ZjGeClBK6rVmE0H32JWFsHYm75yvh+r7AT03JK8h&#13;
+0vGzYQMGHokpfo1BCdISThggRyPPYZKt0F8o1baseMptJy+dY0P4nylk/swQkrwDZ/JlONFbqJh0&#13;
+O1j3YCq/SNstQoB5q6mFDwmNpSjmNlEhS1jqSv8FoAOzwHLMKqXLfx2y4vfchs3YXCYDntHZedou&#13;
+ale95GiDkaPNDVvVfzmrsigL+tgB1DKjXagZxmg64TkLTgElqWTIcjyJKKF1DknirlPTh3alLGHu&#13;
+PlYVihTM9rfKOYqZsrFOMozegbnUneZv2Eo7jNsgSOKHMUYvSj/szjg9OGXxSO6rPq4U1tJIGwoY&#13;
+/7wyykqj5S5jOZnmdkv0wDVphQR9ygc9Z/TNzXJCMEUK6WVsrYe6E6iXrIMZ8Bbq6StHcFeTmpoE&#13;
+Oxzy6Q5B5t08x9laVfN2tQTO05JJ8+OxOD38n67LUzF0IU9HD49Ah/IxswsLVAuI0/VMWvJRCevG&#13;
+Emf/xWQlySNtbYhygspS4ieYX9Le</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></ext:ExtensionContent>
+        </ext:UBLExtension>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <conastec:CustomText>
+                    <conastec:Text name="CAJERO">CUSCO_RECEPCION</conastec:Text>
+                    <conastec:Text name="RECARGO_CONSUMO">383.20</conastec:Text>
+                    <conastec:Text name="RECARGO_CONSUMO_GLOBAL">383.20</conastec:Text>
+                    <conastec:Text name="RECARGO_CONSUMO_ITEM">0.00</conastec:Text>
+                    <conastec:Text name="SEDE">HOTEL HAMPTON BY HILTON CUSCO</conastec:Text>
+                </conastec:CustomText>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+    <cbc:CustomizationID schemeAgencyName="PE:SUNAT">2.0</cbc:CustomizationID>
+    <cbc:ID>F003-00001716</cbc:ID>
+    <cbc:IssueDate>2026-04-05</cbc:IssueDate>
+    <cbc:IssueTime>12:58:00</cbc:IssueTime>
+    <cbc:DueDate>2026-04-12</cbc:DueDate>
+    <cbc:InvoiceTypeCode listAgencyName="PE:SUNAT" listID="0101" listName="Tipo de Documento" listSchemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01" name="Tipo de Operacion">01</cbc:InvoiceTypeCode>
+    <cbc:Note languageLocaleID="1000">CUATRO MIL DOSCIENTOS QUINCE CON 20/100 DÓLARES</cbc:Note>
+    <cbc:DocumentCurrencyCode listAgencyName="United Nations Economic Commission for Europe" listName="Currency">USD</cbc:DocumentCurrencyCode>
+    <cbc:LineCountNumeric>2</cbc:LineCountNumeric>
+    <cac:AccountingSupplierParty>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeAgencyName="PE:SUNAT" schemeID="6" schemeName="Documento de Identidad" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20517863948</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>WANCHAK REAL STATE S.A.C.</cbc:RegistrationName>
+                <cac:RegistrationAddress>
+                    <cbc:ID schemeAgencyName="PE:INEI" schemeName="Ubigeos">080108</cbc:ID>
+                    <cbc:AddressTypeCode listAgencyName="PE:SUNAT">0001</cbc:AddressTypeCode>
+                    <cbc:CityName>CUSCO</cbc:CityName>
+                    <cbc:CountrySubentity>CUSCO</cbc:CountrySubentity>
+                    <cbc:District>WANCHAQ</cbc:District>
+                    <cac:AddressLine>
+                        <cbc:Line>AV. TULLUMAYO NRO. 227</cbc:Line>
+                    </cac:AddressLine>
+                    <cac:Country>
+                        <cbc:IdentificationCode listAgencyName="United Nations Economic Commission for Europe">PE</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:RegistrationAddress>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingSupplierParty>
+    <cac:AccountingCustomerParty>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeAgencyName="PE:SUNAT" schemeID="6" schemeName="Documento de Identidad" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20387589181</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>VIAJES PACIFICO S.A.C.</cbc:RegistrationName>
+                <cac:RegistrationAddress>
+                    <cbc:CityName>LIMA</cbc:CityName>
+                    <cbc:CountrySubentity>LIMA</cbc:CountrySubentity>
+                    <cbc:District>MIRAFLORES</cbc:District>
+                    <cac:AddressLine>
+                        <cbc:Line>CAL. ENRIQUE PALACIOS NRO. 360 INT. 708</cbc:Line>
+                    </cac:AddressLine>
+                    <cac:Country>
+                        <cbc:IdentificationCode listAgencyName="United Nations Economic Commission for Europe">PE</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:RegistrationAddress>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingCustomerParty>
+    <cac:PaymentTerms>
+        <cbc:ID>FormaPago</cbc:ID>
+        <cbc:PaymentMeansID>Credito</cbc:PaymentMeansID>
+        <cbc:Amount currencyID="USD">4215.20</cbc:Amount>
+    </cac:PaymentTerms>
+    <cac:PaymentTerms>
+        <cbc:ID>FormaPago</cbc:ID>
+        <cbc:PaymentMeansID>Cuota001</cbc:PaymentMeansID>
+        <cbc:Amount currencyID="USD">4215.2</cbc:Amount>
+        <cbc:PaymentDueDate>2026-04-12</cbc:PaymentDueDate>
+    </cac:PaymentTerms>
+    <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
+        <cbc:AllowanceChargeReasonCode listAgencyName="PE:SUNAT" listName="Cargo/descuento" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo53">46</cbc:AllowanceChargeReasonCode>
+        <cbc:MultiplierFactorNumeric>0.10000</cbc:MultiplierFactorNumeric>
+        <cbc:Amount currencyID="USD">383.20</cbc:Amount>
+        <cbc:BaseAmount currencyID="USD">3832.00</cbc:BaseAmount>
+    </cac:AllowanceCharge>
+    <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+            <cbc:TaxableAmount currencyID="USD">3832.00</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="USD">0</cbc:TaxAmount>
+            <cac:TaxCategory>
+                <cac:TaxScheme>
+                    <cbc:ID schemeAgencyName="PE:SUNAT" schemeName="Codigo de tributos" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9997</cbc:ID>
+                    <cbc:Name>EXO</cbc:Name>
+                    <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+                </cac:TaxScheme>
+            </cac:TaxCategory>
+        </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:LegalMonetaryTotal>
+        <cbc:LineExtensionAmount currencyID="USD">3832.00</cbc:LineExtensionAmount>
+        <cbc:TaxInclusiveAmount currencyID="USD">3832.00</cbc:TaxInclusiveAmount>
+        <cbc:ChargeTotalAmount currencyID="USD">383.20</cbc:ChargeTotalAmount>
+        <cbc:PayableAmount currencyID="USD">4215.20</cbc:PayableAmount>
+    </cac:LegalMonetaryTotal>
+    <cac:InvoiceLine>
+        <cbc:ID>1</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="ZZ" unitCodeListAgencyName="United Nations Economic Commission for Europe" unitCodeListID="UN/ECE rec 20">1.000</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="USD">2902.00</cbc:LineExtensionAmount>
+        <cac:PricingReference>
+            <cac:AlternativeConditionPrice>
+                <cbc:PriceAmount currencyID="USD">2902.00</cbc:PriceAmount>
+                <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+            </cac:AlternativeConditionPrice>
+        </cac:PricingReference>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+            <cac:TaxSubtotal>
+                <cbc:TaxableAmount currencyID="USD">2902.00</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+                <cac:TaxCategory>
+                    <cbc:Percent>18.00</cbc:Percent>
+                    <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">20</cbc:TaxExemptionReasonCode>
+                    <cac:TaxScheme>
+                        <cbc:ID schemeAgencyName="PE:SUNAT" schemeName="Codigo de tributos" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9997</cbc:ID>
+                        <cbc:Name>EXO</cbc:Name>
+                        <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+                    </cac:TaxScheme>
+                </cac:TaxCategory>
+            </cac:TaxSubtotal>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Description>SERVICIO DE ALOJAMIENTO DEL 04 AL 05 DE ABRIL FILE: 2025-22743 LOCALIZADOR: 20250045475 GRUPO : PERU MAGICO SIN NAZCA 04 TWIN + 14 QUEEN</cbc:Description>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="USD">2902.00000</cbc:PriceAmount>
+        </cac:Price>
+    </cac:InvoiceLine>
+    <cac:InvoiceLine>
+        <cbc:ID>2</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="ZZ" unitCodeListAgencyName="United Nations Economic Commission for Europe" unitCodeListID="UN/ECE rec 20">1.000</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="USD">930.00</cbc:LineExtensionAmount>
+        <cac:PricingReference>
+            <cac:AlternativeConditionPrice>
+                <cbc:PriceAmount currencyID="USD">930.00</cbc:PriceAmount>
+                <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+            </cac:AlternativeConditionPrice>
+        </cac:PricingReference>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+            <cac:TaxSubtotal>
+                <cbc:TaxableAmount currencyID="USD">930.00</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="USD">0.00</cbc:TaxAmount>
+                <cac:TaxCategory>
+                    <cbc:Percent>18.00</cbc:Percent>
+                    <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">20</cbc:TaxExemptionReasonCode>
+                    <cac:TaxScheme>
+                        <cbc:ID schemeAgencyName="PE:SUNAT" schemeName="Codigo de tributos" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9997</cbc:ID>
+                        <cbc:Name>EXO</cbc:Name>
+                        <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+                    </cac:TaxScheme>
+                </cac:TaxCategory>
+            </cac:TaxSubtotal>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Description>SERVICIO DE ALIMENTACION (31 ALMUERZOS) FILE: 2025-22743 LOCALIZADOR: 20250045475 GRUPO : PERU MAGICO SIN NAZCA</cbc:Description>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="USD">930.00000</cbc:PriceAmount>
+        </cac:Price>
+    </cac:InvoiceLine>
+</Invoice>

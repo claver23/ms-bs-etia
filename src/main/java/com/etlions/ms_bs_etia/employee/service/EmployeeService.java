@@ -1,21 +1,16 @@
 package com.etlions.ms_bs_etia.employee.service;
 
-import com.etlions.ms_bs_etia.employee.persistence.EmployeeEntity;
-
-import java.util.List;
+import com.etlions.openapicodegen.dto.*;
 
 public interface EmployeeService {
 
-    EmployeeEntity registrarEmpleado(EmployeeEntity entity);
+    EmployeeResponseDto registrarEmpleado(EmployeeCreateDto request);
 
-    EmployeeEntity actualizarEmpleado(String employeeId, EmployeeEntity entity);
+    EmployeeResponseDto actualizarEmpleado(String employeeId, EmployeeUpdateDto request);
 
-    void eliminarEmpleado(String employeeId, boolean softDelete);
+    SuccessResponse eliminarEmpleado(String employeeId, boolean softDelete);
 
-    List<EmployeeEntity> listarEmpleados(String companyId);
+    EmployeeListResponseDto listarEmpleados(String companyId, String estado);
 
-    List<EmployeeEntity> listarEmpleadosActivos(String companyId);
-
-    EmployeeEntity obtenerEmpleado(String employeeId);
+    EmployeeResponseDto obtenerEmpleado(String employeeId);
 }
-

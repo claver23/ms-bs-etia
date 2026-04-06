@@ -5,7 +5,8 @@ import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_notadeb.mapper.NotaDebitoMapper;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoEntity;
 import com.etlions.ms_bs_etia.doc_notadeb.persistence.NotaDebitoRepository;
-import com.etlions.ms_bs_etia.doc_notadeb.service.docNotadebService;
+import com.etlions.ms_bs_etia.doc_notadeb.service.DocNotadebService;
+import com.etlions.ms_bs_etia.notification.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,20 +18,24 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class docNotadebServiceImpl implements docNotadebService {
+public class DocNotadebServiceImpl implements DocNotadebService {
 
     private final NotaDebitoRepository notaDebitoRepository;
     private final NotaDebitoMapper notaDebitoMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
-    public ActualizarNotaDebitoBorrador200Response emitirNotaDebito(NotaDebitoEmitirRequest request) {
+    public NotaDebitoResponseDto emitirNotaDebito(NotaDebitoEmitirDto request) {
         NotaDebitoEntity entity = notaDebitoMapper.toEntity(request);
         entity.setEstado("BORRADOR");
         entity.setFechaCreacion(LocalDateTime.now());
         NotaDebitoEntity saved = notaDebitoRepository.save(entity);
         NotaDebitoData data = notaDebitoMapper.toData(saved);
-        return new ActualizarNotaDebitoBorrador200Response()
+        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "NOTA_DEBITO",
+                saved.getId(), "",
+                "Nota de débito emitida");
+        return new NotaDebitoResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Nota de débito emitida exitosamente")
@@ -40,8 +45,8 @@ public class docNotadebServiceImpl implements docNotadebService {
 
     @Override
     @Transactional
-    public ActualizarNotaDebitoBorrador200Response actualizarNotaDebitoBorrador(String notaDebitoId,
-                                                                                NotaDebitoUpdateRequest request) {
+    public NotaDebitoResponseDto actualizarNotaDebitoBorrador(String notaDebitoId,
+                                                                                NotaDebitoUpdateDto request) {
         NotaDebitoEntity entity = notaDebitoRepository.findById(notaDebitoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Nota de débito", notaDebitoId));
         // — Solo borradores son editables —
@@ -49,7 +54,7 @@ public class docNotadebServiceImpl implements docNotadebService {
         notaDebitoMapper.updateEntity(request, entity);
         NotaDebitoEntity saved = notaDebitoRepository.save(entity);
         NotaDebitoData data = notaDebitoMapper.toData(saved);
-        return new ActualizarNotaDebitoBorrador200Response()
+        return new NotaDebitoResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Nota de débito actualizada exitosamente")
@@ -73,21 +78,21 @@ public class docNotadebServiceImpl implements docNotadebService {
     }
 
     @Override
-    public ListarNotasDebito200Response listarNotasDebito(String companyId, String facturaReferenciaId,
+    public NotaDebitoListResponseDto listarNotasDebito(String companyId, String facturaReferenciaId,
                                                            Date desdeFecha, Date hastaFecha,
                                                            Integer page, Integer size) {
         List<NotaDebitoEntity> entities = notaDebitoRepository.findByCompanyId(companyId);
         List<NotaDebitoData> dataList = entities.stream()
                 .map(notaDebitoMapper::toData)
                 .toList();
-        ListarNotasDebito200ResponseAllOfData responseData = new ListarNotasDebito200ResponseAllOfData();
+        NotaDebitoListResponseDtoAllOfData responseData = new NotaDebitoListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
                 .currentPage(page)
                 .pageSize(size)
                 .totalElements((long) dataList.size())
                 .totalPages(1));
-        ListarNotasDebito200Response response = new ListarNotasDebito200Response();
+        NotaDebitoListResponseDto response = new NotaDebitoListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
         response.setMessage("Operación exitosa");
@@ -97,11 +102,11 @@ public class docNotadebServiceImpl implements docNotadebService {
     }
 
     @Override
-    public ActualizarNotaDebitoBorrador200Response obtenerNotaDebito(String notaDebitoId) {
+    public NotaDebitoResponseDto obtenerNotaDebito(String notaDebitoId) {
         NotaDebitoEntity entity = notaDebitoRepository.findById(notaDebitoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Nota de débito", notaDebitoId));
         NotaDebitoData data = notaDebitoMapper.toData(entity);
-        return new ActualizarNotaDebitoBorrador200Response()
+        return new NotaDebitoResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Operación exitosa")
@@ -109,3 +114,4 @@ public class docNotadebServiceImpl implements docNotadebService {
                 .data(data);
     }
 }
+

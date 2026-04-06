@@ -1,10 +1,14 @@
 package com.etlions.ms_bs_etia.employee.mapper;
 
 import com.etlions.ms_bs_etia.employee.persistence.EmployeeEntity;
+import com.etlions.openapicodegen.dto.EmployeeCreateDto;
+import com.etlions.openapicodegen.dto.EmployeeData;
+import com.etlions.openapicodegen.dto.EmployeeUpdateDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
-import java.util.Map;
+import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
@@ -12,23 +16,19 @@ public interface EmployeeMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
-    EmployeeEntity toEntity(String companyId,
-                            String nombre,
-                            String cargo,
-                            String dni,
-                            String codigo);
+    EmployeeEntity toEntity(EmployeeCreateDto request);
 
-    default Map<String, Object> toMap(EmployeeEntity entity) {
-        return Map.of(
-                "id", entity.getId(),
-                "companyId", entity.getCompanyId(),
-                "nombre", entity.getNombre() != null ? entity.getNombre() : "",
-                "cargo", entity.getCargo() != null ? entity.getCargo() : "",
-                "dni", entity.getDni() != null ? entity.getDni() : "",
-                "codigo", entity.getCodigo() != null ? entity.getCodigo() : "",
-                "estado", entity.getEstado() != null ? entity.getEstado() : "ACTIVO",
-                "fechaCreacion", entity.getFechaCreacion() != null ? entity.getFechaCreacion().toString() : ""
-        );
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "companyId", ignore = true)
+    @Mapping(target = "estado", ignore = true)
+    @Mapping(target = "fechaCreacion", ignore = true)
+    void updateEntity(EmployeeUpdateDto request, @MappingTarget EmployeeEntity entity);
+
+    @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? EmployeeData.EstadoEnum.fromValue(entity.getEstado()) : EmployeeData.EstadoEnum.ACTIVO)")
+    @Mapping(target = "fechaCreacion", expression = "java(mapLocalDateTime(entity.getFechaCreacion()))")
+    EmployeeData toData(EmployeeEntity entity);
+
+    default java.util.Date mapLocalDateTime(LocalDateTime ldt) {
+        return ldt != null ? java.sql.Timestamp.valueOf(ldt) : null;
     }
 }
-

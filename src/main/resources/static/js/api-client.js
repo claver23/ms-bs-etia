@@ -63,6 +63,31 @@ var ApiClient = (function() {
         });
     }
 
+    function registerClient(payload) {
+        return _post('/client', payload);
+    }
+
+    /* ═══════ RENIEC / SUNAT Document Query ═══════ */
+    function consultarReniec(tipo, numero) {
+        return _get('/reniec?tipo=' + encodeURIComponent(tipo) + '&numero=' + encodeURIComponent(numero));
+    }
+
+    /* ═══════ TIPO DE CAMBIO ═══════ */
+    function getTipoCambio(fecha, moneda, fuente) {
+        var url = '/tipo_cambio?fecha=' + encodeURIComponent(fecha);
+        if (moneda) url += '&moneda=' + encodeURIComponent(moneda);
+        if (fuente) url += '&fuente=' + encodeURIComponent(fuente);
+        return _get(url).then(function(res) {
+            return res.data || res;
+        });
+    }
+
+    function listTiposCambio() {
+        return _get('/tipo_cambio/list').then(function(res) {
+            return (res.data && res.data.content) ? res.data.content : (res.data || []);
+        });
+    }
+
     /* ═══════ EMPLOYEE ═══════ */
     function listEmployees(companyId, estado) {
         var url = '/employee?companyId=' + encodeURIComponent(companyId);
@@ -209,10 +234,52 @@ var ApiClient = (function() {
         });
     }
 
+    /* ═══════ SEDE ═══════ */
+    function listSedes(companyId) {
+        return _get('/sede?companyId=' + encodeURIComponent(companyId)).then(function(res) {
+            return res.data || [];
+        });
+    }
+
+    function getSede(sedeId) {
+        return _get('/sede/' + encodeURIComponent(sedeId)).then(function(res) {
+            return res.data || null;
+        });
+    }
+
+    function createSede(payload) {
+        return _post('/sede', payload);
+    }
+
+    function updateSede(sedeId, payload) {
+        return _put('/sede?sedeId=' + encodeURIComponent(sedeId), payload);
+    }
+
+    function deleteSede(sedeId) {
+        return _delete('/sede?sedeId=' + encodeURIComponent(sedeId));
+    }
+
+    function generarSeriesSede(sedeId) {
+        return _post('/sede/' + encodeURIComponent(sedeId) + '/generar_series', {});
+    }
+
+    /* ═══════ NOTIFICATION / ANNUL ═══════ */
+    function annulDocument(documentId, tipoDocumento, motivoAnulacion) {
+        return _put('/notification/annul', {
+            documentId: documentId,
+            tipoDocumento: tipoDocumento,
+            motivoAnulacion: motivoAnulacion
+        });
+    }
+
     /* ═══════ PUBLIC API ═══════ */
     return {
         listCompanies:      listCompanies,
         listClients:        listClients,
+        registerClient:     registerClient,
+        consultarReniec:    consultarReniec,
+        getTipoCambio:      getTipoCambio,
+        listTiposCambio:    listTiposCambio,
         listEmployees:      listEmployees,
         searchProducts:     searchProducts,
         createProduct:      createProduct,
@@ -222,6 +289,12 @@ var ApiClient = (function() {
         listUbigeos:        listUbigeos,
         listUnidadesMedida: listUnidadesMedida,
         listSeriesConfig:   listSeriesConfig,
+        listSedes:          listSedes,
+        getSede:            getSede,
+        createSede:         createSede,
+        updateSede:         updateSede,
+        deleteSede:         deleteSede,
+        generarSeriesSede:  generarSeriesSede,
         listPreferences:    listPreferences,
         savePreference:     savePreference,
         emitirFactura:      emitirFactura,
@@ -235,6 +308,9 @@ var ApiClient = (function() {
         getNotaCredito:     getNotaCredito,
         emitirNotaDebito:   emitirNotaDebito,
         listarNotasDebito:  listarNotasDebito,
-        getNotaDebito:      getNotaDebito
+        getNotaDebito:      getNotaDebito,
+        annulDocument:      annulDocument,
+        listNotifications:  function(companyId) { return _get('/notifications?companyId=' + companyId); },
+        markAllNotifRead:   function(companyId) { return _put('/notifications/read-all?companyId=' + companyId, {}); }
     };
 })();

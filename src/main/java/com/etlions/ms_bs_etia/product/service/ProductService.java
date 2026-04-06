@@ -1,26 +1,16 @@
 package com.etlions.ms_bs_etia.product.service;
 
-import com.etlions.ms_bs_etia.product.persistence.ProductEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.util.List;
+import com.etlions.openapicodegen.dto.*;
 
 public interface ProductService {
 
-    List<ProductEntity> listarProductos(String companyId);
+    ProductResponseDto crearProducto(ProductCreateDto request);
 
-    List<ProductEntity> listarProductosActivos(String companyId);
+    ProductResponseDto actualizarProducto(String productId, ProductUpdateDto request);
 
-    List<ProductEntity> buscarProductos(String companyId, String term);
+    SuccessResponse eliminarProducto(String productId, boolean softDelete);
 
-    Page<ProductEntity> buscarProductosPaginado(String companyId, String term, String estado, Pageable pageable);
+    ProductListResponseDto buscarProductos(String companyId, String term, String estado, Integer page, Integer size);
 
-    ProductEntity crearProducto(ProductEntity product);
-
-    ProductEntity actualizarProducto(String productId, ProductEntity product);
-
-    void eliminarProducto(String productId, boolean softDelete);
-
-    ProductEntity obtenerProducto(String productId);
+    ProductResponseDto obtenerProducto(String productId);
 }

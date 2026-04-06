@@ -23,5 +23,10 @@ public class SerieConfigServiceImpl implements SerieConfigService {
     public List<SerieConfigEntity> listarPorTipo(String companyId, String tipoDocumento) {
         return serieConfigRepository.findByCompanyIdAndTipoDocumento(companyId, tipoDocumento);
     }
+
+    @Override
+    public List<SerieConfigEntity> listarPorSede(String sedeId) {
+        return serieConfigRepository.findBySedeId(sedeId);
+    }
 }
 

@@ -6,7 +6,8 @@ import com.etlions.ms_bs_etia.app_util.SunatValidator;
 import com.etlions.ms_bs_etia.doc_boleta.mapper.BoletaMapper;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaEntity;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaRepository;
-import com.etlions.ms_bs_etia.doc_boleta.service.docBoletaService;
+import com.etlions.ms_bs_etia.doc_boleta.service.DocBoletaService;
+import com.etlions.ms_bs_etia.notification.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,17 +20,18 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class docBoletaServiceImpl implements docBoletaService {
+public class DocBoletaServiceImpl implements DocBoletaService {
 
     private final BoletaRepository boletaRepository;
     private final BoletaMapper boletaMapper;
     private final CorrelativoService correlativoService;
+    private final NotificationService notificationService;
 
     private static final String DEFAULT_SERIE_BOLETA = "B001";
 
     @Override
     @Transactional
-    public AnularBoleta200Response emitirBoleta(BoletaEmitirRequest request) {
+    public BoletaResponseDto emitirBoleta(BoletaEmitirDto request) {
         // — Validaciones SUNAT —
         String serie = request.getSerie() != null ? request.getSerie().toUpperCase() : DEFAULT_SERIE_BOLETA;
         SunatValidator.validarFormatoSerie(serie);
@@ -46,10 +48,21 @@ public class docBoletaServiceImpl implements docBoletaService {
         if (entity.getFechaEmision() == null) {
             entity.setFechaEmision(LocalDate.now());
         }
+        /* If CONTADO, due date = emission date (date only, no time) */
+        if ("CONTADO".equalsIgnoreCase(entity.getFormaPago()) || entity.getFormaPago() == null) {
+            entity.setFechaVencimiento(entity.getFechaEmision());
+            if (entity.getFormaPago() == null) entity.setFormaPago("CONTADO");
+        }
+        if (entity.getFechaVencimiento() == null) {
+            entity.setFechaVencimiento(entity.getFechaEmision());
+        }
         entity.setFechaCreacion(LocalDateTime.now());
         BoletaEntity saved = boletaRepository.save(entity);
         BoletaData data = boletaMapper.toData(saved);
-        return new AnularBoleta200Response()
+        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "BOLETA",
+                saved.getId(), serie + "-" + numero,
+                "Boleta " + serie + "-" + numero + " emitida");
+        return new BoletaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Boleta emitida exitosamente — " + serie + "-" + numero)
@@ -59,13 +72,16 @@ public class docBoletaServiceImpl implements docBoletaService {
 
     @Override
     @Transactional
-    public AnularBoleta200Response anularBoleta(String boletaId, AnularBoletaRequest request) {
+    public BoletaResponseDto anularBoleta(String boletaId, AnularBoletaDto request) {
         BoletaEntity entity = boletaRepository.findById(boletaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
         entity.setEstado("ANULADA");
         BoletaEntity saved = boletaRepository.save(entity);
         BoletaData data = boletaMapper.toData(saved);
-        return new AnularBoleta200Response()
+        notificationService.publicar(saved.getCompanyId(), "ANULADA", "BOLETA",
+                saved.getId(), saved.getSerie() + "-" + saved.getNumero(),
+                "Boleta " + saved.getSerie() + "-" + saved.getNumero() + " anulada");
+        return new BoletaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Boleta anulada exitosamente")
@@ -89,21 +105,21 @@ public class docBoletaServiceImpl implements docBoletaService {
     }
 
     @Override
-    public ListarBoletas200Response listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
+    public BoletaListResponseDto listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
                                                    String serie, Integer numero,
                                                    Integer page, Integer size) {
         List<BoletaEntity> entities = boletaRepository.findByCompanyId(companyId);
         List<BoletaData> dataList = entities.stream()
                 .map(boletaMapper::toData)
                 .toList();
-        ListarBoletas200ResponseAllOfData responseData = new ListarBoletas200ResponseAllOfData();
+        BoletaListResponseDtoAllOfData responseData = new BoletaListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
                 .currentPage(page)
                 .pageSize(size)
                 .totalElements((long) dataList.size())
                 .totalPages(1));
-        ListarBoletas200Response response = new ListarBoletas200Response();
+        BoletaListResponseDto response = new BoletaListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
         response.setMessage("Operación exitosa");
@@ -113,11 +129,11 @@ public class docBoletaServiceImpl implements docBoletaService {
     }
 
     @Override
-    public AnularBoleta200Response obtenerBoleta(String boletaId) {
+    public BoletaResponseDto obtenerBoleta(String boletaId) {
         BoletaEntity entity = boletaRepository.findById(boletaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
         BoletaData data = boletaMapper.toData(entity);
-        return new AnularBoleta200Response()
+        return new BoletaResponseDto()
                 .isSuccess(true)
                 .status("OK")
                 .message("Operación exitosa")
@@ -125,3 +141,4 @@ public class docBoletaServiceImpl implements docBoletaService {
                 .data(data);
     }
 }
+

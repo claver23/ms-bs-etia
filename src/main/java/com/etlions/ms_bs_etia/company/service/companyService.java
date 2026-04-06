@@ -1,18 +1,19 @@
 package com.etlions.ms_bs_etia.company.service;
 
-import com.etlions.openapicodegen.dto.ActualizarEmpresa200Response;
-import com.etlions.openapicodegen.dto.CompanyRegisterRequest;
-import com.etlions.openapicodegen.dto.CompanyUpdateRequest;
-import com.etlions.openapicodegen.dto.ListarEmpresas200Response;
+import com.etlions.openapicodegen.dto.CompanyResponseDto;
+import com.etlions.openapicodegen.dto.CompanyRegisterDto;
+import com.etlions.openapicodegen.dto.CompanyUpdateDto;
+import com.etlions.openapicodegen.dto.CompanyListResponseDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
-public interface companyService {
+public interface CompanyService {
 
-    ActualizarEmpresa200Response registrarEmpresa(CompanyRegisterRequest request);
+    CompanyResponseDto registrarEmpresa(CompanyRegisterDto request);
 
-    ActualizarEmpresa200Response actualizarEmpresa(String companyId, CompanyUpdateRequest request);
+    CompanyResponseDto actualizarEmpresa(String companyId, CompanyUpdateDto request);
 
     SuccessResponse eliminarEmpresa(String companyId, Boolean softDelete);
 
-    ListarEmpresas200Response listarEmpresas(Integer page, Integer size, String ruc, String estado);
+    CompanyListResponseDto listarEmpresas(Integer page, Integer size, String ruc, String estado);
 }
+

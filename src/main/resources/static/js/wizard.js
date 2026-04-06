@@ -12,6 +12,10 @@ function initWizard(docType) {
     var el = document.getElementById('wiz-detail-title');
     if (el) el.textContent = 'Detalle — ' + (labels[docType] || docType);
 
+    /* Lock sede selector during document creation */
+    var sedeSel = document.getElementById('hdr-sede-select');
+    if (sedeSel) sedeSel.disabled = true;
+
     /* Apply default series from config */
     var serieMap = { FACTURA: 'serieFac', BOLETA: 'serieBol', NOTA_CREDITO: 'serieNC', NOTA_DEBITO: 'serieND' };
     var serieInput = document.getElementById('fac-serie');
@@ -24,6 +28,25 @@ function initWizard(docType) {
     if (monedaSelect && ETIA.config.currency) {
         monedaSelect.value = ETIA.config.currency;
     }
+
+    /* Set fecha emisión to today (date only, no time) */
+    var fechaInput = document.getElementById('fac-fecha');
+    if (fechaInput) {
+        var today = new Date().toISOString().split('T')[0];
+        fechaInput.value = today;
+    }
+
+    /* Set fecha vencimiento = fecha emisión for CONTADO (default) */
+    var fechaVencInput = document.getElementById('fac-fecha-venc');
+    if (fechaVencInput && fechaInput) {
+        fechaVencInput.value = fechaInput.value;
+    }
+
+    /* Show/hide tipo de cambio based on currency */
+    onMonedaChange();
+
+    /* Forma de pago — init */
+    onFormaPagoChange();
 
     /* Auto-set client document type based on doc type (SUNAT rules) */
     var clTipo = document.getElementById('cl-tipo');
@@ -70,19 +93,108 @@ function initWizard(docType) {
     }
 }
 
-/* ═══════ WIZARD NAV ═══════ */
-function wizGo(step) {
-    document.querySelectorAll('#wizard-panels .panel').forEach(function(p) { p.classList.remove('active'); });
-    document.querySelectorAll('.wiz-step').forEach(function(s, i) {
-        s.classList.remove('active');
-        s.classList.toggle('done', i + 1 < step);
+/* ═══════ MONEDA CHANGE — Tipo de cambio ═══════ */
+function onMonedaChange() {
+    recalcTotals();
+    var moneda = document.getElementById('fac-moneda').value;
+    var tcGroup = document.getElementById('fac-tc-group');
+    if (tcGroup) {
+        tcGroup.style.display = (moneda !== 'PEN') ? 'block' : 'none';
+    }
+    if (moneda !== 'PEN') {
+        fetchTipoCambio();
+    }
+}
+
+/* ═══════ FETCH TIPO DE CAMBIO ═══════ */
+function fetchTipoCambio() {
+    var fecha = document.getElementById('fac-fecha').value;
+    var moneda = document.getElementById('fac-moneda').value;
+    var tcInput = document.getElementById('fac-tipo-cambio');
+    var tcFuente = document.getElementById('fac-tc-fuente');
+    if (!fecha || moneda === 'PEN') return;
+
+    tcInput.value = 'Consultando...';
+    var fuente = ETIA.config.tipoCambioFuente || '';
+    ApiClient.getTipoCambio(fecha, moneda, fuente).then(function(data) {
+        if (data && data.tasaVenta) {
+            tcInput.value = parseFloat(data.tasaVenta).toFixed(4);
+            if (tcFuente) tcFuente.textContent = 'Fuente: ' + (data.fuente || 'SBS') + ' — ' + fecha;
+        } else if (data && data.data && data.data.tasaVenta) {
+            tcInput.value = parseFloat(data.data.tasaVenta).toFixed(4);
+            if (tcFuente) tcFuente.textContent = 'Fuente: ' + (data.data.fuente || 'SBS') + ' — ' + fecha;
+        } else {
+            tcInput.value = '—';
+            if (tcFuente) tcFuente.textContent = 'No disponible para esta fecha';
+        }
+    }).catch(function() {
+        tcInput.value = '—';
+        if (tcFuente) tcFuente.textContent = 'Error consultando tipo de cambio';
     });
-    var target = document.getElementById('wiz-' + step);
-    if (target) target.classList.add('active');
-    var steps = document.querySelectorAll('.wiz-step');
-    if (steps[step - 1]) steps[step - 1].classList.add('active');
-    wizStep = step;
-    if (step === 4) populateReview();
+}
+
+/* ═══════ FORMA PAGO CHANGE ═══════ */
+function onFormaPagoChange() {
+    var forma = document.getElementById('fac-forma-pago').value;
+    var fechaVenc = document.getElementById('fac-fecha-venc');
+    var fechaEmision = document.getElementById('fac-fecha');
+    if (forma === 'CONTADO') {
+        if (fechaVenc && fechaEmision) {
+            fechaVenc.value = fechaEmision.value;
+            fechaVenc.readOnly = true;
+        }
+    } else {
+        if (fechaVenc) fechaVenc.readOnly = false;
+    }
+}
+
+/* ═══════ WIZARD NAV — Smooth orchestrated transitions ═══════ */
+function wizGo(step) {
+    /* Skip if already on this step */
+    if (step === wizStep) return;
+
+    var currentPanel = document.getElementById('wiz-' + wizStep);
+    var targetPanel  = document.getElementById('wiz-' + step);
+    var allSteps     = document.querySelectorAll('.wiz-step');
+
+    /* 1. Fade out current panel gracefully */
+    if (currentPanel) {
+        currentPanel.style.transition = 'opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)';
+        currentPanel.style.opacity = '0';
+        currentPanel.style.transform = 'translateY(-8px) scale(0.998)';
+    }
+
+    /* 2. Update step indicators with staggered timing */
+    allSteps.forEach(function(s, i) {
+        var wn = s.querySelector('.wn');
+        s.classList.remove('active');
+        var isDone = (i + 1 < step);
+        s.classList.toggle('done', isDone);
+        if (wn) wn.textContent = isDone ? '✓' : (s.getAttribute('data-icon') || String(i + 1));
+    });
+    if (allSteps[step - 1]) allSteps[step - 1].classList.add('active');
+
+    /* 3. After fadeout completes, swap panels and fade in */
+    setTimeout(function() {
+        document.querySelectorAll('#wizard-panels .panel').forEach(function(p) {
+            p.classList.remove('active');
+            p.style.opacity = '';
+            p.style.transform = '';
+            p.style.transition = '';
+        });
+
+        if (targetPanel) {
+            targetPanel.classList.add('active');
+            /* Force reflow so the animation restarts cleanly */
+            void targetPanel.offsetWidth;
+            targetPanel.style.animation = 'none';
+            void targetPanel.offsetWidth;
+            targetPanel.style.animation = '';
+        }
+
+        wizStep = step;
+        if (step === 4) populateReview();
+    }, 220);
 }
 
 /* ═══════ REVIEW ═══════ */
@@ -99,7 +211,32 @@ function populateReview() {
     var labels = {FACTURA:'Factura Electrónica', BOLETA:'Boleta de Venta', NOTA_CREDITO:'Nota de Crédito', NOTA_DEBITO:'Nota de Débito'};
     document.getElementById('r-tipo').textContent = labels[selectedDocType] || selectedDocType;
     document.getElementById('r-serie').textContent = val('fac-serie');
+    document.getElementById('r-fecha').textContent = val('fac-fecha') || '—';
     document.getElementById('r-moneda').textContent = val('fac-moneda');
+
+    /* Tipo de cambio */
+    var tcRow = document.getElementById('r-tc-row');
+    var moneda = val('fac-moneda');
+    if (tcRow) {
+        if (moneda !== 'PEN') {
+            tcRow.style.display = '';
+            document.getElementById('r-tipo-cambio').textContent = val('fac-tipo-cambio') || '—';
+        } else {
+            tcRow.style.display = 'none';
+        }
+    }
+
+    var rFormaPago = document.getElementById('r-forma-pago');
+    if (rFormaPago) rFormaPago.textContent = val('fac-forma-pago') || 'CONTADO';
+    document.getElementById('r-fecha-venc').textContent = val('fac-fecha-venc') || '—';
+
+    /* Ubigeo from active sede */
+    var rUbigeo = document.getElementById('r-ubigeo');
+    if (rUbigeo) {
+        var sede = ETIA.activeSede;
+        rUbigeo.textContent = sede ? ((sede.codigoUbigeo || '—') + ' · ' + (sede.distrito || '') + ', ' + (sede.provincia || '') + ', ' + (sede.departamento || '')) : '—';
+    }
+
     document.getElementById('r-items').textContent = items.length + ' ítem(s)';
     var g = items.reduce(function(s, i) { return s + i.subtotal; }, 0);
     var iv = items.reduce(function(s, i) { return s + i.igv; }, 0);
@@ -174,12 +311,31 @@ async function emitDoc() {
         };
         emitFn = ApiClient.emitirNotaDebito;
     } else {
+        var fechaEmision = val('fac-fecha') || new Date().toISOString().split('T')[0];
+        var formaPago = val('fac-forma-pago') || 'CONTADO';
+        var fechaVenc = val('fac-fecha-venc') || fechaEmision;
+        /* If CONTADO, due date = emission date (date only) */
+        if (formaPago === 'CONTADO') fechaVenc = fechaEmision;
+
+        var tipoCambioVal = null;
+        if (val('fac-moneda') !== 'PEN') {
+            var tcRaw = val('fac-tipo-cambio');
+            if (tcRaw && tcRaw !== '—' && tcRaw !== 'Consultando...') tipoCambioVal = parseFloat(tcRaw);
+        }
+
+        /* Ubigeo from active sede */
+        var ubigeo = (ETIA.activeSede && ETIA.activeSede.codigoUbigeo) ? ETIA.activeSede.codigoUbigeo : null;
+
         payload = {
             companyId: ETIA.companyId,
             clientId: ETIA.clientId,
             serie: val('fac-serie'),
-            fechaEmision: new Date().toISOString().split('T')[0],
+            fechaEmision: fechaEmision,
             moneda: val('fac-moneda'),
+            formaPago: formaPago,
+            fechaVencimiento: fechaVenc,
+            tipoCambio: tipoCambioVal,
+            codigoUbigeo: ubigeo,
             gravadas: parseFloat(g.toFixed(2)),
             igv: parseFloat(iv.toFixed(2)),
             total: parseFloat(t.toFixed(2)),
@@ -196,6 +352,7 @@ async function emitDoc() {
         if (data.isSuccess) {
             card.className = 'modal-card success';
             title.innerHTML = '✅ <span style="color:var(--accent);">Comprobante emitido exitosamente</span>';
+            if (ETIA.refreshNotifications) ETIA.refreshNotifications();
         } else {
             card.className = 'modal-card error';
             title.innerHTML = '❌ <span style="color:var(--danger);">Error al emitir</span>';
@@ -217,5 +374,8 @@ function resetAll() {
     document.getElementById('modal').classList.remove('show');
     items = []; itemCounter = 0; renderItems();
     clearSelectedProduct();
+    /* Unlock sede selector */
+    var sedeSel = document.getElementById('hdr-sede-select');
+    if (sedeSel) sedeSel.disabled = false;
     window.location.href = '/documents';
 }

@@ -1,13 +1,16 @@
 package com.etlions.ms_bs_etia.employee.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
+import com.etlions.ms_bs_etia.employee.mapper.EmployeeMapper;
 import com.etlions.ms_bs_etia.employee.persistence.EmployeeEntity;
 import com.etlions.ms_bs_etia.employee.persistence.EmployeeRepository;
 import com.etlions.ms_bs_etia.employee.service.EmployeeService;
+import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -15,53 +18,73 @@ import java.util.List;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final EmployeeMapper employeeMapper;
 
     @Override
-    public EmployeeEntity registrarEmpleado(EmployeeEntity entity) {
+    public EmployeeResponseDto registrarEmpleado(EmployeeCreateDto request) {
+        EmployeeEntity entity = employeeMapper.toEntity(request);
         entity.setEstado("ACTIVO");
         entity.setFechaCreacion(LocalDateTime.now());
-        return employeeRepository.save(entity);
+        EmployeeEntity saved = employeeRepository.save(entity);
+        EmployeeData data = employeeMapper.toData(saved);
+        return new EmployeeResponseDto()
+                .isSuccess(true).status("OK")
+                .message("Empleado registrado exitosamente")
+                .timestamp(new Date()).data(data);
     }
 
     @Override
-    public EmployeeEntity actualizarEmpleado(String employeeId, EmployeeEntity updated) {
+    public EmployeeResponseDto actualizarEmpleado(String employeeId, EmployeeUpdateDto request) {
         EmployeeEntity entity = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado: " + employeeId));
-
-        if (updated.getNombre() != null) entity.setNombre(updated.getNombre());
-        if (updated.getCargo() != null) entity.setCargo(updated.getCargo());
-        if (updated.getDni() != null) entity.setDni(updated.getDni());
-        if (updated.getCodigo() != null) entity.setCodigo(updated.getCodigo());
-
-        return employeeRepository.save(entity);
+                .orElseThrow(() -> new ResourceNotFoundException("Empleado", employeeId));
+        employeeMapper.updateEntity(request, entity);
+        EmployeeEntity saved = employeeRepository.save(entity);
+        EmployeeData data = employeeMapper.toData(saved);
+        return new EmployeeResponseDto()
+                .isSuccess(true).status("OK")
+                .message("Empleado actualizado exitosamente")
+                .timestamp(new Date()).data(data);
     }
 
     @Override
-    public void eliminarEmpleado(String employeeId, boolean softDelete) {
+    public SuccessResponse eliminarEmpleado(String employeeId, boolean softDelete) {
         if (softDelete) {
             EmployeeEntity entity = employeeRepository.findById(employeeId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado: " + employeeId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Empleado", employeeId));
             entity.setEstado("INACTIVO");
             employeeRepository.save(entity);
         } else {
             employeeRepository.deleteById(employeeId);
         }
+        return new SuccessResponse()
+                .isSuccess(true).status("OK")
+                .message("Empleado eliminado exitosamente")
+                .timestamp(new Date());
     }
 
     @Override
-    public List<EmployeeEntity> listarEmpleados(String companyId) {
-        return employeeRepository.findByCompanyId(companyId);
+    public EmployeeListResponseDto listarEmpleados(String companyId, String estado) {
+        List<EmployeeEntity> employees;
+        if ("ACTIVO".equalsIgnoreCase(estado)) {
+            employees = employeeRepository.findByCompanyIdAndEstado(companyId, "ACTIVO");
+        } else {
+            employees = employeeRepository.findByCompanyId(companyId);
+        }
+        List<EmployeeData> dataList = employees.stream().map(employeeMapper::toData).toList();
+        return new EmployeeListResponseDto()
+                .isSuccess(true).status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date()).data(dataList);
     }
 
     @Override
-    public List<EmployeeEntity> listarEmpleadosActivos(String companyId) {
-        return employeeRepository.findByCompanyIdAndEstado(companyId, "ACTIVO");
-    }
-
-    @Override
-    public EmployeeEntity obtenerEmpleado(String employeeId) {
-        return employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado: " + employeeId));
+    public EmployeeResponseDto obtenerEmpleado(String employeeId) {
+        EmployeeEntity entity = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empleado", employeeId));
+        EmployeeData data = employeeMapper.toData(entity);
+        return new EmployeeResponseDto()
+                .isSuccess(true).status("OK")
+                .message("Operación exitosa")
+                .timestamp(new Date()).data(data);
     }
 }
-

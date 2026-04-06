@@ -1,6 +1,7 @@
 package com.etlions.ms_bs_etia.ubigeo.openapi;
 
 import com.etlions.ms_bs_etia.ubigeo.persistence.UbigeoEntity;
+import com.etlions.ms_bs_etia.ubigeo.mapper.UbigeoMapper;
 import com.etlions.ms_bs_etia.ubigeo.service.UbigeoService;
 import com.etlions.openapicodegen.api.v1.UbigeoApi;
 import com.etlions.openapicodegen.dto.UbigeoData;
@@ -17,22 +18,12 @@ import java.util.List;
 public class UbigeoOpenApi implements UbigeoApi {
 
     private final UbigeoService ubigeoService;
+    private final UbigeoMapper ubigeoMapper;
 
     @Override
     public ResponseEntity<List<UbigeoData>> listarUbigeos() {
         List<UbigeoEntity> entities = ubigeoService.listarTodos();
-        List<UbigeoData> data = entities.stream().map(this::toData).toList();
+        List<UbigeoData> data = entities.stream().map(ubigeoMapper::toData).toList();
         return ResponseEntity.ok(data);
     }
-
-    private UbigeoData toData(UbigeoEntity e) {
-        UbigeoData d = new UbigeoData();
-        d.setId(e.getId());
-        d.setCodigo(e.getCodigo());
-        d.setDepartamento(e.getDepartamento());
-        d.setProvincia(e.getProvincia());
-        d.setDistrito(e.getDistrito());
-        return d;
-    }
 }
-
