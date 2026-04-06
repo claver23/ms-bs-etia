@@ -3,6 +3,8 @@ package com.etlions.ms_bs_etia.doc_factura.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_util.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
+import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
@@ -26,6 +28,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     private final FacturaMapper facturaMapper;
     private final CorrelativoService correlativoService;
     private final NotificationService notificationService;
+    private final ClientRepository clientRepository;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
 
@@ -37,6 +40,13 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         SunatValidator.validarFormatoSerie(serie);
         SunatValidator.validarSerieFactura(serie);
         SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal());
+
+        // — Validar tipo de documento del cliente: Factura → solo RUC —
+        if (request.getClientId() != null && !request.getClientId().isBlank()) {
+            ClientEntity client = clientRepository.findById(request.getClientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente", request.getClientId()));
+            SunatValidator.validarTipoDocumentoCliente("FACTURA", client.getTipoDocumento());
+        }
 
         // — Correlativo automático (ignora numero del request) —
         int numero = correlativoService.siguienteNumero(request.getCompanyId(), serie);

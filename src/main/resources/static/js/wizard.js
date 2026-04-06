@@ -50,13 +50,33 @@ function initWizard(docType) {
 
     /* Auto-set client document type based on doc type (SUNAT rules) */
     var clTipo = document.getElementById('cl-tipo');
-    if (clTipo && !ETIA.clientId) {
-        /* No client selected yet — apply default based on document type */
+    if (clTipo) {
+        /* Determine allowed document types per SUNAT rules */
+        var allowedTypes;
         if (docType === 'FACTURA' || docType === 'NOTA_CREDITO' || docType === 'NOTA_DEBITO') {
-            clTipo.value = '6'; /* RUC — empresas */
+            allowedTypes = ['6']; /* RUC only */
         } else if (docType === 'BOLETA') {
-            clTipo.value = '1'; /* DNI — personas naturales */
+            allowedTypes = ['1', '4', '7']; /* DNI, C.E., Pasaporte */
+        } else {
+            allowedTypes = ['6', '1', '4', '7', '0']; /* All */
         }
+
+        /* Store globally so client-modal.js can use it */
+        ETIA.allowedClientDocTypes = allowedTypes;
+
+        /* Show/hide options in cl-tipo select */
+        var clOptions = clTipo.querySelectorAll('option');
+        clOptions.forEach(function(opt) {
+            opt.style.display = (allowedTypes.indexOf(opt.value) !== -1) ? '' : 'none';
+        });
+
+        /* Set default value */
+        if (!ETIA.clientId) {
+            clTipo.value = allowedTypes[0];
+        }
+
+        /* Disable the select — user must use client modal to change it */
+        clTipo.disabled = true;
     }
 
     /* Reset items on wizard init */

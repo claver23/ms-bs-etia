@@ -62,7 +62,7 @@
         pageItems.forEach(function(d) {
             var estado = d.estado||'—', badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ANULADA' ? 'badge-red' : 'badge-green';
             var monSym = (d.moneda === 'USD') ? 'US$ ' : 'S/ ';
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'boleta\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">' + (d.serie||'') + '-' + (d.numero||'') + '</strong><span class="badge ' + badgeCls + '">' + estado + '</span></div><div class="dli-right"><span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span><span class="dli-date">' + (d.fechaEmision||d.fechaCreacion||'—') + '</span></div></div>' + renderItemDetail(d.detalle) + '</div>';
+            html += '<div class="doc-list-item" onclick="openDocPreview(\'boleta\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">' + (d.serie||'') + '-' + (d.numero||'') + '</strong><span class="badge ' + badgeCls + '">' + estado + '</span></div><div class="dli-right"><span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaEmision||d.fechaCreacion) + '</span></div></div>' + renderItemDetail(d.detalle) + '</div>';
         });
         document.getElementById('doc-content').innerHTML = html + '</div>';
         var bar = document.getElementById('doc-pag'); bar.style.display = 'flex';

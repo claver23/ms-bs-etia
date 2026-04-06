@@ -92,7 +92,7 @@
                     '</div>' +
                     '<div class="dli-right">' +
                         '<span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span>' +
-                        '<span class="dli-date">' + (d.fechaEmision||d.fechaCreacion||'—') + '</span>' +
+                        '<span class="dli-date">' + ETIA.formatDate(d.fechaEmision||d.fechaCreacion) + '</span>' +
                     '</div>' +
                 '</div>' +
                 renderItemDetail(d.detalle) +

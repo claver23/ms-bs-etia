@@ -59,7 +59,7 @@
         var html = '<div class="doc-list-cards">';
         pageItems.forEach(function(d) {
             var estado = d.estado||'—', badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ACEPTADA' ? 'badge-green' : estado === 'RECHAZADA' ? 'badge-red' : 'badge-blue';
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'nota_debito\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">ND</strong><span class="badge ' + badgeCls + '">' + estado + '</span><span class="dli-motivo">' + (d.motivo||'—') + '</span></div><div class="dli-right"><span class="dli-total" style="color:var(--warning);">+S/ ' + (parseFloat(d.montoIncremento)||0).toFixed(2) + '</span><span class="dli-date">' + (d.fechaCreacion||'—') + '</span></div></div><div class="dli-ref">📎 Ref: ' + (d.facturaReferenciaId||'—') + '</div>' + renderItemDetail(d.detalle) + '</div>';
+            html += '<div class="doc-list-item" onclick="openDocPreview(\'nota_debito\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">ND</strong><span class="badge ' + badgeCls + '">' + estado + '</span><span class="dli-motivo">' + (d.motivo||'—') + '</span></div><div class="dli-right"><span class="dli-total" style="color:var(--warning);">+S/ ' + (parseFloat(d.montoIncremento)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaCreacion) + '</span></div></div><div class="dli-ref">📎 Ref: ' + (d.facturaReferenciaId||'—') + '</div>' + renderItemDetail(d.detalle) + '</div>';
         });
         document.getElementById('doc-content').innerHTML = html + '</div>';
         var bar = document.getElementById('doc-pag'); bar.style.display = 'flex';

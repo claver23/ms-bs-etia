@@ -261,3 +261,27 @@ ETIA.refreshNotifications = function() {
     }
 };
 
+/* ─── Date Formatting Utility ─── */
+/**
+ * Formats an ISO date string (yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss) to dd/MM/yyyy.
+ * Returns '—' if input is falsy or unparseable.
+ */
+ETIA.formatDate = function(dateStr) {
+    if (!dateStr) return '—';
+    /* Handle both "yyyy-MM-dd" and "yyyy-MM-ddTHH:mm:ss..." */
+    var parts = String(dateStr).substring(0, 10).split('-');
+    if (parts.length !== 3) return dateStr;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+};
+
+/**
+ * Formats an ISO datetime string to dd/MM/yyyy HH:mm.
+ */
+ETIA.formatDateTime = function(dateStr) {
+    if (!dateStr) return '—';
+    var d = ETIA.formatDate(dateStr);
+    if (d === '—') return '—';
+    var timePart = String(dateStr).substring(11, 16);
+    return timePart ? (d + ' ' + timePart) : d;
+};
+

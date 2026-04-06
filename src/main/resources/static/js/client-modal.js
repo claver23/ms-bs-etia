@@ -32,6 +32,9 @@ function openClientModal() {
     document.getElementById('cm-results').innerHTML = '<div class="pm-empty">Cargando clientes...</div>';
     setTimeout(function(){ input.focus(); }, 100);
 
+    /* Filter register tab tipo select based on allowed types */
+    _filterRegisterTipoOptions();
+
     /* Pre-load all clients */
     if (_allClients) {
         renderClientResults(_allClients, '');
@@ -43,6 +46,24 @@ function openClientModal() {
             document.getElementById('cm-results').innerHTML = '<div class="pm-empty" style="color:var(--danger);">Error cargando clientes</div>';
         });
     }
+}
+
+/* ─── Filter register tipo options based on SUNAT rules ─── */
+function _filterRegisterTipoOptions() {
+    var regTipo = document.getElementById('cm-reg-tipo');
+    if (!regTipo || !ETIA.allowedClientDocTypes) return;
+    var allowed = ETIA.allowedClientDocTypes;
+    /* Map code → enum name used in register select */
+    var codeToEnum = { '1':'DNI', '4':'CE', '6':'RUC', '7':'PASAPORTE' };
+    var allowedEnums = allowed.map(function(c) { return codeToEnum[c] || c; });
+    var opts = regTipo.querySelectorAll('option');
+    var firstVisible = null;
+    opts.forEach(function(opt) {
+        var show = (allowedEnums.indexOf(opt.value) !== -1);
+        opt.style.display = show ? '' : 'none';
+        if (show && !firstVisible) firstVisible = opt.value;
+    });
+    if (firstVisible) regTipo.value = firstVisible;
 }
 
 function closeClientModal() {
@@ -68,16 +89,33 @@ function onModalClientSearch(term) {
 function renderClientResults(clients, term) {
     var container = document.getElementById('cm-results');
     var filtered = clients;
+
+    /* ── Filter by allowed document types (SUNAT rules) ── */
+    if (ETIA.allowedClientDocTypes && ETIA.allowedClientDocTypes.length > 0) {
+        var allowed = ETIA.allowedClientDocTypes;
+        /* Map enum names to SUNAT codes for comparison */
+        var enumToCode = { 'DNI':'1', 'RUC':'6', 'CE':'4', 'PASAPORTE':'7' };
+        filtered = filtered.filter(function(c) {
+            var code = enumToCode[c.tipoDocumento] || c.tipoDocumento || '';
+            return allowed.indexOf(code) !== -1;
+        });
+    }
+
     if (term && term.trim().length > 0) {
         var t = term.toLowerCase();
-        filtered = clients.filter(function(c) {
+        filtered = filtered.filter(function(c) {
             return (c.denominacion && c.denominacion.toLowerCase().includes(t)) ||
                    (c.numeroDocumento && c.numeroDocumento.toLowerCase().includes(t)) ||
                    (c.email && c.email.toLowerCase().includes(t));
         });
     }
     if (!filtered || filtered.length === 0) {
-        container.innerHTML = '<div class="pm-empty">No se encontraron clientes' + (term ? ' para "' + term + '"' : '') + '</div>';
+        var docTypeMsg = '';
+        if (ETIA.allowedClientDocTypes) {
+            var labels = { '6':'RUC', '1':'DNI', '4':'C.E.', '7':'Pasaporte' };
+            docTypeMsg = ' (solo ' + ETIA.allowedClientDocTypes.map(function(c) { return labels[c]||c; }).join(', ') + ')';
+        }
+        container.innerHTML = '<div class="pm-empty">No se encontraron clientes' + docTypeMsg + (term ? ' para "' + term + '"' : '') + '</div>';
         return;
     }
     var tipoLabels = { '1':'DNI', '6':'RUC', '4':'C.E.', '7':'Pasaporte', 'DNI':'DNI', 'RUC':'RUC', 'CE':'C.E.', 'PASAPORTE':'Pasaporte' };

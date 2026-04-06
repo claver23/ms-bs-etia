@@ -17,6 +17,7 @@
 </p>
 
 <p align="center">
+  <a href="#-novedades-abril-2026">Novedades</a> •
   <a href="#-arquitectura">Arquitectura</a> •
   <a href="#-dominios">Dominios</a> •
   <a href="#-api-endpoints">API</a> •
@@ -26,6 +27,68 @@
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-roadmap">Roadmap</a>
 </p>
+
+---
+
+## ✨ Novedades (Abril 2026)
+
+> Resumen de las funcionalidades más recientes implementadas en **Fase 1.5** — de wizard demo a **aplicación de facturación completa conforme a SUNAT**.
+
+### 🛡️ Validaciones SUNAT pre-emisión
+
+| Validación | Detalle |
+|------------|---------|
+| **Tipo de documento del cliente** | Factura → solo clientes con RUC (`6`). Boleta → solo DNI (`1`), Carnet de Extranjería (`4`) o Pasaporte (`7`). Valida automáticamente al emitir. |
+| **Formato de serie** | Debe cumplir `^[A-Z]\d{3}$` (ej: `F001`, `B001`). Rechaza series mal formateadas. |
+| **Prefijo de serie** | Factura debe iniciar con `F`, Boleta con `B`. Validación estricta por tipo de comprobante. |
+| **Cuadre de totales** | Verifica que `total == gravadas + IGV` con tolerancia de ±0.01 por redondeo. |
+| **Eliminación protegida** | Solo los comprobantes en estado `BORRADOR` pueden eliminarse. Docs emitidos/aceptados/anulados están protegidos. |
+
+### 🔢 Emisión inteligente de comprobantes
+
+| Feature | Detalle |
+|---------|---------|
+| **Auto-correlativo** | Cada serie mantiene su propio contador atómico (`CorrelativoService`). F001-1, F001-2, F001-3… sin saltos. |
+| **Serie por defecto** | Si no se especifica serie, se asigna `F001` (factura) o `B001` (boleta). |
+| **Fecha automática** | Si no se envía `fechaEmision`, se asigna la fecha actual. |
+| **Forma de pago** | Default `CONTADO`. En modo contado, `fechaVencimiento = fechaEmision` automáticamente. |
+| **Estado inicial** | Todo comprobante nace como `BORRADOR`. Flujo: `BORRADOR → ACEPTADA → ANULADA`. |
+| **Notificación automática** | Cada emisión y anulación genera una notificación in-memory con serie, número y acción. |
+
+### 🏪 Gestión de sedes y series
+
+| Feature | Detalle |
+|---------|---------|
+| **Auto-generación de series** | Al crear sede, se generan 4 series automáticas: `F{cod}`, `B{cod}`, `FC{cod2}`, `FD{cod2}`. |
+| **Código correlativo** | Cada sede recibe código auto-incremental de 3 dígitos (`001`, `002`, `003`…). |
+| **Sede default** | La primera sede creada para una empresa se marca como default. |
+| **Eliminación en cascada** | Al desactivar una sede, todas sus series asociadas se desactivan automáticamente. |
+
+### 👤 Consulta RENIEC / SUNAT (mock)
+
+| Feature | Detalle |
+|---------|---------|
+| **Consulta DNI** | Retorna nombre, apellidos, dirección y ubigeo (mock — en producción conectará con RENIEC). |
+| **Consulta RUC** | Retorna razón social, dirección, estado y condición (mock — en producción conectará con SUNAT). |
+| **Frontend integrado** | El modal de clientes consulta RENIEC/SUNAT en tiempo real al ingresar DNI o RUC. |
+
+### 🔔 Sistema de notificaciones
+
+| Feature | Detalle |
+|---------|---------|
+| **Store in-memory** | `ConcurrentLinkedDeque` con notificaciones por empresa (thread-safe). |
+| **Badge en tiempo real** | Contador de no-leídas en el header, actualización automática. |
+| **Acciones REST** | Listar, marcar leída, marcar todas leídas, limpiar por empresa. |
+| **Auto-publicación** | Emisión y anulación de cualquier comprobante genera notificación automática. |
+
+### 🖥️ Frontend SUNAT-aware
+
+| Feature | Detalle |
+|---------|---------|
+| **Filtro de tipo de documento** | El wizard filtra automáticamente los tipos de documento permitidos para el cliente según el tipo de comprobante. |
+| **Cambio de sede** | Al cambiar sede en Config, las series se actualizan automáticamente en el wizard. |
+| **14 vistas MPA** | Welcome, Menu, Documents, Facturas, Boletas, Notas C/D, Clients, Products, Employees, Sedes, TC, Resúmenes, Wizard. |
+| **10 módulos JS** | Separación de responsabilidades: api-client, app-state, wizard, items, client-modal, product-modal, config-overlay, doc-preview, error-handler, navigation. |
 
 ---
 
@@ -258,7 +321,8 @@ com.etlions.ms_bs_etia
 │
 ├── 👤 reniec/                     Consulta RENIEC / SUNAT (DNI ↔ RUC)
 │   ├── openapi/                   ReniecOpenApi.java
-│   └── service/                   ReniecService.java
+│   ├── service/                   ReniecService.java
+│   └── service/impl/              ReniecServiceImpl.java (mock — producción conectará APIs externas)
 │
 ├── ⚙️ user_preference/            Preferencias de usuario por empresa
 │   ├── openapi/                   UserPreferenceOpenApi.java
@@ -1021,7 +1085,7 @@ java -jar target/ms-bs-etia-0.0.1-SNAPSHOT.jar
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos Java (src) | **123** |
+| Archivos Java (src) | **124** |
 | Dominios de negocio | **17** |
 | Endpoints REST (OpenAPI) | **54** |
 | Endpoints Notificaciones | **4** |

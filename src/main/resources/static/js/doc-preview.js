@@ -80,14 +80,14 @@ var DocPreview = (function() {
 
         if (docType === 'factura' || docType === 'boleta') {
             html += _field('Serie / Número', (doc.serie || '') + '-' + (doc.numero || ''));
-            html += _field('Fecha Emisión', doc.fechaEmision || doc.fechaCreacion || '—');
+            html += _field('Fecha Emisión', ETIA.formatDate(doc.fechaEmision || doc.fechaCreacion));
             html += _field('Moneda', doc.moneda || 'PEN');
             html += _field('Estado', estado);
         } else {
             html += _field('Tipo', docType === 'nota_credito' ? 'Nota de Crédito' : 'Nota de Débito');
             html += _field('Motivo', doc.motivo || '—');
             html += _field('Estado', estado);
-            html += _field('Fecha', doc.fechaCreacion || '—');
+            html += _field('Fecha', ETIA.formatDate(doc.fechaCreacion));
             if (doc.facturaReferenciaId) {
                 html += _field('Ref. Factura', doc.facturaReferenciaId);
             }

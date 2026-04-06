@@ -81,10 +81,10 @@
                 var fuenteBadge = tc.fuente === 'SBS'
                     ? '<span class="badge badge-green">' + tc.fuente + '</span>'
                     : '<span class="badge badge-blue">' + tc.fuente + '</span>';
-                var creado = tc.fechaCreacion ? tc.fechaCreacion.substring(0, 16).replace('T', ' ') : '—';
+                var creado = tc.fechaCreacion ? ETIA.formatDateTime(tc.fechaCreacion) : '—';
 
                 html += '<tr>';
-                html += '<td><strong>' + tc.fecha + '</strong></td>';
+                html += '<td><strong>' + ETIA.formatDate(tc.fecha) + '</strong></td>';
                 html += '<td>' + tc.monedaOrigen + ' → ' + tc.monedaDestino + '</td>';
                 html += '<td style="font-family:var(--font-mono);font-weight:600;">' + parseFloat(tc.tasaCompra).toFixed(4) + '</td>';
                 html += '<td style="font-family:var(--font-mono);font-weight:600;">' + parseFloat(tc.tasaVenta).toFixed(4) + '</td>';

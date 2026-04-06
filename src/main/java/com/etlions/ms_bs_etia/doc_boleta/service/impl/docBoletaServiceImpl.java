@@ -3,6 +3,8 @@ package com.etlions.ms_bs_etia.doc_boleta.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_util.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.SunatValidator;
+import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
+import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.doc_boleta.mapper.BoletaMapper;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaEntity;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaRepository;
@@ -26,6 +28,7 @@ public class DocBoletaServiceImpl implements DocBoletaService {
     private final BoletaMapper boletaMapper;
     private final CorrelativoService correlativoService;
     private final NotificationService notificationService;
+    private final ClientRepository clientRepository;
 
     private static final String DEFAULT_SERIE_BOLETA = "B001";
 
@@ -37,6 +40,13 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         SunatValidator.validarFormatoSerie(serie);
         SunatValidator.validarSerieBoleta(serie);
         SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal());
+
+        // — Validar tipo de documento del cliente: Boleta → solo DNI, C.E. o Pasaporte —
+        if (request.getClientId() != null && !request.getClientId().isBlank()) {
+            ClientEntity client = clientRepository.findById(request.getClientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente", request.getClientId()));
+            SunatValidator.validarTipoDocumentoCliente("BOLETA", client.getTipoDocumento());
+        }
 
         // — Correlativo automático (ignora numero del request) —
         int numero = correlativoService.siguienteNumero(request.getCompanyId(), serie);

@@ -6,10 +6,42 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class SunatValidator {
 
     private SunatValidator() {
+    }
+
+    /* Tipos de documento de identidad permitidos por tipo de comprobante (SUNAT) */
+    private static final Set<String> FACTURA_DOC_TYPES = Set.of("6");               // RUC
+    private static final Set<String> BOLETA_DOC_TYPES  = Set.of("1", "4", "7");     // DNI, C.E., Pasaporte
+
+    /**
+     * Valida que el tipo de documento de identidad del cliente sea compatible
+     * con el tipo de comprobante (FACTURA o BOLETA) según reglas SUNAT.
+     *
+     * @param tipoComprobante  "FACTURA" o "BOLETA"
+     * @param tipoDocCliente   Código SUNAT del tipo de documento de identidad del cliente ("1","4","6","7")
+     */
+    public static void validarTipoDocumentoCliente(String tipoComprobante, String tipoDocCliente) {
+        if (tipoDocCliente == null || tipoDocCliente.isBlank()) {
+            throw new SunatValidationException(
+                    "SUNAT: El tipo de documento de identidad del cliente es obligatorio.");
+        }
+        if ("FACTURA".equalsIgnoreCase(tipoComprobante)) {
+            if (!FACTURA_DOC_TYPES.contains(tipoDocCliente)) {
+                throw new SunatValidationException(
+                        "SUNAT: Para una Factura, el cliente debe tener RUC (tipo documento '6'). "
+                                + "Tipo recibido: '" + tipoDocCliente + "'.");
+            }
+        } else if ("BOLETA".equalsIgnoreCase(tipoComprobante)) {
+            if (!BOLETA_DOC_TYPES.contains(tipoDocCliente)) {
+                throw new SunatValidationException(
+                        "SUNAT: Para una Boleta, el cliente debe tener DNI ('1'), Carnet de Extranjería ('4') "
+                                + "o Pasaporte ('7'). Tipo recibido: '" + tipoDocCliente + "'.");
+            }
+        }
     }
 
     /**
