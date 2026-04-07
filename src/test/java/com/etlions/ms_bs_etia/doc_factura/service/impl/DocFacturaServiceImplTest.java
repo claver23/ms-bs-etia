@@ -12,6 +12,7 @@ import com.etlions.ms_bs_etia.doc_factura.persistence.AllowanceChargeRepository;
 import com.etlions.ms_bs_etia.doc_factura.persistence.CuotaCreditoRepository;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
+import com.etlions.ms_bs_etia.doc_factura.xml.UblInvoiceXmlBuilder;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,7 @@ class DocFacturaServiceImplTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private CuotaCreditoRepository cuotaCreditoRepository;
     @Mock private AllowanceChargeRepository allowanceChargeRepository;
+    @Mock private UblInvoiceXmlBuilder ublXmlBuilder;
 
     @InjectMocks
     private DocFacturaServiceImpl service;
@@ -123,7 +125,7 @@ class DocFacturaServiceImplTest {
             stubEmisionExitosa(req);
             FacturaResponseDto r = service.emitirFactura(req);
             assertTrue(r.getIsSuccess());
-            verify(facturaRepository).save(any());
+            verify(facturaRepository, times(2)).save(any());
             verify(notificationService).publicar(eq("COMP-1"), eq("EMITIDA"),
                     eq("FACTURA"), anyString(), anyString(), anyString());
         }

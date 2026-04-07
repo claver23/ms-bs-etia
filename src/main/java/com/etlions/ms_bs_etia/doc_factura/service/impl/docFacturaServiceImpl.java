@@ -5,10 +5,12 @@ import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
+import com.etlions.ms_bs_etia.company.persistence.CompanyEntity;
 import com.etlions.ms_bs_etia.company.persistence.CompanyRepository;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
 import com.etlions.ms_bs_etia.doc_factura.persistence.*;
 import com.etlions.ms_bs_etia.doc_factura.service.DocFacturaService;
+import com.etlions.ms_bs_etia.doc_factura.xml.UblInvoiceXmlBuilder;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -35,6 +38,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     private final CompanyRepository companyRepository;
     private final CuotaCreditoRepository cuotaCreditoRepository;
     private final AllowanceChargeRepository allowanceChargeRepository;
+    private final UblInvoiceXmlBuilder ublXmlBuilder;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
 
@@ -147,6 +151,13 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         List<AllowanceChargeEntity> acEntities = persistAllowanceCharges(
                 request.getCargosDescuentos(), saved.getId(), null, saved.getMoneda());
 
+        // ── 11. Generar XML UBL 2.1 ──
+        CompanyEntity company = companyRepository.findById(saved.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", saved.getCompanyId()));
+        String xml = ublXmlBuilder.buildInvoiceXml(saved, company, client, cuotaEntities, acEntities);
+        saved.setXmlContent(xml);
+        facturaRepository.save(saved);
+
         FacturaData data = facturaMapper.toData(saved);
         enrichFacturaData(data, cuotaEntities, acEntities);
 
@@ -234,6 +245,24 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                 .message("Operación exitosa")
                 .timestamp(new Date())
                 .data(data);
+    }
+
+    @Override
+    public FacturaXmlResult descargarFacturaXml(String facturaId) {
+        FacturaEntity entity = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
+
+        String filename = entity.getSerie() + "-" + entity.getNumero() + ".xml";
+
+        if (entity.getXmlContent() == null || entity.getXmlContent().isBlank()) {
+            return new FacturaXmlResult(null, filename, false);
+        }
+
+        return new FacturaXmlResult(
+                entity.getXmlContent().getBytes(StandardCharsets.UTF_8),
+                filename,
+                true
+        );
     }
 
     // ═══════ HELPERS ═══════

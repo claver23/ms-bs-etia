@@ -21,5 +21,18 @@ public interface DocFacturaService {
                                              Integer page, Integer size);
 
     FacturaResponseDto obtenerFactura(String facturaId);
+
+    /**
+     * Obtiene el XML UBL 2.1 de una factura.
+     *
+     * @param facturaId ID de la factura
+     * @return record con bytes, filename y flag de contenido presente;
+     *         null bytes si la factura aún no tiene XML generado
+     * @throws com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException si la factura no existe
+     */
+    FacturaXmlResult descargarFacturaXml(String facturaId);
+
+    /** DTO inmutable para el resultado de descarga XML */
+    record FacturaXmlResult(byte[] content, String filename, boolean hasContent) {}
 }
 

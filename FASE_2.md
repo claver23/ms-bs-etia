@@ -212,3 +212,87 @@ Analicé `F003-00001716` (factura) y `B002-2058` (boleta). Estos son **todos** l
 - Columna "Afectación" en tabla de ítems (reemplaza "IGV" por dropdown)
 - Dropdown "Tipo Operación" (Cat. 51): 0101, 0200, 0401
 - Filas condicionales "Op. Exoneradas" / "Op. Inafectas" en totales
+
+---
+
+## PARTE 6 — Análisis Final: ¿Qué falta para 100%?
+
+> **Fecha de corte:** 2026-04-07
+
+### Estado del Modelo de Datos: ~95% ✅
+
+Todos los campos del XML real `F003-00001716.xml` (218 líneas, UBL 2.1) tienen contraparte en:
+- `FacturaEntity` (20 campos mapeados)
+- `DetalleItem` DTO (13 campos tributarios)
+- `CuotaCreditoEntity` (cuotas de crédito)
+- `AllowanceChargeEntity` (cargos/descuentos Cat.53)
+- `CompanyEntity` (emisor completo)
+- `ClientEntity` (receptor con depto/prov/dist/país)
+
+**12 catálogos SUNAT cubiertos:** 01, 02, 03, 04, 05, 06, 07, 13, 16, 51, 52, 53
+
+### Pendientes para completar la cadena de facturación:
+
+| # | Componente | Descripción | Esfuerzo | Estado |
+|---|---|---|---|---|
+| 1 | **`UblInvoiceXmlBuilder`** | Servicio que ensambla el XML UBL 2.1 desde las entidades. Namespaces, atributos schemeID, secciones Supplier/Customer/PaymentTerms/AllowanceCharge/TaxTotal/LegalMonetaryTotal/InvoiceLine. | 🔴 Alto | ✅ **Completado** — 36 tests |
+| 2 | **Endpoint XML descarga** | `GET /factura/{facturaId}/xml` — regularizado al patrón OpenAPI-first (spec → codegen → service → controller). | 🟡 Medio | ✅ **Completado** |
+| 3 | **`SunatProperties` ampliado** | Configuración type-safe con `certificado.base-path` y `sol.default-user/password` en `application.yaml`. | 🟢 Bajo | ✅ **Completado** |
+| 4 | **`DigitalSignatureService`** | Firma digital X.509 enveloped-signature. Cargar .pfx/.p12, firmar con RSA-SHA, insertar ds:Signature en UBLExtensions. | 🔴 Alto | ❌ Pendiente |
+| 5 | **`SunatSoapClient`** | Envío SOAP a SUNAT (sendBill/sendSummary), parseo de CDR, actualización de hashCdr/codigoRespuesta/estado en entidad. | 🟡 Medio | ❌ Pendiente |
+| 6 | **Vinculación Sede → XML** | AddressTypeCode del establecimiento emisor (0001=principal, 0002+). SedeEntity ya existe. | 🟢 Bajo | ❌ Pendiente |
+
+### Progreso global:
+```
+ MODELO DE DATOS  ██████████████████████░░  ~95% ✅
+ GENERADOR XML    ████████████████████████  100% ✅  (36 tests)
+ ENDPOINT XML     ████████████████████████  100% ✅  (OpenAPI-first)
+ CONFIG SUNAT     ████████████████████████  100% ✅  (type-safe props)
+ FIRMA DIGITAL    ░░░░░░░░░░░░░░░░░░░░░░░░   0% ❌
+ ENVÍO SUNAT      ░░░░░░░░░░░░░░░░░░░░░░░░   0% ❌
+```
+
+> **Conclusión:** El modelo de datos está completo, el generador XML UBL 2.1 está implementado y testeado (36 tests), y el endpoint de descarga sigue el patrón OpenAPI-first del proyecto. Lo que resta es la **firma digital** y el **envío SOAP a SUNAT**. Estos 2 componentes constituyen la **FASE 3** del proyecto.
+
+---
+
+## PARTE 7 — Paso Detallado: Regularización Endpoint XML (2026-04-07)
+
+### Problema Detectado
+`FacturaXmlController.java` era un controller code-first (`@RestController` con `@GetMapping` manual) que rompía el patrón del proyecto: **OpenAPI YAML → codegen → interfaz generada → controller impl → service → persistence**.
+
+### Pasos Ejecutados
+
+#### Paso R1: Agregar endpoint al OpenAPI YAML ✅
+- Nuevo path `/factura/{facturaId}/xml` con tag `factura`
+- `operationId: descargarFacturaXml`
+- Response `200`: `application/xml` con `type: string, format: binary` + header `Content-Disposition`
+- Response `204`: factura sin XML generado
+- Response `404`: factura no encontrada
+
+#### Paso R2: Regenerar interfaces (`mvn clean compile`) ✅
+- El codegen generó `descargarFacturaXml(String facturaId)` en `FacturaApi.java`
+- Retorna `ResponseEntity<org.springframework.core.io.Resource>`
+
+#### Paso R3: Agregar método al Service Layer ✅
+- `DocFacturaService.descargarFacturaXml(String facturaId)` → devuelve `FacturaXmlResult`
+- `FacturaXmlResult` es un `record(byte[] content, String filename, boolean hasContent)`
+- Implementación en `DocFacturaServiceImpl`: busca factura, construye filename SUNAT, retorna bytes UTF-8
+
+#### Paso R4: Override en DocFacturaOpenApi ✅
+- `descargarFacturaXml()` invoca el service
+- Si `!hasContent()` → `ResponseEntity.noContent().build()` (204)
+- Si tiene contenido → `ResponseEntity.ok()` con `ByteArrayResource`, header `Content-Disposition`, y `MediaType.APPLICATION_XML`
+
+#### Paso R5: Eliminar FacturaXmlController.java ✅
+- Archivo eliminado del paquete `doc_factura.xml`
+- `UblInvoiceXmlBuilder.java` se conserva intacto en el mismo paquete
+
+#### Paso R6: Ampliar SunatProperties ✅
+- `application.yaml`: sección `sunat.certificado.base-path` y `sunat.sol.default-user/password`
+- Variables de entorno: `SUNAT_CERT_PATH`, `SUNAT_SOL_USER`, `SUNAT_SOL_PASSWORD`
+- `SunatProperties.java`: clases internas `Certificado` y `Sol` para binding type-safe
+
+#### Paso R7: Verificación ✅
+- `mvn clean compile` → **BUILD SUCCESS** (254 source files)
+- `mvn test` → **184 tests, 0 Failures, 0 Errors**

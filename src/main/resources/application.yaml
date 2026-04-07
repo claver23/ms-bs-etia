@@ -26,3 +26,19 @@ spring:
         cachecontrol:
           no-cache: true
           no-store: true
+
+# ═══ SUNAT Configuration ═══
+sunat:
+  modo: beta
+  endpoints:
+    factura-beta: https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService
+    factura-prod: https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService
+    guia-beta: https://e-beta.sunat.gob.pe/ol-ti-itemision-guia-gem-beta/billService
+    guia-prod: https://e-guiaremision.sunat.gob.pe/ol-ti-itemision-guia-gem/billService
+    consulta-cdr-beta: https://e-beta.sunat.gob.pe/ol-it-wsconscpegem-beta/billConsultService
+    consulta-cdr-prod: https://e-factura.sunat.gob.pe/ol-it-wsconscpegem/billConsultService
+  certificado:
+    base-path: ${SUNAT_CERT_PATH:./certs}
+  sol:
+    default-user: ${SUNAT_SOL_USER:MODDATOS}
+    default-password: ${SUNAT_SOL_PASSWORD:MODDATOS}

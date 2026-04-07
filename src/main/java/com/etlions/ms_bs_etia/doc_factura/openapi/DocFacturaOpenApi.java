@@ -4,6 +4,10 @@ import com.etlions.ms_bs_etia.doc_factura.service.DocFacturaService;
 import com.etlions.openapicodegen.api.v1.FacturaApi;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +44,21 @@ public class DocFacturaOpenApi implements FacturaApi {
     @Override
     public ResponseEntity<FacturaResponseDto> obtenerFactura(String facturaId) {
         return ResponseEntity.ok(docFacturaService.obtenerFactura(facturaId));
+    }
+
+    @Override
+    public ResponseEntity<Resource> descargarFacturaXml(String facturaId) {
+        DocFacturaService.FacturaXmlResult result = docFacturaService.descargarFacturaXml(facturaId);
+
+        if (!result.hasContent()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + result.filename() + "\"")
+                .contentType(MediaType.APPLICATION_XML)
+                .body(new ByteArrayResource(result.content()));
     }
 }
 

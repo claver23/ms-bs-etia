@@ -447,6 +447,40 @@ paths:
         "404":
           description: Factura no encontrada
 
+  /factura/{facturaId}/xml:
+    get:
+      tags:
+        - factura
+      summary: Descargar XML UBL 2.1 de una factura
+      description: |
+        Retorna el XML UBL 2.1 generado para la factura indicada.
+        El nombre del archivo sigue el formato SUNAT: {serie}-{numero}.xml
+      operationId: descargarFacturaXml
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura
+      responses:
+        "200":
+          description: XML UBL 2.1 de la factura
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La factura existe pero aún no tiene XML generado
+        "404":
+          description: Factura no encontrada
+
   # ==================== BOLETA ====================
   /boleta:
     post:

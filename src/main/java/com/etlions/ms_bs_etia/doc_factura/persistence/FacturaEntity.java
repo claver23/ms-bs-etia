@@ -104,7 +104,11 @@ public class FacturaEntity {
     @Column(columnDefinition = "TEXT")
     private String detalleJson;
 
+    /** XML UBL 2.1 generado */
+    @Lob
+    @Column(name = "xml_content", columnDefinition = "TEXT")
+    private String xmlContent;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }
-
