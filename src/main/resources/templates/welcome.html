@@ -174,13 +174,12 @@
                 <div class="f-group">
                     <label>📝 Tipo de Contribuyente</label>
                     <select id="onb-tipo-doc">
-                        <option value="RUC">RUC — Empresa</option>
-                        <option value="DNI">DNI — Persona Natural</option>
+                        <option value="">Cargando…</option>
                     </select>
                 </div>
                 <div class="f-group">
-                    <label id="onb-numdoc-label">🏢 Número de RUC</label>
-                    <input type="text" id="onb-numdoc" placeholder="20XXXXXXXXX" maxlength="11"/>
+                    <label id="onb-numdoc-label">🏢 Número de Documento</label>
+                    <input type="text" id="onb-numdoc" placeholder="Ingrese número" maxlength="15"/>
                 </div>
             </div>
             <div class="f-row">
@@ -490,27 +489,80 @@
         }, 220);
     }
 
+    /* ═══ Config del campo según tipo de documento ═══ */
+    var DOC_CONFIG = {
+        '1': { label: '👤 Número de DNI',              placeholder: '12345678',    maxLength: 8  },
+        '6': { label: '🏢 Número de RUC',              placeholder: '20XXXXXXXXX', maxLength: 11 },
+        '4': { label: '📄 Carnet de Extranjería',      placeholder: 'CE-XXXXXXX',  maxLength: 12 },
+        '7': { label: '📄 Número de Pasaporte',        placeholder: 'Pasaporte',   maxLength: 12 },
+        'A': { label: '📄 Cédula Diplomática',         placeholder: 'Cédula',      maxLength: 15 },
+        'B': { label: '📄 Doc. Ident. País Residencia',placeholder: 'Documento',   maxLength: 15 },
+        'C': { label: '📄 Tax Identification Number',  placeholder: 'TIN',         maxLength: 15 },
+        'D': { label: '📄 Identification Number',      placeholder: 'IN',          maxLength: 15 },
+        '0': { label: '📄 Número de Documento',        placeholder: 'Documento',   maxLength: 15 }
+    };
+
+    function updateDocField() {
+        var tipoDoc  = document.getElementById('onb-tipo-doc');
+        var numDoc   = document.getElementById('onb-numdoc');
+        var numLabel = document.getElementById('onb-numdoc-label');
+        if (!tipoDoc || !numDoc || !numLabel) return;
+        var cfg = DOC_CONFIG[tipoDoc.value] || DOC_CONFIG['0'];
+        numLabel.textContent = cfg.label;
+        numDoc.placeholder   = cfg.placeholder;
+        numDoc.maxLength     = cfg.maxLength;
+    }
+
+    /* ═══ Cargar Tipo de Documento desde Catálogo SUNAT Nº 06 ═══ */
+    function cargarTiposDocumento() {
+        var select = document.getElementById('onb-tipo-doc');
+        if (!select) return Promise.resolve();
+
+        return ApiClient.obtenerCatalogoSunat('Catálogo No. 06: Códigos de tipos de documentos de identidad')
+            .then(function(catalogo) {
+                var registros = (catalogo && catalogo.data) ? catalogo.data : catalogo;
+                select.innerHTML = '';
+                if (Array.isArray(registros)) {
+                    registros.forEach(function(item) {
+                        var opt = document.createElement('option');
+                        opt.value = String(item.codigo);
+                        opt.textContent = item.codigo + ' — ' + item.descripcion;
+                        select.appendChild(opt);
+                    });
+                    /* Seleccionar RUC (codigo 6) por defecto */
+                    select.value = '6';
+                }
+                updateDocField();
+            })
+            .catch(function() {
+                /* Fallback si la API falla */
+                select.innerHTML = '';
+                var fb = [
+                    { codigo: '6', desc: 'REG. UNICO DE CONTRIBUYENTES' },
+                    { codigo: '1', desc: 'DOC. NACIONAL DE IDENTIDAD' }
+                ];
+                fb.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.codigo;
+                    opt.textContent = item.codigo + ' — ' + item.desc;
+                    select.appendChild(opt);
+                });
+                select.value = '6';
+                updateDocField();
+            });
+    }
+
     /* ═══ Tipo doc selector ═══ */
     document.addEventListener('DOMContentLoaded', function() {
         var tipoDoc = document.getElementById('onb-tipo-doc');
-        var numDoc  = document.getElementById('onb-numdoc');
-        var numLabel = document.getElementById('onb-numdoc-label');
         if (tipoDoc) {
-            tipoDoc.addEventListener('change', function() {
-                if (tipoDoc.value === 'DNI') {
-                    numLabel.textContent = '👤 Número de DNI';
-                    numDoc.placeholder = '12345678';
-                    numDoc.maxLength = 8;
-                } else {
-                    numLabel.textContent = '🏢 Número de RUC';
-                    numDoc.placeholder = '20XXXXXXXXX';
-                    numDoc.maxLength = 11;
-                }
-            });
+            tipoDoc.addEventListener('change', updateDocField);
         }
 
-        /* Pre-populate from API */
-        ETIA.init().then(function(company) {
+        /* Cargar Catálogo SUNAT Nº 06 + Pre-populate from API */
+        cargarTiposDocumento().then(function() {
+            return ETIA.init();
+        }).then(function(company) {
             if (company) {
                 var el;
                 el = document.getElementById('onb-numdoc');   if (el && !el.value) el.value = company.ruc || '';

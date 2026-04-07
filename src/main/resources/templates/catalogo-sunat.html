@@ -15,9 +15,12 @@
     transition: background 0.4s ease;
 }
 .cs-zone.cs-dark {
-    background: rgba(0,0,0,0.2);
+    background: transparent;
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
+}
+[data-theme="light"] .cs-zone.cs-dark {
+    background: transparent;
 }
 .cs-showcase {
     position: relative;

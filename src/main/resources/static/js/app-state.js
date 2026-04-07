@@ -332,7 +332,7 @@ function _renderNotifBadge(docs) {
             return '<div class="g-notif-item">' +
                 '<div class="g-notif-item-info">' +
                     '<strong>' + label + ' ' + (d.serie || '') + '-' + (d.numero || '') + '</strong>' +
-                    '<span>' + (d.fecha || '') + ' · S/ ' + (d.total != null ? d.total.toFixed(2) : '—') + ' · ' + d.estado + '</span>' +
+                    '<span>' + ETIA.formatDate(d.fecha) + ' · S/ ' + (d.total != null ? d.total.toFixed(2) : '—') + ' · ' + d.estado + '</span>' +
                 '</div>' +
                 '<div class="g-notif-item-actions">' +
                     '<button class="g-notif-btn-anular" onclick="anularDocumento(\'' + d.tipo + '\',\'' + d.id + '\')">✕ Anular</button>' +
