@@ -82,6 +82,10 @@ function initWizard(docType) {
     /* Reset items on wizard init */
     items = [];
     itemCounter = 0;
+    cuotas = [];
+    cuotaCounter = 0;
+    cargosDescuentos = [];
+    acCounter = 0;
     renderItems();
 
     /* Show/hide nota-specific fields */
@@ -158,13 +162,20 @@ function onFormaPagoChange() {
     var forma = document.getElementById('fac-forma-pago').value;
     var fechaVenc = document.getElementById('fac-fecha-venc');
     var fechaEmision = document.getElementById('fac-fecha');
+    var cuotasSection = document.getElementById('cuotas-section');
     if (forma === 'CONTADO') {
         if (fechaVenc && fechaEmision) {
             fechaVenc.value = fechaEmision.value;
             fechaVenc.readOnly = true;
         }
+        if (cuotasSection) cuotasSection.style.display = 'none';
     } else {
         if (fechaVenc) fechaVenc.readOnly = false;
+        if (cuotasSection) cuotasSection.style.display = 'block';
+        // Auto-generate one default cuota if none exist
+        if (cuotas.length === 0) {
+            addCuota();
+        }
     }
 }
 
@@ -291,9 +302,20 @@ async function emitDoc() {
     spinner.style.display = 'inline-block';
     btn.disabled = true;
     var val = function(id) { var e = document.getElementById(id); return e ? e.value : ''; };
-    var g = items.reduce(function(s, i) { return s + i.subtotal; }, 0);
-    var iv = items.reduce(function(s, i) { return s + i.igv; }, 0);
-    var t = g + iv;
+    var grav = 0, exo = 0, ina = 0, totalIgv = 0;
+    items.forEach(function(i) {
+        if (i.tipoAfectacionIgv === '20') exo += i.subtotal;
+        else if (i.tipoAfectacionIgv === '30') ina += i.subtotal;
+        else grav += i.subtotal;
+        totalIgv += i.montoImpuesto;
+    });
+    // Include cargos/descuentos in total
+    var totalCargos = 0, totalDescuentos = 0;
+    cargosDescuentos.forEach(function(ac) {
+        if (ac.chargeIndicator) totalCargos += ac.amount;
+        else totalDescuentos += ac.amount;
+    });
+    var t = grav + exo + ina + totalIgv + totalCargos - totalDescuentos;
 
     var detalleArr = items.map(function(i) {
         return {
@@ -302,7 +324,13 @@ async function emitDoc() {
             valorUnitario: parseFloat(i.valorUnitario.toFixed(2)),
             precioUnitario: parseFloat(i.precioUnitario.toFixed(2)),
             igv: parseFloat(i.igv.toFixed(2)),
-            subtotal: parseFloat(i.subtotal.toFixed(2))
+            subtotal: parseFloat(i.subtotal.toFixed(2)),
+            tipoAfectacionIgv: i.tipoAfectacionIgv || '10',
+            codigoTributo: i.codigoTributo || '1000',
+            tipoPrecio: i.tipoPrecio || '01',
+            porcentajeIgv: i.porcentajeIgv != null ? i.porcentajeIgv : 18.00,
+            baseImponible: parseFloat((i.baseImponible || i.subtotal).toFixed(2)),
+            montoImpuesto: parseFloat((i.montoImpuesto || i.igv).toFixed(2))
         };
     });
 
@@ -356,11 +384,35 @@ async function emitDoc() {
             fechaVencimiento: fechaVenc,
             tipoCambio: tipoCambioVal,
             codigoUbigeo: ubigeo,
-            gravadas: parseFloat(g.toFixed(2)),
-            igv: parseFloat(iv.toFixed(2)),
+            tipoOperacion: val('fac-tipo-operacion') || '0101',
+            gravadas: parseFloat(grav.toFixed(2)),
+            exoneradas: parseFloat(exo.toFixed(2)),
+            inafectas: parseFloat(ina.toFixed(2)),
+            igv: parseFloat(totalIgv.toFixed(2)),
             total: parseFloat(t.toFixed(2)),
+            subtotal: parseFloat((grav + exo + ina).toFixed(2)),
+            totalConImpuestos: parseFloat((grav + exo + ina + totalIgv).toFixed(2)),
             leyenda: val('fac-leyenda') || 'MONTO EN LETRAS',
-            detalle: detalleArr
+            detalle: detalleArr,
+            cuotas: (formaPago === 'CREDITO' && cuotas.length > 0)
+                ? cuotas.map(function(c) {
+                    return {
+                        numeroCuota: c.numeroCuota,
+                        monto: c.monto,
+                        fechaVencimiento: c.fechaVencimiento
+                    };
+                }) : [],
+            cargosDescuentos: cargosDescuentos.length > 0
+                ? cargosDescuentos.map(function(ac) {
+                    return {
+                        chargeIndicator: ac.chargeIndicator,
+                        reasonCode: ac.reasonCode,
+                        reasonDescription: ac.reasonDescription,
+                        multiplierFactor: ac.multiplierFactor,
+                        amount: ac.amount,
+                        baseAmount: ac.baseAmount
+                    };
+                }) : []
         };
         emitFn = (selectedDocType === 'BOLETA') ? ApiClient.emitirBoleta : ApiClient.emitirFactura;
     }
@@ -393,6 +445,8 @@ async function emitDoc() {
 function resetAll() {
     document.getElementById('modal').classList.remove('show');
     items = []; itemCounter = 0; renderItems();
+    cuotas = []; cuotaCounter = 0;
+    cargosDescuentos = []; acCounter = 0;
     clearSelectedProduct();
     /* Unlock sede selector */
     var sedeSel = document.getElementById('hdr-sede-select');

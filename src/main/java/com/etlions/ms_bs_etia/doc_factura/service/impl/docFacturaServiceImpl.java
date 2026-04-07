@@ -7,8 +7,7 @@ import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.company.persistence.CompanyRepository;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
-import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
-import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
+import com.etlions.ms_bs_etia.doc_factura.persistence.*;
 import com.etlions.ms_bs_etia.doc_factura.service.DocFacturaService;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
@@ -19,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -32,6 +33,8 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     private final NotificationService notificationService;
     private final ClientRepository clientRepository;
     private final CompanyRepository companyRepository;
+    private final CuotaCreditoRepository cuotaCreditoRepository;
+    private final AllowanceChargeRepository allowanceChargeRepository;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
 
@@ -95,6 +98,20 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         if (entity.getFechaEmision() == null) {
             entity.setFechaEmision(LocalDate.now());
         }
+        // ── Defaults UBL 2.1 ──
+        if (entity.getTipoOperacion() == null) entity.setTipoOperacion("0101");
+        if (entity.getHoraEmision() == null) entity.setHoraEmision(LocalTime.now());
+        if (entity.getExoneradas() == null) entity.setExoneradas(BigDecimal.ZERO);
+        if (entity.getInafectas() == null) entity.setInafectas(BigDecimal.ZERO);
+        if (entity.getGratuitas() == null) entity.setGratuitas(BigDecimal.ZERO);
+        if (entity.getTotalCargos() == null) entity.setTotalCargos(BigDecimal.ZERO);
+        if (entity.getTotalDescuentos() == null) entity.setTotalDescuentos(BigDecimal.ZERO);
+        if (entity.getSubtotal() == null && entity.getGravadas() != null) {
+            entity.setSubtotal(entity.getGravadas());
+        }
+        if (entity.getTotalConImpuestos() == null && entity.getGravadas() != null && entity.getIgv() != null) {
+            entity.setTotalConImpuestos(entity.getGravadas().add(entity.getIgv()));
+        }
         /* If CONTADO, due date = emission date (date only, no time) */
         if ("CONTADO".equalsIgnoreCase(entity.getFormaPago()) || entity.getFormaPago() == null) {
             entity.setFechaVencimiento(entity.getFechaEmision());
@@ -103,9 +120,36 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         if (entity.getFechaVencimiento() == null) {
             entity.setFechaVencimiento(entity.getFechaEmision());
         }
+
+        // ── Recalculate totalCargos/totalDescuentos from AllowanceCharge items ──
+        if (request.getCargosDescuentos() != null && !request.getCargosDescuentos().isEmpty()) {
+            BigDecimal sumCargos = BigDecimal.ZERO;
+            BigDecimal sumDescuentos = BigDecimal.ZERO;
+            for (AllowanceChargeItem ac : request.getCargosDescuentos()) {
+                if (Boolean.TRUE.equals(ac.getChargeIndicator())) {
+                    sumCargos = sumCargos.add(ac.getAmount());
+                } else {
+                    sumDescuentos = sumDescuentos.add(ac.getAmount());
+                }
+            }
+            entity.setTotalCargos(sumCargos);
+            entity.setTotalDescuentos(sumDescuentos);
+        }
+
         entity.setFechaCreacion(LocalDateTime.now());
         FacturaEntity saved = facturaRepository.save(entity);
+
+        // ── Persist cuotas de crédito ──
+        List<CuotaCreditoEntity> cuotaEntities = persistCuotas(
+                request.getCuotas(), saved.getId(), null, saved.getMoneda());
+
+        // ── Persist cargos/descuentos globales ──
+        List<AllowanceChargeEntity> acEntities = persistAllowanceCharges(
+                request.getCargosDescuentos(), saved.getId(), null, saved.getMoneda());
+
         FacturaData data = facturaMapper.toData(saved);
+        enrichFacturaData(data, cuotaEntities, acEntities);
+
         notificationService.publicar(saved.getCompanyId(), "EMITIDA", "FACTURA",
                 saved.getId(), serie + "-" + numero,
                 "Factura " + serie + "-" + numero + " emitida");
@@ -126,7 +170,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         SunatValidator.validarAnulacionPermitida(entity.getEstado(), "Factura", facturaId);
         entity.setEstado("ANULADA");
         FacturaEntity saved = facturaRepository.save(entity);
-        FacturaData data = facturaMapper.toData(saved);
+        FacturaData data = buildFacturaData(saved);
         notificationService.publicar(saved.getCompanyId(), "ANULADA", "FACTURA",
                 saved.getId(), saved.getSerie() + "-" + saved.getNumero(),
                 "Factura " + saved.getSerie() + "-" + saved.getNumero() + " anulada");
@@ -145,6 +189,8 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
         // — SUNAT: solo se pueden eliminar borradores —
         SunatValidator.validarEliminacionPermitida(entity.getEstado(), "Factura", facturaId);
+        cuotaCreditoRepository.deleteByFacturaId(facturaId);
+        allowanceChargeRepository.deleteByFacturaId(facturaId);
         facturaRepository.delete(entity);
         return new SuccessResponse()
                 .isSuccess(true)
@@ -159,7 +205,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                                                      Integer page, Integer size) {
         List<FacturaEntity> entities = facturaRepository.findByCompanyId(companyId);
         List<FacturaData> dataList = entities.stream()
-                .map(facturaMapper::toData)
+                .map(this::buildFacturaData)
                 .toList();
         FacturaListResponseDtoAllOfData responseData = new FacturaListResponseDtoAllOfData();
         responseData.setContent(dataList);
@@ -181,7 +227,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     public FacturaResponseDto obtenerFactura(String facturaId) {
         FacturaEntity entity = facturaRepository.findById(facturaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
-        FacturaData data = facturaMapper.toData(entity);
+        FacturaData data = buildFacturaData(entity);
         return new FacturaResponseDto()
                 .isSuccess(true)
                 .status("OK")
@@ -189,5 +235,86 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                 .timestamp(new Date())
                 .data(data);
     }
-}
 
+    // ═══════ HELPERS ═══════
+
+    /** Build FacturaData enriched with cuotas and cargos/descuentos */
+    private FacturaData buildFacturaData(FacturaEntity entity) {
+        FacturaData data = facturaMapper.toData(entity);
+        List<CuotaCreditoEntity> cuotas = cuotaCreditoRepository.findByFacturaIdOrderByNumeroCuota(entity.getId());
+        List<AllowanceChargeEntity> acs = allowanceChargeRepository.findByFacturaId(entity.getId());
+        enrichFacturaData(data, cuotas, acs);
+        return data;
+    }
+
+    /** Enrich FacturaData with cuota and allowance-charge lists */
+    private void enrichFacturaData(FacturaData data,
+                                   List<CuotaCreditoEntity> cuotas,
+                                   List<AllowanceChargeEntity> acs) {
+        if (cuotas != null && !cuotas.isEmpty()) {
+            data.setCuotas(cuotas.stream().map(c -> new CuotaCredito()
+                    .numeroCuota(c.getNumeroCuota())
+                    .monto(c.getMonto())
+                    .fechaVencimiento(java.sql.Date.valueOf(c.getFechaVencimiento()))
+                    .moneda(c.getMoneda())
+            ).toList());
+        }
+        if (acs != null && !acs.isEmpty()) {
+            data.setCargosDescuentos(acs.stream().map(a -> new AllowanceChargeItem()
+                    .chargeIndicator(a.getChargeIndicator())
+                    .reasonCode(a.getReasonCode())
+                    .reasonDescription(a.getReasonDescription())
+                    .multiplierFactor(a.getMultiplierFactor())
+                    .amount(a.getAmount())
+                    .baseAmount(a.getBaseAmount())
+            ).toList());
+        }
+    }
+
+    /** Persist cuotas de crédito for factura or boleta */
+    private List<CuotaCreditoEntity> persistCuotas(List<CuotaCredito> cuotas,
+                                                    String facturaId, String boletaId,
+                                                    String moneda) {
+        if (cuotas == null || cuotas.isEmpty()) return List.of();
+        List<CuotaCreditoEntity> entities = new ArrayList<>();
+        for (int i = 0; i < cuotas.size(); i++) {
+            CuotaCredito c = cuotas.get(i);
+            String numCuota = c.getNumeroCuota() != null ? c.getNumeroCuota()
+                    : String.format("Cuota%03d", i + 1);
+            LocalDate fv = c.getFechaVencimiento() != null
+                    ? new java.sql.Date(c.getFechaVencimiento().getTime()).toLocalDate()
+                    : null;
+            entities.add(CuotaCreditoEntity.builder()
+                    .facturaId(facturaId)
+                    .boletaId(boletaId)
+                    .numeroCuota(numCuota)
+                    .monto(c.getMonto())
+                    .fechaVencimiento(fv)
+                    .moneda(c.getMoneda() != null ? c.getMoneda() : moneda)
+                    .build());
+        }
+        return cuotaCreditoRepository.saveAll(entities);
+    }
+
+    /** Persist cargos/descuentos globales for factura or boleta */
+    private List<AllowanceChargeEntity> persistAllowanceCharges(List<AllowanceChargeItem> items,
+                                                                 String facturaId, String boletaId,
+                                                                 String moneda) {
+        if (items == null || items.isEmpty()) return List.of();
+        List<AllowanceChargeEntity> entities = new ArrayList<>();
+        for (AllowanceChargeItem ac : items) {
+            entities.add(AllowanceChargeEntity.builder()
+                    .facturaId(facturaId)
+                    .boletaId(boletaId)
+                    .chargeIndicator(ac.getChargeIndicator())
+                    .reasonCode(ac.getReasonCode())
+                    .reasonDescription(ac.getReasonDescription())
+                    .multiplierFactor(ac.getMultiplierFactor())
+                    .amount(ac.getAmount())
+                    .baseAmount(ac.getBaseAmount())
+                    .moneda(moneda)
+                    .build());
+        }
+        return allowanceChargeRepository.saveAll(entities);
+    }
+}

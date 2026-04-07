@@ -16,6 +16,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "facturas")
@@ -57,11 +58,34 @@ public class FacturaEntity {
     @Column(name = "codigo_ubigeo", length = 6)
     private String codigoUbigeo;
 
+    @Column(name = "tipo_operacion", length = 4)
+    private String tipoOperacion;
+
+    @Column(name = "hora_emision")
+    private LocalTime horaEmision;
+
     private BigDecimal gravadas;
+
+    private BigDecimal exoneradas;
+
+    private BigDecimal inafectas;
+
+    private BigDecimal gratuitas;
 
     private BigDecimal igv;
 
     private BigDecimal total;
+
+    @Column(name = "total_cargos")
+    private BigDecimal totalCargos;
+
+    @Column(name = "total_descuentos")
+    private BigDecimal totalDescuentos;
+
+    private BigDecimal subtotal;
+
+    @Column(name = "total_con_impuestos")
+    private BigDecimal totalConImpuestos;
 
     private String estado;
 

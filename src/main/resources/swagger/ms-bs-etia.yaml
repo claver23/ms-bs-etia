@@ -1923,6 +1923,20 @@ components:
         telefono:
           type: string
           example: "51987654321"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        codigoPais:
+          type: string
+          description: "Catálogo 04 SUNAT: código ISO país"
+          default: "PE"
+          example: "PE"
 
     ClientUpdateDto:
       type: object
@@ -1940,6 +1954,18 @@ components:
         telefono:
           type: string
           example: "51999999999"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        codigoPais:
+          type: string
+          example: "PE"
 
     # ===== FACTURA =====
     FacturaEmitirDto:
@@ -2018,6 +2044,60 @@ components:
           type: string
           description: Código ubigeo SUNAT de la sede emisora
           example: "150101"
+        tipoOperacion:
+          type: string
+          description: "Catálogo 51 SUNAT: 0101=Venta interna, 0200=Exportación, etc."
+          default: "0101"
+          example: "0101"
+        horaEmision:
+          type: string
+          description: "Hora de emisión HH:mm:ss"
+          example: "12:58:00"
+        exoneradas:
+          type: number
+          description: Subtotal operaciones exoneradas (Cat. 05 - 9997)
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          description: Subtotal operaciones inafectas (Cat. 05 - 9998)
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          description: Subtotal operaciones gratuitas (Cat. 05 - 9996)
+          minimum: 0
+          example: 0.00
+        totalCargos:
+          type: number
+          description: Total de cargos globales (ej. recargo al consumo)
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          description: Total de descuentos globales
+          minimum: 0
+          example: 0.00
+        subtotal:
+          type: number
+          description: Suma de LineExtensionAmount de todas las líneas
+          minimum: 0
+          example: 1000.00
+        totalConImpuestos:
+          type: number
+          description: TaxInclusiveAmount (subtotal + impuestos)
+          minimum: 0
+          example: 1180.00
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO). Suma de montos debe = total."
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
 
     # ===== BOLETA =====
     BoletaEmitirDto:
@@ -2081,6 +2161,53 @@ components:
           type: string
           description: Código ubigeo SUNAT de la sede emisora
           example: "150101"
+        tipoOperacion:
+          type: string
+          description: "Catálogo 51 SUNAT: 0101=Venta interna"
+          default: "0101"
+          example: "0101"
+        horaEmision:
+          type: string
+          description: "Hora de emisión HH:mm:ss"
+          example: "16:27:08"
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 500.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 590.00
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
 
     # ===== NOTA CRÉDITO =====
     NotaCreditoEmitirDto:
@@ -2257,6 +2384,97 @@ components:
           type: number
           minimum: 0
           example: 0.00
+        tipoAfectacionIgv:
+          type: string
+          description: "Catálogo 07 SUNAT: 10=Gravado, 20=Exonerado, 30=Inafecto"
+          default: "10"
+          example: "10"
+        codigoTributo:
+          type: string
+          description: "Catálogo 05 SUNAT: 1000=IGV, 9997=EXO, 9998=INA, 9996=GRA"
+          default: "1000"
+          example: "1000"
+        tipoPrecio:
+          type: string
+          description: "Catálogo 16 SUNAT: 01=Precio con IGV, 02=Valor referencial gratuita"
+          default: "01"
+          example: "01"
+        porcentajeIgv:
+          type: number
+          description: Porcentaje de IGV aplicado (18.00 estándar)
+          default: 18.00
+          example: 18.00
+        baseImponible:
+          type: number
+          description: Base imponible por línea (TaxableAmount)
+          minimum: 0
+          example: 847.46
+        montoImpuesto:
+          type: number
+          description: Monto de impuesto calculado por línea (TaxAmount)
+          minimum: 0
+          example: 152.54
+
+    # ===== CUOTA CRÉDITO =====
+    CuotaCredito:
+      type: object
+      required:
+        - numeroCuota
+        - monto
+        - fechaVencimiento
+      properties:
+        numeroCuota:
+          type: string
+          description: "Identificador de la cuota (Cuota001, Cuota002, ...)"
+          example: "Cuota001"
+        monto:
+          type: number
+          description: Monto de la cuota
+          minimum: 0.01
+          example: 3009.00
+        fechaVencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento de la cuota
+          example: "2026-05-05"
+        moneda:
+          type: string
+          description: Moneda de la cuota (hereda del documento si no se indica)
+          example: "PEN"
+
+    # ===== ALLOWANCE / CHARGE (Cat. 53 SUNAT) =====
+    AllowanceChargeItem:
+      type: object
+      required:
+        - chargeIndicator
+        - amount
+      properties:
+        chargeIndicator:
+          type: boolean
+          description: "true = Cargo (surcharge), false = Descuento (allowance)"
+          example: true
+        reasonCode:
+          type: string
+          description: "Catálogo 53 SUNAT: 00=Desc. global, 02=Desc. ítem, 46=Recargo consumo, 47=Cargos, 50=Percepción"
+          example: "46"
+        reasonDescription:
+          type: string
+          description: Descripción del cargo o descuento
+          example: "Recargo al consumo"
+        multiplierFactor:
+          type: number
+          description: Factor multiplicador (ej. 0.10 para 10%)
+          example: 0.10
+        amount:
+          type: number
+          description: Monto del cargo o descuento
+          minimum: 0
+          example: 100.00
+        baseAmount:
+          type: number
+          description: Monto base sobre el que se calcula
+          minimum: 0
+          example: 1000.00
 
     # ===== PAGINACIÓN =====
     PaginationMeta:
@@ -2363,6 +2581,18 @@ components:
         telefono:
           type: string
           example: "51987654321"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        codigoPais:
+          type: string
+          example: "PE"
         fechaCreacion:
           type: string
           format: date-time
@@ -2437,10 +2667,47 @@ components:
           type: string
           description: Código ubigeo SUNAT de la sede emisora
           example: "150101"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "12:58:00"
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        subtotal:
+          type: number
+          example: 1000.00
+        totalConImpuestos:
+          type: number
+          example: 1180.00
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
         fechaCreacion:
           type: string
           format: date-time
@@ -2502,10 +2769,47 @@ components:
         codigoUbigeo:
           type: string
           example: "150101"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "16:27:08"
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        subtotal:
+          type: number
+          example: 500.00
+        totalConImpuestos:
+          type: number
+          example: 590.00
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
         fechaCreacion:
           type: string
           format: date-time
@@ -2635,6 +2939,10 @@ components:
         codigoProducto:
           type: string
           example: "SRV-001"
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT del producto/servicio"
+          example: "82101500"
         descripcion:
           type: string
           example: "Servicio de Consultoría en TI"
@@ -2643,6 +2951,11 @@ components:
           description: Código SUNAT de unidad de medida
           default: "ZZ"
           example: "ZZ"
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
+          default: "10"
+          example: "10"
         valorUnitario:
           type: number
           description: Valor unitario sin IGV
@@ -2655,8 +2968,14 @@ components:
           type: string
         codigoProducto:
           type: string
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT"
         unidadMedida:
           type: string
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
         valorUnitario:
           type: number
 
@@ -2672,12 +2991,20 @@ components:
         codigoProducto:
           type: string
           example: "SRV-001"
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT del producto/servicio"
+          example: "82101500"
         descripcion:
           type: string
           example: "Servicio de Consultoría en TI"
         unidadMedida:
           type: string
           example: "ZZ"
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
+          example: "10"
         valorUnitario:
           type: number
           example: 2500.00

@@ -24,13 +24,17 @@ public interface BoletaMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "formaPago", expression = "java(request.getFormaPago() != null ? request.getFormaPago().getValue() : \"CONTADO\")")
+    @Mapping(target = "horaEmision", expression = "java(request.getHoraEmision() != null ? java.time.LocalTime.parse(request.getHoraEmision()) : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
     BoletaEntity toEntity(BoletaEmitirDto request);
 
     @Mapping(target = "moneda", expression = "java(entity.getMoneda() != null ? BoletaData.MonedaEnum.fromValue(entity.getMoneda()) : null)")
     @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? BoletaData.EstadoEnum.fromValue(entity.getEstado()) : null)")
     @Mapping(target = "formaPago", expression = "java(entity.getFormaPago() != null ? BoletaData.FormaPagoEnum.fromValue(entity.getFormaPago()) : null)")
+    @Mapping(target = "horaEmision", expression = "java(entity.getHoraEmision() != null ? entity.getHoraEmision().toString() : null)")
     @Mapping(target = "detalle", source = "detalleJson", qualifiedByName = "jsonToDetalle")
+    @Mapping(target = "cuotas", ignore = true)
+    @Mapping(target = "cargosDescuentos", ignore = true)
     BoletaData toData(BoletaEntity entity);
 
     @Named("detalleToJson")
@@ -51,4 +55,3 @@ public interface BoletaMapper {
         }
     }
 }
-

@@ -40,6 +40,15 @@ public class ClientEntity {
 
     private String direccion;
 
+    private String departamento;
+
+    private String provincia;
+
+    private String distrito;
+
+    @Column(name = "codigo_pais", length = 2)
+    private String codigoPais;
+
     private String email;
 
     private String telefono;

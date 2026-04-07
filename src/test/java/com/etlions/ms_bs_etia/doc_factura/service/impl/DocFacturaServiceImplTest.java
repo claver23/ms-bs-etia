@@ -8,6 +8,8 @@ import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.company.persistence.CompanyEntity;
 import com.etlions.ms_bs_etia.company.persistence.CompanyRepository;
 import com.etlions.ms_bs_etia.doc_factura.mapper.FacturaMapper;
+import com.etlions.ms_bs_etia.doc_factura.persistence.AllowanceChargeRepository;
+import com.etlions.ms_bs_etia.doc_factura.persistence.CuotaCreditoRepository;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
@@ -42,6 +44,8 @@ class DocFacturaServiceImplTest {
     @Mock private NotificationService notificationService;
     @Mock private ClientRepository clientRepository;
     @Mock private CompanyRepository companyRepository;
+    @Mock private CuotaCreditoRepository cuotaCreditoRepository;
+    @Mock private AllowanceChargeRepository allowanceChargeRepository;
 
     @InjectMocks
     private DocFacturaServiceImpl service;

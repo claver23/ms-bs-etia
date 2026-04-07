@@ -39,13 +39,27 @@
         <form id="product-form" onsubmit="return handleCreateProduct(event);">
             <div class="f-row" style="margin-bottom:0;">
                 <div class="f-group">
-                    <label for="pf-code">Código</label>
+                    <label for="pf-code">Código Interno</label>
                     <input type="text" id="pf-code" placeholder="Ej: SRV-004" required/>
                 </div>
+                <div class="f-group">
+                    <label for="pf-sunat-code">Código SUNAT (UNSPSC)</label>
+                    <input type="text" id="pf-sunat-code" placeholder="Ej: 82101500" maxlength="8"/>
+                </div>
+            </div>
+            <div class="f-row" style="margin-bottom:0;">
                 <div class="f-group">
                     <label for="pf-um">Unidad de Medida</label>
                     <select id="pf-um" required>
                         <option value="">Cargando...</option>
+                    </select>
+                </div>
+                <div class="f-group">
+                    <label for="pf-afectacion">Afectación IGV</label>
+                    <select id="pf-afectacion" onchange="calcIGV()">
+                        <option value="10">Gravado (10)</option>
+                        <option value="20">Exonerado (20)</option>
+                        <option value="30">Inafecto (30)</option>
                     </select>
                 </div>
             </div>
@@ -154,16 +168,22 @@
         var umMap = {};
         unidades.forEach(function(u) { umMap[u.codigo] = u.descripcion; });
 
+        var afectMap = {'10':'Gravado','20':'Exonerado','30':'Inafecto'};
+
         var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
-            '<th>Código</th><th>Descripción</th><th>U.M.</th><th>V.Unit.</th><th>P.Unit.</th><th>IGV</th>' +
+            '<th>Código</th><th>SUNAT</th><th>Descripción</th><th>U.M.</th><th>Afect.</th><th>V.Unit.</th><th>P.Unit.</th><th>IGV</th>' +
             '</tr></thead><tbody>';
         prods.forEach(function(p) {
             var umCode = p.unidadMedida || 'ZZ';
             var umLabel = umMap[umCode] ? umCode + ' · ' + umMap[umCode] : umCode;
+            var afect = p.tipoAfectacionIgv || '10';
+            var afectLabel = afectMap[afect] || afect;
             html += '<tr>' +
                 '<td><span class="badge badge-blue">' + (p.codigoProducto || '—') + '</span></td>' +
+                '<td><span class="badge badge-purple" style="font-size:0.6rem;">' + (p.codigoProductoSunat || '—') + '</span></td>' +
                 '<td><strong>' + (p.descripcion || '') + '</strong></td>' +
                 '<td><span class="badge badge-purple" style="font-size:0.6rem;">' + umLabel + '</span></td>' +
+                '<td><span class="badge ' + (afect==='10'?'badge-blue':afect==='20'?'badge-green':'badge-orange') + '" style="font-size:0.6rem;">' + afectLabel + '</span></td>' +
                 '<td style="font-family:var(--font-mono);">S/ ' + (parseFloat(p.valorUnitario) || 0).toFixed(2) + '</td>' +
                 '<td style="font-family:var(--font-mono);color:var(--accent);font-weight:600;">S/ ' + (parseFloat(p.precioUnitario) || 0).toFixed(2) + '</td>' +
                 '<td style="font-family:var(--font-mono);">S/ ' + (parseFloat(p.igv) || 0).toFixed(2) + '</td>' +
@@ -202,6 +222,7 @@
     function openCreateModal() {
         document.getElementById('product-form').reset();
         document.getElementById('pf-um').value = 'ZZ';
+        document.getElementById('pf-afectacion').value = '10';
         document.getElementById('pf-igv').value = '0.00';
         document.getElementById('pf-precio').value = '0.00';
         document.getElementById('create-product-modal').classList.add('show');
@@ -213,7 +234,8 @@
 
     function calcIGV() {
         var val = parseFloat(document.getElementById('pf-valor').value) || 0;
-        var igv = Math.round(val * 18) / 100;
+        var afect = document.getElementById('pf-afectacion').value;
+        var igv = (afect === '10') ? Math.round(val * 18) / 100 : 0;
         document.getElementById('pf-igv').value = igv.toFixed(2);
         document.getElementById('pf-precio').value = (val + igv).toFixed(2);
     }
@@ -227,8 +249,10 @@
         var product = {
             companyId: ETIA.companyId,
             codigoProducto: document.getElementById('pf-code').value.trim(),
+            codigoProductoSunat: document.getElementById('pf-sunat-code').value.trim() || null,
             descripcion: document.getElementById('pf-desc').value.trim(),
             unidadMedida: document.getElementById('pf-um').value,
+            tipoAfectacionIgv: document.getElementById('pf-afectacion').value,
             valorUnitario: parseFloat(document.getElementById('pf-valor').value)
         };
 

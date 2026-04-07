@@ -28,6 +28,7 @@ public interface FacturaMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "formaPago", expression = "java(request.getFormaPago() != null ? request.getFormaPago().getValue() : \"CONTADO\")")
+    @Mapping(target = "horaEmision", expression = "java(request.getHoraEmision() != null ? java.time.LocalTime.parse(request.getHoraEmision()) : null)")
     @Mapping(target = "detalleJson", source = "detalle", qualifiedByName = "detalleToJson")
     FacturaEntity toEntity(FacturaEmitirDto request);
 
@@ -35,7 +36,10 @@ public interface FacturaMapper {
     @Mapping(target = "moneda", expression = "java(entity.getMoneda() != null ? FacturaData.MonedaEnum.fromValue(entity.getMoneda()) : null)")
     @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? FacturaData.EstadoEnum.fromValue(entity.getEstado()) : null)")
     @Mapping(target = "formaPago", expression = "java(entity.getFormaPago() != null ? FacturaData.FormaPagoEnum.fromValue(entity.getFormaPago()) : null)")
+    @Mapping(target = "horaEmision", expression = "java(entity.getHoraEmision() != null ? entity.getHoraEmision().toString() : null)")
     @Mapping(target = "detalle", source = "detalleJson", qualifiedByName = "jsonToDetalle")
+    @Mapping(target = "cuotas", ignore = true)
+    @Mapping(target = "cargosDescuentos", ignore = true)
     FacturaData toData(FacturaEntity entity);
 
     @Named("detalleToJson")
@@ -56,4 +60,3 @@ public interface FacturaMapper {
         }
     }
 }
-

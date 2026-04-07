@@ -30,6 +30,10 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponseDto crearProducto(ProductCreateDto request) {
         ProductEntity entity = productMapper.toEntity(request);
+        // Default tipoAfectacionIgv → "10" (Gravado) si no se especifica
+        if (entity.getTipoAfectacionIgv() == null || entity.getTipoAfectacionIgv().isBlank()) {
+            entity.setTipoAfectacionIgv("10");
+        }
         recalcularIgv(entity);
         if (entity.getUnidadMedida() == null || entity.getUnidadMedida().isBlank()) {
             entity.setUnidadMedida("ZZ");
@@ -125,9 +129,16 @@ public class ProductServiceImpl implements ProductService {
 
     private void recalcularIgv(ProductEntity product) {
         if (product.getValorUnitario() != null) {
-            BigDecimal igv = product.getValorUnitario().multiply(IGV_RATE).setScale(2, RoundingMode.HALF_UP);
-            product.setIgv(igv);
-            product.setPrecioUnitario(product.getValorUnitario().add(igv));
+            String afectacion = product.getTipoAfectacionIgv();
+            // Solo productos gravados (10) llevan IGV; exonerados (20) e inafectos (30) → IGV = 0
+            if ("20".equals(afectacion) || "30".equals(afectacion)) {
+                product.setIgv(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+                product.setPrecioUnitario(product.getValorUnitario());
+            } else {
+                BigDecimal igv = product.getValorUnitario().multiply(IGV_RATE).setScale(2, RoundingMode.HALF_UP);
+                product.setIgv(igv);
+                product.setPrecioUnitario(product.getValorUnitario().add(igv));
+            }
         }
     }
 }

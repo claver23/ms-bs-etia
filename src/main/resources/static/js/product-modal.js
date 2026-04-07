@@ -43,9 +43,15 @@ function onModalProductSearch(term) {
                     return;
                 }
                 container.innerHTML = products.map(function(p){
-                    return '<div class="pm-item" onclick="selectProductFromModal(\'' + p.id + '\',\'' + (p.descripcion||'').replace(/'/g,"\\'") + '\',\'' + (p.unidadMedida||'ZZ') + '\',' + (p.valorUnitario||0) + ',' + (p.precioUnitario||0) + ')">' +
+                    var afectMap = {'10':'Grav.','20':'Exon.','30':'Inaf.'};
+                    var afect = p.tipoAfectacionIgv || '10';
+                    return '<div class="pm-item" onclick=\'selectProductFromModal(' + JSON.stringify({
+                        id: p.id, descripcion: p.descripcion||'', unidadMedida: p.unidadMedida||'ZZ',
+                        valorUnitario: p.valorUnitario||0, precioUnitario: p.precioUnitario||0,
+                        tipoAfectacionIgv: afect, codigoProductoSunat: p.codigoProductoSunat||''
+                    }) + ')\'>' +
                         '<div class="pm-item-info"><h4>' + p.descripcion + '</h4>' +
-                        '<span>' + (p.codigoProducto||'') + ' · ' + (p.unidadMedida||'ZZ') + '</span></div>' +
+                        '<span>' + (p.codigoProducto||'') + ' · ' + (p.unidadMedida||'ZZ') + (p.codigoProductoSunat ? ' · SUNAT:' + p.codigoProductoSunat : '') + ' · ' + (afectMap[afect]||afect) + '</span></div>' +
                         '<div class="pm-item-price"><div class="price">S/ ' + parseFloat(p.valorUnitario||0).toFixed(2) + '</div>' +
                         '<div class="unit">+ IGV</div></div></div>';
                 }).join('');
@@ -56,17 +62,23 @@ function onModalProductSearch(term) {
     }, 300);
 }
 
-function selectProductFromModal(id, desc, um, valor, precio) {
-    selectedProduct = { id:id, descripcion:desc, unidadMedida:um, valorUnitario:valor, precioUnitario:precio };
-    document.getElementById('sp-name').textContent = desc;
-    document.getElementById('sp-meta').textContent = um + ' · S/ ' + parseFloat(valor).toFixed(2) + ' + IGV';
+function selectProductFromModal(prod) {
+    selectedProduct = {
+        id: prod.id, descripcion: prod.descripcion, unidadMedida: prod.unidadMedida,
+        valorUnitario: prod.valorUnitario, precioUnitario: prod.precioUnitario,
+        tipoAfectacionIgv: prod.tipoAfectacionIgv || '10',
+        codigoProductoSunat: prod.codigoProductoSunat || ''
+    };
+    document.getElementById('sp-name').textContent = prod.descripcion;
+    var afectMap = {'10':'Gravado','20':'Exonerado','30':'Inafecto'};
+    document.getElementById('sp-meta').textContent = prod.unidadMedida + ' · S/ ' + parseFloat(prod.valorUnitario).toFixed(2) + ' + IGV · ' + (afectMap[prod.tipoAfectacionIgv]||'Gravado');
     document.getElementById('selected-product').style.display = 'block';
     document.getElementById('search-btn-wrap').style.display = 'none';
     var qtyInput = document.getElementById('add-qty');
-    if (um === 'ZZ') { qtyInput.value = 1; qtyInput.disabled = true; }
+    if (prod.unidadMedida === 'ZZ') { qtyInput.value = 1; qtyInput.disabled = true; }
     else { qtyInput.disabled = false; }
     closeProductModal();
-    if (um !== 'ZZ') qtyInput.focus();
+    if (prod.unidadMedida !== 'ZZ') qtyInput.focus();
 }
 
 function clearSelectedProduct() {

@@ -118,6 +118,13 @@
                     </div>
                     <div class="f-group"><label>Fecha Vencimiento</label><input type="date" id="fac-fecha-venc" /></div>
                     <div class="f-group"><label>Leyenda</label><input id="fac-leyenda" value=""/></div>
+                    <div class="f-group"><label>Tipo Operación</label>
+                        <select id="fac-tipo-operacion">
+                            <option value="0101" selected>0101 — Venta interna</option>
+                            <option value="0200">0200 — Exportación</option>
+                            <option value="0401">0401 — Venta interna - Anticipos</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Campos específicos para Notas (crédito/débito) -->
@@ -179,7 +186,7 @@
                     <table class="tbl">
                         <thead><tr>
                             <th>#</th><th>Descripción</th><th>U.M.</th><th>Cant.</th>
-                            <th>V.Unit.</th><th>P.Unit.</th><th>IGV</th><th>Subtotal</th><th></th>
+                            <th>V.Unit.</th><th>P.Unit.</th><th>Afectación</th><th>Impuesto</th><th>Subtotal</th><th></th>
                         </tr></thead>
                         <tbody id="items-body"></tbody>
                     </table>
@@ -188,8 +195,48 @@
                 <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
                     <div style="min-width:260px;">
                         <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="t-grav">S/ 0.00</span></div>
+                        <div class="sr" style="display:none;"><span class="l">Op. Exoneradas:</span><span class="v" id="t-exo">S/ 0.00</span></div>
+                        <div class="sr" style="display:none;"><span class="l">Op. Inafectas:</span><span class="v" id="t-ina">S/ 0.00</span></div>
                         <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="t-igv">S/ 0.00</span></div>
+                        <div class="sr" id="t-cargos-row" style="display:none;"><span class="l">Cargos:</span><span class="v" id="t-cargos">S/ 0.00</span></div>
+                        <div class="sr" id="t-desc-row" style="display:none;"><span class="l">Descuentos:</span><span class="v" id="t-desc">S/ 0.00</span></div>
                         <div class="sr total"><span class="l">TOTAL:</span><span class="v" id="t-total">S/ 0.00</span></div>
+                    </div>
+                </div>
+
+                <!-- Cargos / Descuentos Globales (Cat. 53 SUNAT) -->
+                <div style="margin-top:1.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                        <h3 style="margin:0;font-size:0.95rem;">📋 Cargos / Descuentos Globales</h3>
+                        <button class="btn btn-ghost" onclick="addCargoDescuento()" style="font-size:0.75rem;padding:0.3rem 0.7rem;">+ Agregar</button>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl" id="ac-table" style="font-size:0.8rem;">
+                            <thead><tr>
+                                <th>Tipo</th><th>Código (Cat.53)</th><th>Descripción</th><th>Factor</th><th>Base</th><th>Monto</th><th></th>
+                            </tr></thead>
+                            <tbody id="ac-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cuotas de Crédito (solo visible si formaPago=CREDITO) -->
+                <div id="cuotas-section" style="margin-top:1.5rem;display:none;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                        <h3 style="margin:0;font-size:0.95rem;">💳 Cuotas de Crédito</h3>
+                        <button class="btn btn-ghost" onclick="addCuota()" style="font-size:0.75rem;padding:0.3rem 0.7rem;">+ Agregar Cuota</button>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl" id="cuotas-table" style="font-size:0.8rem;">
+                            <thead><tr>
+                                <th># Cuota</th><th>Monto</th><th>Fecha Vencimiento</th><th></th>
+                            </tr></thead>
+                            <tbody id="cuotas-body"></tbody>
+                        </table>
+                    </div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem;">
+                        ⚠️ La suma de las cuotas debe ser igual al total del comprobante.
+                        <span id="cuotas-sum-check" style="margin-left:0.5rem;"></span>
                     </div>
                 </div>
                 <div class="btn-row">

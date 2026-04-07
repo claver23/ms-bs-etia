@@ -35,10 +35,16 @@ public class ProductEntity {
     @Column(name = "codigo_producto")
     private String codigoProducto;
 
+    @Column(name = "codigo_producto_sunat", length = 8)
+    private String codigoProductoSunat;
+
     private String descripcion;
 
     @Column(name = "unidad_medida")
     private String unidadMedida;
+
+    @Column(name = "tipo_afectacion_igv", length = 2)
+    private String tipoAfectacionIgv;
 
     @Column(name = "valor_unitario")
     private BigDecimal valorUnitario;
