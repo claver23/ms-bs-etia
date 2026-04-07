@@ -16,6 +16,9 @@
             <div class="vt-search-wrap">
                 <input type="text" id="client-search" class="vt-search" placeholder="🔍 Buscar por nombre, RUC, DNI..." oninput="filterClients(this.value)"/>
             </div>
+            <div class="vt-actions">
+                <button class="btn btn-accent" onclick="openClientForm()">➕ Nuevo Cliente</button>
+            </div>
         </div>
 
         <div class="panel active" id="client-panel">
@@ -24,6 +27,58 @@
             </div>
             <div id="client-pag" class="pag-bar" style="display:none;"></div>
         </div>
+    </div>
+</div>
+
+<!-- ═══════ Modal: Crear / Editar Cliente ═══════ -->
+<div class="modal-overlay" id="client-form-modal">
+    <div class="modal-card" style="max-width:540px;">
+        <h3 id="cf-title">👤 Nuevo Cliente</h3>
+        <form id="client-form" onsubmit="return handleSubmitClient(event);">
+            <input type="hidden" id="cf-id" value=""/>
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="cf-tipo">Tipo Documento</label>
+                    <select id="cf-tipo" required onchange="onCfTipoChange()">
+                        <option value="RUC">RUC</option>
+                        <option value="DNI">DNI</option>
+                        <option value="CE">Carnet de Extranjería</option>
+                        <option value="PASAPORTE">Pasaporte</option>
+                    </select>
+                </div>
+                <div class="f-group">
+                    <label for="cf-numdoc">Nro. Documento</label>
+                    <div style="display:flex;gap:0.4rem;">
+                        <input type="text" id="cf-numdoc" required style="flex:1;"/>
+                        <button type="button" class="btn btn-accent" id="cf-btn-reniec" onclick="cfQueryReniec()" style="white-space:nowrap;padding:0.4rem 0.7rem;font-size:0.8rem;">🔎 Consultar</button>
+                    </div>
+                </div>
+            </div>
+            <!-- RENIEC status -->
+            <div id="cf-reniec-status" style="display:none;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.8rem;margin-bottom:0.8rem;"></div>
+            <div class="f-group">
+                <label for="cf-denom">Denominación / Razón Social</label>
+                <input type="text" id="cf-denom" required/>
+            </div>
+            <div class="f-group">
+                <label for="cf-dir">Dirección</label>
+                <input type="text" id="cf-dir"/>
+            </div>
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="cf-email">Email</label>
+                    <input type="email" id="cf-email"/>
+                </div>
+                <div class="f-group">
+                    <label for="cf-tel">Teléfono</label>
+                    <input type="text" id="cf-tel"/>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="closeClientForm()">Cancelar</button>
+                <button type="submit" class="btn btn-accent" id="cf-submit">💾 Guardar</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -84,10 +139,11 @@
             return;
         }
         var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
-            '<th>Tipo Doc.</th><th>Nro. Documento</th><th>Denominación</th><th>Dirección</th><th>Email</th><th>Teléfono</th>' +
+            '<th>Tipo Doc.</th><th>Nro. Documento</th><th>Denominación</th><th>Dirección</th><th>Email</th><th>Teléfono</th><th style="text-align:center;">Acciones</th>' +
             '</tr></thead><tbody>';
         clients.forEach(function(c) {
             var tipoLabel = tipoLabels[c.tipoDocumento] || c.tipoDocumento || '—';
+            var safe = function(s) { return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); };
             html += '<tr>' +
                 '<td><span class="badge badge-blue">' + tipoLabel + '</span></td>' +
                 '<td style="font-family:var(--font-mono);">' + (c.numeroDocumento || '—') + '</td>' +
@@ -95,6 +151,10 @@
                 '<td style="font-size:0.75rem;color:var(--text-secondary);">' + (c.direccion || '—') + '</td>' +
                 '<td>' + (c.email || '—') + '</td>' +
                 '<td>' + (c.telefono || '—') + '</td>' +
+                '<td style="text-align:center;white-space:nowrap;">' +
+                    '<button class="btn btn-ghost" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="editClient(\'' + safe(c.id) + '\',\'' + safe(c.tipoDocumento) + '\',\'' + safe(c.numeroDocumento) + '\',\'' + safe(c.denominacion) + '\',\'' + safe(c.direccion) + '\',\'' + safe(c.email) + '\',\'' + safe(c.telefono) + '\')">✏️</button> ' +
+                    '<button class="btn btn-ghost" style="padding:0.25rem 0.5rem;font-size:0.75rem;color:var(--danger);" onclick="confirmDeleteClient(\'' + safe(c.id) + '\',\'' + safe(c.denominacion) + '\')">🗑️</button>' +
+                '</td>' +
                 '</tr>';
         });
         html += '</tbody></table></div>';
@@ -124,6 +184,166 @@
         html += '</div>';
         bar.innerHTML = html;
     }
+
+    /* ═══════ RENIEC / SUNAT Consultation ═══════ */
+    function onCfTipoChange() {
+        var tipo = document.getElementById('cf-tipo').value;
+        var numdoc = document.getElementById('cf-numdoc');
+        var btn = document.getElementById('cf-btn-reniec');
+        numdoc.value = '';
+        /* Show/hide consultar button — only for RUC and DNI */
+        btn.style.display = (tipo === 'RUC' || tipo === 'DNI') ? '' : 'none';
+        /* Set maxlength */
+        numdoc.maxLength = (tipo === 'DNI') ? 8 : (tipo === 'RUC') ? 11 : 20;
+        numdoc.placeholder = (tipo === 'DNI') ? '8 dígitos' : (tipo === 'RUC') ? '11 dígitos' : 'Nro. documento';
+        /* Hide status */
+        document.getElementById('cf-reniec-status').style.display = 'none';
+    }
+
+    function cfQueryReniec() {
+        var tipo = document.getElementById('cf-tipo').value;
+        var numDoc = document.getElementById('cf-numdoc').value.trim();
+        var statusEl = document.getElementById('cf-reniec-status');
+        var btn = document.getElementById('cf-btn-reniec');
+
+        if (!numDoc) {
+            _cfStatus('⚠️ Ingresa un número de documento', 'warn');
+            return;
+        }
+        if (tipo === 'DNI' && numDoc.length !== 8) {
+            _cfStatus('⚠️ El DNI debe tener 8 dígitos', 'warn');
+            return;
+        }
+        if (tipo === 'RUC' && numDoc.length !== 11) {
+            _cfStatus('⚠️ El RUC debe tener 11 dígitos', 'warn');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        _cfStatus('🔄 Consultando RENIEC/SUNAT...', 'info');
+
+        ApiClient.consultarReniec(tipo, numDoc).then(function(data) {
+            btn.disabled = false;
+            btn.textContent = '🔎 Consultar';
+            if (data && (data.denominacion || data.nombre || data.razonSocial)) {
+                var nombre = data.denominacion || data.razonSocial || ((data.nombre || '') + ' ' + (data.apellidoPaterno || '') + ' ' + (data.apellidoMaterno || '')).trim();
+                document.getElementById('cf-denom').value = nombre;
+                document.getElementById('cf-dir').value = data.direccion || '';
+                _cfStatus('✅ Datos encontrados — ' + nombre, 'ok');
+            } else {
+                _cfStatus('⚠️ No se encontraron datos. Completa manualmente.', 'warn');
+            }
+        }).catch(function(err) {
+            btn.disabled = false;
+            btn.textContent = '🔎 Consultar';
+            _cfStatus('❌ Error consultando: ' + (err.message || err), 'error');
+        });
+    }
+
+    function _cfStatus(msg, type) {
+        var el = document.getElementById('cf-reniec-status');
+        el.style.display = 'block';
+        el.textContent = msg;
+        if (type === 'ok')    { el.style.background = 'rgba(0,255,136,0.1)'; el.style.color = 'var(--accent)'; }
+        else if (type === 'warn')  { el.style.background = 'var(--warning-bg, rgba(255,200,0,0.1))'; el.style.color = 'var(--warning, #e0a800)'; }
+        else if (type === 'error') { el.style.background = 'rgba(248,81,73,0.1)'; el.style.color = 'var(--danger)'; }
+        else                       { el.style.background = 'var(--accent-glow, rgba(0,255,136,0.05))'; el.style.color = 'var(--accent)'; }
+    }
+
+    /* ═══════ Modal CRUD ═══════ */
+    var editingClientId = null;
+
+    function openClientForm() {
+        editingClientId = null;
+        document.getElementById('cf-title').textContent = '👤 Nuevo Cliente';
+        document.getElementById('cf-submit').textContent = '💾 Guardar';
+        document.getElementById('client-form').reset();
+        document.getElementById('cf-id').value = '';
+        document.getElementById('cf-tipo').disabled = false;
+        document.getElementById('cf-numdoc').readOnly = false;
+        document.getElementById('cf-btn-reniec').style.display = '';
+        document.getElementById('cf-reniec-status').style.display = 'none';
+        onCfTipoChange();
+        document.getElementById('client-form-modal').classList.add('show');
+    }
+
+    function editClient(id, tipo, numDoc, denom, dir, email, tel) {
+        editingClientId = id;
+        document.getElementById('cf-title').textContent = '✏️ Editar Cliente';
+        document.getElementById('cf-submit').textContent = '💾 Actualizar';
+        document.getElementById('cf-id').value = id;
+        document.getElementById('cf-tipo').value = tipo || 'RUC';
+        document.getElementById('cf-tipo').disabled = true;
+        document.getElementById('cf-numdoc').value = numDoc || '';
+        document.getElementById('cf-numdoc').readOnly = true;
+        document.getElementById('cf-btn-reniec').style.display = 'none';
+        document.getElementById('cf-reniec-status').style.display = 'none';
+        document.getElementById('cf-denom').value = denom || '';
+        document.getElementById('cf-dir').value = dir || '';
+        document.getElementById('cf-email').value = email || '';
+        document.getElementById('cf-tel').value = tel || '';
+        document.getElementById('client-form-modal').classList.add('show');
+    }
+
+    function closeClientForm() {
+        document.getElementById('client-form-modal').classList.remove('show');
+    }
+
+    function handleSubmitClient(e) {
+        e.preventDefault();
+        var btn = document.getElementById('cf-submit');
+        btn.disabled = true;
+        btn.textContent = '⏳ Guardando...';
+
+        if (editingClientId) {
+            var updatePayload = {
+                denominacion: document.getElementById('cf-denom').value.trim(),
+                direccion: document.getElementById('cf-dir').value.trim() || null,
+                email: document.getElementById('cf-email').value.trim() || null,
+                telefono: document.getElementById('cf-tel').value.trim() || null
+            };
+            ApiClient.updateClient(editingClientId, updatePayload).then(function() {
+                closeClientForm();
+                loadClients();
+                if (ETIA.showSuccess) ETIA.showSuccess('Cliente actualizado exitosamente');
+            }).catch(function() {}).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '💾 Actualizar';
+            });
+        } else {
+            var createPayload = {
+                companyId: ETIA.companyId,
+                tipoDocumento: document.getElementById('cf-tipo').value,
+                numeroDocumento: document.getElementById('cf-numdoc').value.trim(),
+                denominacion: document.getElementById('cf-denom').value.trim(),
+                direccion: document.getElementById('cf-dir').value.trim() || null,
+                email: document.getElementById('cf-email').value.trim() || null,
+                telefono: document.getElementById('cf-tel').value.trim() || null
+            };
+            ApiClient.registerClient(createPayload).then(function() {
+                closeClientForm();
+                loadClients();
+                if (ETIA.showSuccess) ETIA.showSuccess('Cliente "' + createPayload.denominacion + '" registrado exitosamente');
+            }).catch(function() {}).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '💾 Guardar';
+            });
+        }
+        return false;
+    }
+
+    function confirmDeleteClient(id, name) {
+        if (!confirm('¿Eliminar al cliente "' + name + '"? Esta acción no se puede deshacer.')) return;
+        ApiClient.deleteClient(id).then(function() {
+            loadClients();
+            if (ETIA.showSuccess) ETIA.showSuccess('Cliente eliminado exitosamente');
+        });
+    }
+
+    document.getElementById('client-form-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeClientForm();
+    });
 </script>
 </body>
 </html>

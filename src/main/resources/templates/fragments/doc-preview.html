@@ -8,12 +8,18 @@
             </div>
             <button class="dp-close" onclick="closeDocPreview()">✕</button>
         </div>
+        <!-- Status banner — shown for RECHAZADA -->
+        <div id="dp-status-banner" style="display:none;"></div>
         <div class="dp-body" id="dp-body">
             <p class="pm-spinner">⏳ Cargando documento...</p>
         </div>
         <div class="dp-footer" id="dp-footer" style="display:none;">
             <button class="btn btn-ghost" onclick="closeDocPreview()">Cerrar</button>
-            <a id="dp-edit-btn" class="btn btn-accent" style="display:none;">✏️ Editar Borrador</a>
+            <div style="display:flex;gap:0.5rem;" id="dp-action-buttons">
+                <a id="dp-edit-btn" class="btn btn-accent" style="display:none;">✏️ Editar</a>
+                <button id="dp-emit-btn" class="btn btn-accent" style="display:none;" onclick="dpEmitirFactura()">📤 Emitir</button>
+                <button id="dp-annul-btn" class="btn btn-ghost" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="dpAnularFactura()">🚫 Anular</button>
+            </div>
         </div>
     </div>
 </div>

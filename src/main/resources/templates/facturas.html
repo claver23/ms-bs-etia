@@ -82,9 +82,11 @@
         var html = '<div class="doc-list-cards">';
         pageItems.forEach(function(d) {
             var estado = d.estado || '—';
-            var badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ANULADA' ? 'badge-red' : 'badge-green';
+            var badgeMap = { 'BORRADOR': 'badge-gray', 'ENVIADA': 'badge-blue', 'ACEPTADA': 'badge-green', 'RECHAZADA': 'badge-red', 'ANULADA': 'badge-yellow' };
+            var badgeCls = badgeMap[estado] || 'badge-gray';
             var monSym = (d.moneda === 'USD' || d.moneda === 'usd') ? 'US$ ' : 'S/ ';
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;">' +
+            var strikeStyle = estado === 'ANULADA' ? 'text-decoration:line-through;opacity:0.6;' : '';
+            html += '<div class="doc-list-item" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
                 '<div class="dli-header">' +
                     '<div class="dli-left">' +
                         '<strong class="dli-serie">' + (d.serie||'') + '-' + (d.numero||'') + '</strong>' +

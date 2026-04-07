@@ -89,6 +89,15 @@ var ApiClient = (function() {
         });
     }
 
+    /* ═══════ CLIENT (extended) ═══════ */
+    function updateClient(clientId, payload) {
+        return _put('/client?clientId=' + encodeURIComponent(clientId), payload);
+    }
+
+    function deleteClient(clientId) {
+        return _delete('/client?clientId=' + encodeURIComponent(clientId));
+    }
+
     /* ═══════ EMPLOYEE ═══════ */
     function listEmployees(companyId, estado) {
         var url = '/employee?companyId=' + encodeURIComponent(companyId);
@@ -96,6 +105,20 @@ var ApiClient = (function() {
         return _get(url).then(function(res) {
             return res.data || [];
         });
+    }
+
+    function registerEmployee(payload) {
+        return _post('/employee', payload);
+    }
+
+    function updateEmployee(employeeId, payload) {
+        return _put('/employee?employeeId=' + encodeURIComponent(employeeId), payload);
+    }
+
+    function deleteEmployee(employeeId, softDelete) {
+        var url = '/employee?employeeId=' + encodeURIComponent(employeeId);
+        if (softDelete !== undefined) url += '&softDelete=' + softDelete;
+        return _delete(url);
     }
 
     /* ═══════ PRODUCT ═══════ */
@@ -202,6 +225,10 @@ var ApiClient = (function() {
         });
     }
 
+    function anularFactura(facturaId, payload) {
+        return _put('/factura?facturaId=' + encodeURIComponent(facturaId), payload);
+    }
+
     /* ═══════ BOLETA ═══════ */
     function emitirBoleta(payload) {
         return _post('/boleta', payload);
@@ -273,15 +300,40 @@ var ApiClient = (function() {
         });
     }
 
+    /* ═══════ TABLAS SUNAT ═══════ */
+    function listMenuTablasSunat() {
+        return _get('/tabla_sunat/menu');
+    }
+
+    function obtenerTablaSunat(nombreTabla) {
+        return _get('/tabla_sunat?nombreTabla=' + encodeURIComponent(nombreTabla))
+            .then(function(res) { return res.data || res; });
+    }
+
+    /* ═══════ CATÁLOGO SUNAT ═══════ */
+    function listMenuCatalogosSunat() {
+        return _get('/catalogo_sunat/menu');
+    }
+
+    function obtenerCatalogoSunat(nombreCatalogo) {
+        return _get('/catalogo_sunat?nombreCatalogo=' + encodeURIComponent(nombreCatalogo))
+            .then(function(res) { return res.data || res; });
+    }
+
     /* ═══════ PUBLIC API ═══════ */
     return {
         listCompanies:      listCompanies,
         listClients:        listClients,
         registerClient:     registerClient,
+        updateClient:       updateClient,
+        deleteClient:       deleteClient,
         consultarReniec:    consultarReniec,
         getTipoCambio:      getTipoCambio,
         listTiposCambio:    listTiposCambio,
         listEmployees:      listEmployees,
+        registerEmployee:   registerEmployee,
+        updateEmployee:     updateEmployee,
+        deleteEmployee:     deleteEmployee,
         searchProducts:     searchProducts,
         createProduct:      createProduct,
         getProduct:         getProduct,
@@ -300,6 +352,7 @@ var ApiClient = (function() {
         savePreference:     savePreference,
         emitirFactura:      emitirFactura,
         listarFacturas:     listarFacturas,
+        anularFactura:      anularFactura,
         getFactura:         getFactura,
         emitirBoleta:       emitirBoleta,
         listarBoletas:      listarBoletas,
@@ -311,6 +364,10 @@ var ApiClient = (function() {
         listarNotasDebito:  listarNotasDebito,
         getNotaDebito:      getNotaDebito,
         annulDocument:      annulDocument,
+        listMenuTablasSunat:    listMenuTablasSunat,
+        obtenerTablaSunat:      obtenerTablaSunat,
+        listMenuCatalogosSunat: listMenuCatalogosSunat,
+        obtenerCatalogoSunat:   obtenerCatalogoSunat,
         listNotifications:  function(companyId) {
             return _get('/notification?companyId=' + companyId).then(function(res) {
                 return res.data || res;

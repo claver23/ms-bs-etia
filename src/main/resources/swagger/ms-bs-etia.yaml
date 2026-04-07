@@ -41,6 +41,10 @@ tags:
     description: Notificaciones de transmisión de documentos
   - name: reniec
     description: Consulta de documentos RENIEC / SUNAT
+  - name: tabla_sunat
+    description: Catálogo de tablas parametrizadas SUNAT
+  - name: catalogo_sunat
+    description: Catálogos oficiales SUNAT para comprobantes electrónicos (CPE)
 
 paths:
   # ==================== COMPANY ====================
@@ -1651,6 +1655,86 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # ==================== TABLA SUNAT ====================
+  /tabla_sunat/menu:
+    get:
+      tags:
+        - tabla_sunat
+      summary: Listar menú de tablas SUNAT disponibles
+      operationId: listarMenuTablasSunat
+      responses:
+        "200":
+          description: Lista de nombres de tablas disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TablaSunatMenuItem'
+
+  /tabla_sunat:
+    get:
+      tags:
+        - tabla_sunat
+      summary: Obtener una tabla SUNAT por nombre
+      operationId: obtenerTablaSunat
+      parameters:
+        - name: nombreTabla
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nombre exacto de la tabla SUNAT (ej. TIPO DE MONEDA)
+      responses:
+        "200":
+          description: Datos de la tabla solicitada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TablaSunatResponseDto'
+        "404":
+          description: Tabla no encontrada
+
+  # ==================== CATÁLOGO SUNAT ====================
+  /catalogo_sunat/menu:
+    get:
+      tags:
+        - catalogo_sunat
+      summary: Listar menú de catálogos SUNAT disponibles
+      operationId: listarMenuCatalogosSunat
+      responses:
+        "200":
+          description: Lista de nombres de catálogos disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogoSunatMenuItem'
+
+  /catalogo_sunat:
+    get:
+      tags:
+        - catalogo_sunat
+      summary: Obtener un catálogo SUNAT por nombre
+      operationId: obtenerCatalogoSunat
+      parameters:
+        - name: nombreCatalogo
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nombre del catálogo SUNAT (ej. Catálogo No. 01)
+      responses:
+        "200":
+          description: Datos del catálogo solicitado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogoSunatResponseDto'
+        "404":
+          description: Catálogo no encontrado
+
 components:
   schemas:
     # ===== GENERIC =====
@@ -1870,15 +1954,19 @@ components:
         - gravadas
         - igv
         - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
         clientId:
           type: string
+          minLength: 1
           example: "cli_123456"
         serie:
           type: string
+          pattern: "^[A-Za-z]\\d{3}$"
           example: "F001"
         numero:
           type: integer
@@ -1893,15 +1981,19 @@ components:
           example: "PEN"
         gravadas:
           type: number
+          minimum: 0
           example: 1000.00
         igv:
           type: number
+          minimum: 0
           example: 180.00
         total:
           type: number
+          minimum: 0
           example: 1180.00
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
         leyenda:
@@ -1914,6 +2006,7 @@ components:
           example: "CONTADO"
         tipoCambio:
           type: number
+          minimum: 0
           description: Tipo de cambio del día (solo si moneda != PEN)
           example: 3.7520
         fechaVencimiento:
@@ -2115,40 +2208,54 @@ components:
     # ===== DETALLE REUSABLE =====
     DetalleItem:
       type: object
+      required:
+        - descripcion
+        - cantidad
+        - valorUnitario
+        - precioUnitario
       properties:
         codigo:
           type: string
           example: "PROD-001"
         descripcion:
           type: string
+          minLength: 1
           example: "LAPTOP HP 15"
         unidadMedida:
           type: string
           description: Código SUNAT de unidad de medida
+          default: "NIU"
           example: "NIU"
         cantidad:
           type: number
+          minimum: 0.01
           example: 2
         valorUnitario:
           type: number
+          minimum: 0
           description: Valor unitario sin IGV
           example: 423.73
         precioUnitario:
           type: number
+          minimum: 0
           description: Valor unitario con IGV
           example: 500.00
         subtotal:
           type: number
+          minimum: 0
           example: 1000.00
         igv:
           type: number
+          minimum: 0
           example: 180.00
         icbper:
           type: number
+          minimum: 0
           example: 0.00
           description: Impuesto al consumo de bolsas plásticas (si aplica)
         descuento:
           type: number
+          minimum: 0
           example: 0.00
 
     # ===== PAGINACIÓN =====
@@ -3346,4 +3453,95 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/ReniecData'
+
+    # ===== TABLA SUNAT =====
+    TablaSunatMenuItem:
+      type: object
+      properties:
+        nombreTabla:
+          type: string
+          example: "TIPO DE MONEDA"
+
+    TablaSunatRegistro:
+      type: object
+      properties:
+        cod:
+          type: string
+          example: "PEN"
+        descripcion:
+          type: string
+          example: "NUEVO SOL"
+
+    TablaSunatData:
+      type: object
+      properties:
+        nombreTabla:
+          type: string
+          example: "TIPO DE MONEDA"
+        registros:
+          type: integer
+          example: 28
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TablaSunatRegistro'
+
+    TablaSunatResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TablaSunatData'
+
+    # ===== CATÁLOGO SUNAT =====
+    CatalogoSunatMenuItem:
+      type: object
+      properties:
+        nombreCatalogo:
+          type: string
+          example: "Catálogo No. 01: Código de tipo de documento"
+
+    CatalogoSunatRegistro:
+      type: object
+      properties:
+        codigo:
+          type: string
+          example: "01"
+        descripcion:
+          type: string
+          example: "FACTURA"
+
+    CatalogoSunatData:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: "Catálogo No. 01: Código de tipo de documento"
+        campo:
+          type: string
+          description: Campo UBL donde se usa este catálogo
+          example: "cbc:InvoiceTypeCode"
+        description:
+          type: string
+          example: "Código de tipo de documento autorizado para efectos tributarios"
+        catalogo:
+          type: string
+          description: Fuente normativa del catálogo
+          example: "SUNAT"
+        registros:
+          type: integer
+          example: 25
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogoSunatRegistro'
+
+    CatalogoSunatResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CatalogoSunatData'
 

@@ -1,0 +1,86 @@
+[
+  {
+    "nombreTabla": "TIPO DE MEDIO DE PAGO"
+  },
+  {
+    "nombreTabla": "TIPO DE DOCUMENTO DE IDENTIDAD"
+  },
+  {
+    "nombreTabla": "ENTIDAD FINANCIERA"
+  },
+  {
+    "nombreTabla": "TIPO DE MONEDA"
+  },
+  {
+    "nombreTabla": "TIPO DE EXISTENCIA"
+  },
+  {
+    "nombreTabla": "CÓDIGO DE LA UNIDAD DE MEDIDA"
+  },
+  {
+    "nombreTabla": "TIPO DE COMPROBANTE DE PAGO O DOCUMENTO"
+  },
+  {
+    "nombreTabla": "CÓDIGO DE LA ADUANA"
+  },
+  {
+    "nombreTabla": "TIPO DE OPERACIÓN"
+  },
+  {
+    "nombreTabla": "CATÁLOGO DE EXISTENCIAS"
+  },
+  {
+    "nombreTabla": "MÉTODO DE VALUACIÓN"
+  },
+  {
+    "nombreTabla": "TIPO DE TÍTULO"
+  },
+  {
+    "nombreTabla": "TIPO DE ACCIONES O PARTICIPACIONES"
+  },
+  {
+    "nombreTabla": "PLAN DE CUENTAS"
+  },
+  {
+    "nombreTabla": "TIPO DE ACTIVO FIJO"
+  },
+  {
+    "nombreTabla": "ESTADO DEL ACTIVO FIJO"
+  },
+  {
+    "nombreTabla": "MÉTODO DE DEPRECIACIÓN"
+  },
+  {
+    "nombreTabla": "CÓDIGO DE AGRUPAMIENTO DEL COSTO DE PRODUCCIÓN VALORIZADO ANUAL"
+  },
+  {
+    "nombreTabla": "CATÁLOGO DE ESTADOS FINANCIEROS"
+  },
+  {
+    "nombreTabla": "CONVENIOS PARA EVITAR LA DOBLE TRIBUTACIÓN"
+  },
+  {
+    "nombreTabla": "TIPO DE VINCULACION ECONOMICA"
+  },
+  {
+    "nombreTabla": "PATRIMONIO NETO"
+  },
+  {
+    "nombreTabla": "CLASIFICACIÓN DE LOS BIENES Y SERVICIOS ADQUIRIDOS"
+  },
+  {
+    "nombreTabla": "TIPO DE RENTA"
+  },
+  {
+    "nombreTabla": "MODALIDAD DEL SERVICIO PRESTADO POR EL SUJETO NO DOMICILIADO"
+  },
+  {
+    "nombreTabla": "EXONERACIONES DE OPERACIONES DE NO DOMICILIADOS (ART. 19 DE LA LEY DEL IMPUESTO A LA RENTA)"
+  },
+  {
+    "nombreTabla": "CÓDIGO DE LOS RUBROS DE LOS ESTADOS FINANCIEROS"
+  },
+  {
+    "nombreTabla": "PAISES"
+  }
+]
