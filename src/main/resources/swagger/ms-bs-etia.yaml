@@ -3501,6 +3501,10 @@ components:
         nombreCatalogo:
           type: string
           example: "Catálogo No. 01: Código de tipo de documento"
+        icono:
+          type: string
+          description: Emoji representativo del catálogo
+          example: "📄"
 
     CatalogoSunatRegistro:
       type: object

@@ -5,20 +5,29 @@
 
 <header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú')}"></header>
 
-<!-- ═══════ MARQUEE STYLES ═══════ -->
+<!-- ═══════ STYLES ═══════ -->
 <style>
-/* ── Marquee Showcase ── */
+/* ── Showcase: full-width ── */
+.cs-zone {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    position: relative;
+    transition: background 0.4s ease;
+}
+.cs-zone.cs-dark {
+    background: rgba(0,0,0,0.2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
 .cs-showcase {
     position: relative;
     overflow: hidden;
-    padding: 1.2rem 0 0.8rem;
-    margin-bottom: 0.5rem;
+    padding: 0.6rem 0;
 }
-/* Fade edges — left & right */
 .cs-showcase::before,
 .cs-showcase::after {
     content: '';
-    position: absolute; top: 0; bottom: 0; width: 80px;
+    position: absolute; top: 0; bottom: 0; width: 140px;
     z-index: 3; pointer-events: none;
 }
 .cs-showcase::before {
@@ -29,112 +38,358 @@
     right: 0;
     background: linear-gradient(to left, var(--bg-primary) 0%, transparent 100%);
 }
-
-/* Each row */
+/* Hide fades in navegable mode */
+.cs-zone.cs-dark .cs-showcase::before,
+.cs-zone.cs-dark .cs-showcase::after { display: none; }
 .cs-row {
-    display: flex;
-    width: max-content;
-    gap: 0.6rem;
-    padding: 0.3rem 0;
+    display: flex; width: max-content; gap: 0.9rem; padding: 0.45rem 0;
 }
-.cs-row-1 { animation: marqueeLeft 60s linear infinite; }
-.cs-row-2 { animation: marqueeRight 65s linear infinite; }
+.cs-row-1 { animation: marqueeLeft 150s linear infinite; }
+.cs-row-2 { animation: marqueeRight 160s linear infinite; }
+@keyframes marqueeLeft  { 0%{transform:translateX(0)}     100%{transform:translateX(-50%)} }
+@keyframes marqueeRight { 0%{transform:translateX(-50%)}  100%{transform:translateX(0)} }
+/* Once JS takes over, CSS animation is removed entirely */
+.cs-showcase.cs-js-driven .cs-row { animation: none !important; }
 
-@keyframes marqueeLeft {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-@keyframes marqueeRight {
-    0%   { transform: translateX(-50%); }
-    100% { transform: translateX(0); }
-}
-
-/* Pause on hover */
-.cs-showcase:hover .cs-row { animation-play-state: paused; }
-
-/* ── Card Brick ── */
+/* ══════════════════════════════════════
+   CARD — STOCK MARKET / TICKER STYLE
+   ══════════════════════════════════════ */
 .cs-brick {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
     cursor: pointer;
-    white-space: nowrap;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     flex-shrink: 0;
-    min-width: 0;
+    width: 320px;
+    min-height: 140px;
+    position: relative;
+    overflow: hidden;
 }
+/* subtle diagonal line pattern (stock feel) */
+.cs-brick::before {
+    content: '';
+    position: absolute; top: 0; right: 0; width: 80px; height: 100%;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 6px,
+        var(--border) 6px,
+        var(--border) 7px
+    );
+    opacity: 0.25;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.cs-brick:hover::before { opacity: 0.45; }
 .cs-brick:hover {
     border-color: var(--accent);
     background: var(--bg-card-hover);
-    box-shadow: 0 0 18px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.3);
-    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 0 24px var(--accent-glow), 0 6px 20px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
 }
 .cs-brick.cs-active {
     border-color: var(--accent);
     background: var(--accent-glow-strong);
-    box-shadow: 0 0 24px var(--accent-glow), inset 0 0 12px var(--accent-glow);
+    box-shadow: 0 0 30px var(--accent-glow), inset 0 0 12px var(--accent-glow);
 }
-.cs-brick.cs-active .cs-brick-num { color: var(--accent); }
+.cs-brick.cs-active .cs-chip { background: var(--accent); color: var(--bg-primary); }
 
+/* Top row: chip + icon */
+.cs-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.cs-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.2rem 0.55rem;
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800;
+    color: var(--accent); letter-spacing: 0.5px;
+    line-height: 1; white-space: nowrap;
+    transition: all 0.25s ease;
+}
 .cs-brick-icon {
-    font-size: 1.1rem;
-    line-height: 1;
-    filter: drop-shadow(0 0 3px rgba(0,0,0,0.3));
+    font-size: 2.2rem; line-height: 1; flex-shrink: 0;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.35));
+    transition: filter 0.3s ease, transform 0.3s ease;
 }
-.cs-brick-body { display: flex; flex-direction: column; gap: 0; }
-.cs-brick-num {
-    font-size: 0.58rem;
-    font-family: var(--font-mono);
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    line-height: 1.1;
-}
-.cs-brick-name {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.2;
-    max-width: 200px;
+.cs-brick:hover .cs-brick-icon { transform: scale(1.08); }
+.cs-brick.cs-active .cs-brick-icon { filter: drop-shadow(0 0 10px var(--accent-glow)); }
+
+/* Middle: description */
+.cs-desc {
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--text-primary); line-height: 1.35;
+    margin: 0.4rem 0 0.3rem;
+    white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+    flex: 1;
 }
 
-/* ── Selected Indicator ── */
-.cs-selected-bar {
-    text-align: center;
-    padding: 0 1rem;
-    min-height: 1.6rem;
-    display: flex;
+/* Bottom row: ticker-style bar */
+.cs-ticker {
+    display: flex; align-items: center; gap: 0.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.45rem;
+    margin-top: auto;
+}
+.cs-ticker-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: tickerPulse 2s ease-in-out infinite;
+}
+@keyframes tickerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.cs-ticker-label {
+    font-size: 0.6rem; font-family: var(--font-mono);
+    color: var(--text-muted); letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.cs-ticker-action {
+    margin-left: auto;
+    font-size: 0.58rem; font-family: var(--font-mono); font-weight: 700;
+    color: var(--accent); letter-spacing: 0.8px; text-transform: uppercase;
+    opacity: 0; transition: opacity 0.25s ease;
+}
+.cs-brick:hover .cs-ticker-action { opacity: 1; }
+
+/* ══════════════════════════════
+   TOOLBAR: Search + Toggle
+   ══════════════════════════════ */
+.cs-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 0.6rem 0; flex-wrap: wrap;
+}
+.cs-filter-input {
+    flex: 1; min-width: 200px; max-width: 420px;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.5rem 1.1rem;
+    font-size: 0.82rem; color: var(--text-primary); font-family: var(--font-sans);
+    transition: var(--transition); outline: none;
+}
+.cs-filter-input::placeholder { color: var(--text-muted); }
+.cs-filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.cs-filter-count {
+    font-size: 0.62rem; font-family: var(--font-mono); color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Filter chips */
+.cs-chips {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    padding: 0; margin: 0;
     align-items: center;
+}
+.cs-chip-filter {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: var(--accent-glow-strong); border: 1px solid var(--accent);
+    border-radius: 14px; padding: 0.22rem 0.55rem 0.22rem 0.7rem;
+    font-size: 0.68rem; font-weight: 600; color: var(--accent);
+    font-family: var(--font-sans); white-space: nowrap;
+    animation: chipIn 0.2s ease;
+}
+@keyframes chipIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.cs-chip-x {
+    background: none; border: none; color: var(--accent);
+    font-size: 0.72rem; cursor: pointer; padding: 0;
+    line-height: 1; opacity: 0.6; transition: opacity 0.15s;
+    display: flex; align-items: center;
+}
+.cs-chip-x:hover { opacity: 1; }
+.cs-chip-clear {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: 14px;
+    padding: 0.2rem 0.55rem; font-size: 0.6rem; font-family: var(--font-mono);
+    cursor: pointer; transition: var(--transition);
+}
+.cs-chip-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Toggle */
+.cs-toggle-wrap {
+    display: flex; align-items: center; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem; flex-shrink: 0;
+}
+.cs-toggle-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 0.72rem; font-family: var(--font-sans); font-weight: 600;
+    padding: 0.35rem 0.8rem; border-radius: 16px;
+    cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
+}
+.cs-toggle-btn.active {
+    background: var(--accent-glow-strong); color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+.cs-toggle-btn:hover:not(.active) { color: var(--text-primary); }
+
+/* ══════════════════════════
+   NAVEGABLE: grid + pag
+   ══════════════════════════ */
+.cs-nav-container {
+    padding: 1.5rem 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.cs-nav-grid {
+    display: flex; flex-wrap: wrap; gap: 1rem;
     justify-content: center;
-    gap: 0.5rem;
 }
-.cs-selected-name {
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    color: var(--accent);
-    font-weight: 700;
-    letter-spacing: 0.3px;
+.cs-nav-grid .cs-brick { width: 320px; }
+.cs-nav-pag {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem; padding: 1rem 0 0.5rem;
 }
-.cs-selected-badge {
-    font-size: 0.65rem;
-    color: var(--text-muted);
+.cs-nav-pag-btn {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-secondary); border-radius: var(--radius-sm);
+    padding: 0.3rem 0.7rem; font-size: 0.72rem; font-family: var(--font-mono);
+    cursor: pointer; transition: var(--transition);
+}
+.cs-nav-pag-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cs-nav-pag-btn.active { background: var(--accent-glow-strong); color: var(--accent); border-color: var(--accent); }
+.cs-nav-pag-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.cs-nav-pag-info { font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* ══════════════════
+   MODAL
+   ══════════════════ */
+.cs-modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.cs-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.cs-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 40px var(--accent-glow);
+    width: 90vw; max-width: 920px;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+@keyframes modalIn {
+    0% { transform: scale(0.92) translateY(20px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.cs-modal-header {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.cs-modal-icon { font-size: 2rem; }
+.cs-modal-titles { flex: 1; min-width: 0; }
+.cs-modal-title {
+    font-size: 1rem; font-weight: 800; color: var(--text-primary);
+    line-height: 1.25;
+}
+.cs-modal-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent); color: var(--bg-primary);
+    border-radius: 6px; padding: 0.15rem 0.5rem;
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800;
+    margin-right: 0.5rem; vertical-align: middle;
+}
+.cs-modal-sub {
+    font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);
+    margin-top: 0.15rem; display: flex; gap: 0.8rem; flex-wrap: wrap;
+}
+.cs-modal-close {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1rem; transition: var(--transition);
+    flex-shrink: 0;
+}
+.cs-modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Modal meta bar */
+.cs-modal-meta {
+    display: flex; gap: 0.8rem; flex-wrap: wrap;
+    padding: 0.7rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem; color: var(--text-secondary);
+    flex-shrink: 0;
+    align-items: center;
+}
+.cs-modal-meta code {
+    background: var(--bg-input); padding: 1px 6px; border-radius: 3px;
+    font-family: var(--font-mono); font-size: 0.68rem;
+}
+
+/* Export bar */
+.cs-export-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.cs-export-label {
+    font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);
+    letter-spacing: 0.5px; text-transform: uppercase; margin-right: 0.3rem;
+}
+.cs-export-btn {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-secondary); border-radius: var(--radius-sm);
+    padding: 0.28rem 0.65rem; font-size: 0.68rem; font-family: var(--font-mono);
+    font-weight: 700; cursor: pointer; transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 0.3rem;
+}
+.cs-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Modal search */
+.cs-modal-search-wrap {
+    padding: 0.6rem 1.5rem; flex-shrink: 0;
+}
+.cs-modal-search {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.45rem 0.9rem;
+    font-size: 0.8rem; color: var(--text-primary); font-family: var(--font-sans);
+    outline: none; transition: var(--transition);
+}
+.cs-modal-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+/* Modal body (scrollable) */
+.cs-modal-body {
+    flex: 1; overflow-y: auto; padding: 0 1.5rem;
+}
+
+/* Modal footer / pagination */
+.cs-modal-footer {
+    border-top: 1px solid var(--border);
+    padding: 0.6rem 1.5rem;
+    flex-shrink: 0;
 }
 
 /* ── Responsive ── */
-@media (max-width: 640px) {
-    .cs-showcase::before,
-    .cs-showcase::after { width: 40px; }
-    .cs-brick { padding: 0.35rem 0.65rem; }
-    .cs-brick-name { max-width: 140px; font-size: 0.66rem; }
-    .cs-brick-icon { font-size: 0.95rem; }
+@media (max-width: 768px) {
+    .cs-showcase::before, .cs-showcase::after { width: 50px; }
+    .cs-brick { width: 250px; min-height: 120px; padding: 0.7rem 0.9rem; }
+    .cs-brick-icon { font-size: 1.8rem; }
+    .cs-desc { font-size: 0.72rem; -webkit-line-clamp: 2; }
+    .cs-toolbar { flex-direction: column; align-items: stretch; }
+    .cs-filter-input { max-width: 100%; }
+    .cs-modal { width: 96vw; max-height: 92vh; }
+    .cs-modal-header { padding: 0.8rem 1rem; }
+    .cs-modal-body { padding: 0 1rem; }
+    .cs-export-bar, .cs-modal-meta { padding-left: 1rem; padding-right: 1rem; }
+    .cs-nav-container { padding: 1rem 1rem; }
+    .cs-nav-grid .cs-brick { width: 100%; }
 }
 </style>
 
@@ -145,37 +400,61 @@
             <p>Catálogos oficiales para comprobantes de pago electrónicos (CPE)</p>
         </div>
 
-        <!-- ═══ CINEMATIC MARQUEE SELECTOR ═══ -->
+        <!-- Toolbar -->
+        <div class="cs-toolbar">
+            <input type="text" id="cs-filter" class="cs-filter-input"
+                   placeholder="🔍 Filtrar catálogos... (Enter para agregar filtro)"
+                   autocomplete="off"
+                   oninput="onFilterLive(this.value)"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addChip();}"/>
+            <span class="cs-filter-count" id="cs-filter-count"></span>
+            <div class="cs-toggle-wrap">
+                <button class="cs-toggle-btn active" id="btn-presentacion" onclick="setMode('presentacion')">🎬 Presentación</button>
+                <button class="cs-toggle-btn" id="btn-navegable" onclick="setMode('navegable')">📋 Navegable</button>
+            </div>
+        </div>
+        <!-- Filter chips -->
+        <div class="cs-chips" id="cs-chips"></div>
+    </div>
+
+    <!-- Full-width zone -->
+    <div class="cs-zone" id="cs-zone">
         <div class="cs-showcase" id="cs-showcase">
             <div class="cs-row cs-row-1" id="cs-row1"></div>
             <div class="cs-row cs-row-2" id="cs-row2"></div>
         </div>
-
-        <!-- Selected catalog indicator -->
-        <div class="cs-selected-bar" id="cs-selected-bar">
-            <span class="cs-selected-name" id="cs-sel-label">Haz clic en un catálogo ↑</span>
-            <span class="cs-selected-badge" id="cs-badge"></span>
+        <div class="cs-nav-container" id="cs-nav" style="display:none;">
+            <div class="cs-nav-grid" id="cs-nav-grid"></div>
+            <div class="cs-nav-pag" id="cs-nav-pag"></div>
         </div>
+    </div>
+</div>
 
-        <!-- Panel con meta-info, buscador, tabla y paginación -->
-        <div class="panel active" id="cs-panel">
-            <!-- Meta info del catálogo (oculto hasta seleccionar) -->
-            <div id="cs-meta" style="display:none; padding:0.75rem 1rem 0.25rem; border-bottom:1px solid var(--border);">
-                <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:0.78rem; color:var(--text-secondary);">
-                    <span>📌 <strong>Campo UBL:</strong> <code id="cs-campo" style="background:var(--surface2);padding:1px 6px;border-radius:3px;">—</code></span>
-                    <span>📝 <strong id="cs-desc">—</strong></span>
-                    <span>📖 <strong>Fuente:</strong> <span id="cs-fuente" class="badge badge-green">—</span></span>
-                </div>
+<!-- ═══ MODAL ═══ -->
+<div class="cs-modal-overlay" id="cs-modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="cs-modal">
+        <div class="cs-modal-header">
+            <span class="cs-modal-icon" id="m-icon">📚</span>
+            <div class="cs-modal-titles">
+                <div class="cs-modal-title" id="m-title"></div>
+                <div class="cs-modal-sub" id="m-sub"></div>
             </div>
-            <!-- Buscador dentro del panel -->
-            <div id="cs-search-bar" style="display:none; padding:0.75rem 1rem 0.5rem;">
-                <input type="text" id="cs-search" class="vt-search" style="width:100%;" placeholder="🔍 Buscar por código o descripción..." oninput="filterRegistros(this.value)"/>
-            </div>
-            <div id="cs-content">
-                <p class="pm-empty">👆 Selecciona un catálogo del marquesina para ver su contenido</p>
-            </div>
-            <div id="cs-pag" class="pag-bar" style="display:none;"></div>
+            <button class="cs-modal-close" onclick="closeModal()">✕</button>
         </div>
+        <div class="cs-modal-meta" id="m-meta"></div>
+        <div class="cs-export-bar">
+            <span class="cs-export-label">Exportar:</span>
+            <button class="cs-export-btn" onclick="exportData('json')">📋 JSON</button>
+            <button class="cs-export-btn" onclick="exportData('csv')">📊 CSV</button>
+            <button class="cs-export-btn" onclick="exportData('sql')">🗄️ SQL</button>
+        </div>
+        <div class="cs-modal-search-wrap">
+            <input type="text" class="cs-modal-search" id="m-search" placeholder="🔍 Buscar por código o descripción..." oninput="filterRegistros(this.value)"/>
+        </div>
+        <div class="cs-modal-body" id="m-body">
+            <p class="pm-empty">⏳ Cargando...</p>
+        </div>
+        <div class="cs-modal-footer" id="m-footer"></div>
     </div>
 </div>
 
@@ -189,227 +468,450 @@
 <script th:src="@{/js/navigation.js}"></script>
 <script th:src="@{/js/config-overlay.js}"></script>
 <script>
-    var allRegistros = [], filteredRegistros = [], currentPage = 0, PAGE_SIZE = 15;
-    var selectedCatalogo = '';
+    var allRegistros = [], filteredRegistros = [], currentPage = 0, PAGE_SIZE = 20;
+    var selectedCatalogo = '', selectedIcon = '', currentCatalogoMeta = {};
+    var menuItems = [];
+    var viewMode = 'presentacion';
+    var navPage = 0, NAV_PAGE_SIZE = 18;
 
-    /* ═══ ICON MAP ═══ */
-    var CATALOGO_ICONS = {
-        '01': '📄', '02': '💰', '03': '📏', '04': '🌍', '05': '💸',
-        '06': '🪪', '07': '📊', '08': '🧮', '09': '📝', '10': '📝',
-        '11': '📑', '12': '📎', '13': '📍', '14': '🏷️', '15': '➕',
-        '16': '💲', '17': '⚙️', '18': '🚛', '19': '📋', '20': '📦',
-        '21': '🚚', '22': '🔍', '23': '🔒', '24': '💡', '25': '🏭',
-        '26': '🏠', '27': '🏡', '51': '🧾', '52': '📜', '53': '💹',
-        '54': '⛏️', '55': '🔖', '56': '⚡', '57': '📡', '58': '🔌',
-        '59': '💳'
-    };
-
-    function extractNum(name) {
-        var m = name.match(/No\.\s*(\d+)/);
-        return m ? m[1] : '00';
-    }
-
-    function shortName(name) {
-        var idx = name.indexOf(':');
-        return idx !== -1 ? name.substring(idx + 1).trim() : name;
-    }
-
-    /* ═══ BUILD MARQUEE ═══ */
     document.addEventListener('DOMContentLoaded', function() {
-        ETIA.init().then(function() {
-            loadMenuCatalogosSunat();
+        ETIA.init().then(function() { loadMenuCatalogosSunat(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
         });
+        initShowcaseScroll();
     });
 
-    function buildBrick(item) {
-        var num = extractNum(item.nombreCatalogo);
-        var icon = CATALOGO_ICONS[num] || '📚';
-        var short = shortName(item.nombreCatalogo);
+    /* ═══ NETFLIX-STYLE MOUSE SCROLL ═══
+       - First mouseenter: JS takes over permanently (CSS animation killed)
+       - Mouse on a row: that row follows mouse direction, other row goes OPPOSITE
+       - Mouse leaves: both rows KEEP going in their last directions at cruise speed
+       - Mouse re-enters: interactive control resumes
+    */
+    function initShowcaseScroll() {
+        var showcase = document.getElementById('cs-showcase');
+        var rows = [document.getElementById('cs-row1'), document.getElementById('cs-row2')];
+        var offsets = [0, 0];
+        var speeds  = [-0.5, 0.5];   /* current speed per row (px/frame) — row1 left, row2 right initially */
+        var jsStarted = false;
+        var mouseInside = false;
+        var activeRow = 0;
+        var CRUISE = 0.8;            /* cruise speed when mouse is out (px/frame) */
 
+        function getRowOffset(row) {
+            var st = getComputedStyle(row);
+            var m = (st.transform || st.webkitTransform || '').match(/matrix.*\((.+)\)/);
+            return m ? (parseFloat(m[1].split(',')[4]) || 0) : 0;
+        }
+
+        function wrapOffset(off, row) {
+            var half = row.scrollWidth / 2;
+            if (half <= 0) return off;
+            while (off < -half) off += half;
+            while (off > 0) off -= half;
+            return off;
+        }
+
+        function tick() {
+            for (var i = 0; i < 2; i++) {
+                offsets[i] = wrapOffset(offsets[i] + speeds[i], rows[i]);
+                rows[i].style.transform = 'translateX(' + offsets[i] + 'px)';
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function startJS() {
+            if (jsStarted) return;
+            jsStarted = true;
+            /* Capture current CSS-animated positions */
+            offsets[0] = getRowOffset(rows[0]);
+            offsets[1] = getRowOffset(rows[1]);
+            /* Kill CSS animation, JS drives from now on */
+            showcase.classList.add('cs-js-driven');
+            requestAnimationFrame(tick);
+        }
+
+        showcase.addEventListener('mouseenter', function() {
+            startJS();
+            mouseInside = true;
+        });
+
+        showcase.addEventListener('mouseleave', function() {
+            mouseInside = false;
+            /* Cruise: keep last directions, settle to constant speed */
+            var dir0 = speeds[0] < 0 ? -1 : (speeds[0] > 0 ? 1 : -1);
+            var dir1 = -dir0; /* always opposite */
+            speeds[0] = dir0 * CRUISE;
+            speeds[1] = dir1 * CRUISE;
+        });
+
+        showcase.addEventListener('mousemove', function(e) {
+            if (!mouseInside) return;
+            var rect = showcase.getBoundingClientRect();
+
+            /* Which row is the mouse on? */
+            var midY = rect.top + rect.height / 2;
+            activeRow = (e.clientY < midY) ? 0 : 1;
+            var otherRow = 1 - activeRow;
+
+            /* X ratio: 0 (left edge) → 1 (right edge) */
+            var ratio = (e.clientX - rect.left) / rect.width;
+            /* Center it: -1 (far left) → +1 (far right) */
+            var centered = (ratio - 0.5) * 2;
+
+            /* Dead zone in center ±0.12 */
+            var sign = centered < 0 ? -1 : 1;
+            var mag = Math.abs(centered);
+            var activeSpeed;
+            if (mag < 0.12) {
+                activeSpeed = 0;
+            } else {
+                var norm = (mag - 0.12) / 0.88;   /* 0..1 */
+                activeSpeed = sign * norm * norm * 5; /* max ~5 px/frame */
+            }
+
+            /* Active row goes OPPOSITE to mouse side, other row mirrors at 70% */
+            speeds[activeRow] = -activeSpeed;
+            speeds[otherRow]  =  activeSpeed * 0.7;
+        });
+    }
+
+    /* ═══ HELPERS ═══ */
+    function extractNum(n) { var m = n.match(/No\.\s*(\d+)/); return m ? m[1] : '00'; }
+    function shortName(n) { var i = n.indexOf(':'); return i !== -1 ? n.substring(i + 1).trim() : n; }
+    function escapeHtml(s) {
+        if (!s) return '';
+        var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML;
+    }
+
+    /* ═══ FILTER CHIPS (OR logic) ═══ */
+    var filterChips = [];   /* array of lowercase search terms */
+    var liveTerm = '';      /* current text in input (before Enter) */
+
+    function onFilterLive(val) {
+        liveTerm = (val || '').toLowerCase().trim();
+        applyView();
+    }
+
+    function addChip() {
+        var input = document.getElementById('cs-filter');
+        var term = (input.value || '').trim();
+        if (!term) return;
+        var lower = term.toLowerCase();
+        /* Don't add duplicates */
+        if (filterChips.indexOf(lower) === -1) {
+            filterChips.push(lower);
+        }
+        input.value = '';
+        liveTerm = '';
+        renderChips();
+        applyView();
+    }
+
+    function removeChip(idx) {
+        filterChips.splice(idx, 1);
+        renderChips();
+        applyView();
+    }
+
+    function clearAllChips() {
+        filterChips = [];
+        document.getElementById('cs-filter').value = '';
+        liveTerm = '';
+        renderChips();
+        applyView();
+    }
+
+    function renderChips() {
+        var container = document.getElementById('cs-chips');
+        if (!filterChips.length) { container.innerHTML = ''; return; }
+        var html = '';
+        filterChips.forEach(function(chip, i) {
+            html += '<span class="cs-chip-filter">"' + escapeHtml(chip) + '"'
+                 + '<button class="cs-chip-x" onclick="removeChip(' + i + ')">✕</button></span>';
+        });
+        html += '<button class="cs-chip-clear" onclick="clearAllChips()">Limpiar todo</button>';
+        container.innerHTML = html;
+    }
+
+    function getFilteredItems() {
+        /* Combine chips (OR) with live term */
+        var terms = filterChips.slice();
+        if (liveTerm) terms.push(liveTerm);
+        if (!terms.length) return menuItems;
+        return menuItems.filter(function(item) {
+            var name = item.nombreCatalogo.toLowerCase();
+            return terms.some(function(t) { return name.indexOf(t) !== -1; });
+        });
+    }
+
+    function applyView() {
+        var zone = document.getElementById('cs-zone');
+        var showcase = document.getElementById('cs-showcase');
+        var nav = document.getElementById('cs-nav');
+        var countEl = document.getElementById('cs-filter-count');
+        var hasFilter = filterChips.length > 0 || liveTerm;
+        var filtered = getFilteredItems();
+
+        if (hasFilter) {
+            /* Filtering active → static grid, no animation */
+            countEl.textContent = filtered.length + ' de ' + menuItems.length;
+            zone.classList.add('cs-dark');
+            showcase.style.display = 'none';
+            nav.style.display = 'block';
+            var g = document.getElementById('cs-nav-grid'); g.innerHTML = '';
+            if (!filtered.length) {
+                g.innerHTML = '<p class="pm-empty" style="width:100%;text-align:center;padding:2rem;">📭 Sin coincidencias</p>';
+            } else {
+                filtered.forEach(function(i) { g.appendChild(buildBrick(i)); });
+            }
+            document.getElementById('cs-nav-pag').innerHTML = '';
+        } else {
+            countEl.textContent = '';
+            if (viewMode === 'presentacion') {
+                zone.classList.remove('cs-dark');
+                showcase.style.display = '';
+                nav.style.display = 'none';
+                buildMarquee(menuItems);
+            } else {
+                zone.classList.add('cs-dark');
+                showcase.style.display = 'none';
+                nav.style.display = 'block';
+                buildNavGrid();
+            }
+        }
+    }
+
+    /* ═══ BUILD CARD ═══ */
+    function buildBrick(item) {
+        var num = extractNum(item.nombreCatalogo), icon = item.icono || '📚', short = shortName(item.nombreCatalogo);
         var el = document.createElement('div');
-        el.className = 'cs-brick';
+        el.className = 'cs-brick' + (item.nombreCatalogo === selectedCatalogo ? ' cs-active' : '');
         el.setAttribute('data-catalogo', item.nombreCatalogo);
         el.innerHTML =
-            '<span class="cs-brick-icon">' + icon + '</span>' +
-            '<div class="cs-brick-body">' +
-                '<span class="cs-brick-num">Nº ' + num + '</span>' +
-                '<span class="cs-brick-name">' + escapeHtml(short) + '</span>' +
+            '<div class="cs-top">' +
+                '<span class="cs-chip">Nº ' + num + '</span>' +
+                '<span class="cs-brick-icon">' + icon + '</span>' +
+            '</div>' +
+            '<div class="cs-desc">' + escapeHtml(short) + '</div>' +
+            '<div class="cs-ticker">' +
+                '<span class="cs-ticker-dot"></span>' +
+                '<span class="cs-ticker-label">CAT-' + num.padStart(2, '0') + '</span>' +
+                '<span class="cs-ticker-action">▸ VER DATOS</span>' +
             '</div>';
-
-        el.addEventListener('click', function() {
-            selectCatalogo(item.nombreCatalogo);
-        });
+        el.addEventListener('click', function() { openCatalogo(item); });
         return el;
     }
 
+    /* ═══ LOAD MENU ═══ */
     function loadMenuCatalogosSunat() {
         ApiClient.listMenuCatalogosSunat().then(function(items) {
-            var row1 = document.getElementById('cs-row1');
-            var row2 = document.getElementById('cs-row2');
-            var half = Math.ceil(items.length / 2);
-            var set1 = items.slice(0, half);
-            var set2 = items.slice(half);
-
-            /* Duplicate for seamless loop */
-            function fillRow(container, set) {
-                for (var dup = 0; dup < 2; dup++) {
-                    set.forEach(function(item) {
-                        container.appendChild(buildBrick(item));
-                    });
-                }
-            }
-            fillRow(row1, set1);
-            fillRow(row2, set2);
-        }).catch(function(err) {
-            console.error('Error cargando menú catálogos SUNAT:', err);
-        });
+            menuItems = items; buildMarquee(items);
+        }).catch(function(err) { console.error('Error cargando menú:', err); });
     }
 
-    function selectCatalogo(nombreCatalogo) {
-        selectedCatalogo = nombreCatalogo;
+    /* ═══ MARQUEE ═══ */
+    function buildMarquee(items) {
+        var r1 = document.getElementById('cs-row1'), r2 = document.getElementById('cs-row2');
+        r1.innerHTML = ''; r2.innerHTML = '';
+        var h = Math.ceil(items.length / 2);
+        function fill(c, s) { for (var d = 0; d < 2; d++) s.forEach(function(i) { c.appendChild(buildBrick(i)); }); }
+        fill(r1, items.slice(0, h)); fill(r2, items.slice(h));
+    }
 
-        /* Active state on bricks */
+    /* ═══ NAVEGABLE GRID ═══ */
+    function buildNavGrid() {
+        var g = document.getElementById('cs-nav-grid'); g.innerHTML = '';
+        var total = menuItems.length, tp = Math.max(1, Math.ceil(total / NAV_PAGE_SIZE));
+        if (navPage >= tp) navPage = tp - 1;
+        menuItems.slice(navPage * NAV_PAGE_SIZE, navPage * NAV_PAGE_SIZE + NAV_PAGE_SIZE)
+            .forEach(function(i) { g.appendChild(buildBrick(i)); });
+        renderNavPag(total, tp);
+    }
+    function renderNavPag(total, tp) {
+        var bar = document.getElementById('cs-nav-pag');
+        if (tp <= 1) { bar.innerHTML = ''; return; }
+        var h = '';
+        h += '<button class="cs-nav-pag-btn" onclick="goNavPage(0)" ' + (navPage===0?'disabled':'') + '>«</button>';
+        h += '<button class="cs-nav-pag-btn" onclick="goNavPage('+(navPage-1)+')" ' + (navPage===0?'disabled':'') + '>‹</button>';
+        for (var i = 0; i < tp; i++) h += '<button class="cs-nav-pag-btn'+(i===navPage?' active':'')+'" onclick="goNavPage('+i+')">'+(i+1)+'</button>';
+        h += '<button class="cs-nav-pag-btn" onclick="goNavPage('+(navPage+1)+')" '+(navPage>=tp-1?'disabled':'')+'>›</button>';
+        h += '<button class="cs-nav-pag-btn" onclick="goNavPage('+(tp-1)+')" '+(navPage>=tp-1?'disabled':'')+'>»</button>';
+        h += '<span class="cs-nav-pag-info">' + total + ' catálogos</span>';
+        bar.innerHTML = h;
+    }
+    function goNavPage(p) { navPage = p; buildNavGrid(); }
+
+    /* ═══ MODE TOGGLE ═══ */
+    function setMode(mode) {
+        viewMode = mode;
+        document.getElementById('btn-presentacion').classList.toggle('active', mode === 'presentacion');
+        document.getElementById('btn-navegable').classList.toggle('active', mode === 'navegable');
+        /* Clear filters when switching */
+        filterChips = [];
+        liveTerm = '';
+        document.getElementById('cs-filter').value = '';
+        renderChips();
+        navPage = 0;
+        applyView();
+    }
+
+    /* ═══ OPEN CATALOG → MODAL ═══ */
+    function openCatalogo(item) {
+        var num = extractNum(item.nombreCatalogo), icon = item.icono || '📚', short = shortName(item.nombreCatalogo);
+        selectedCatalogo = item.nombreCatalogo; selectedIcon = icon;
+
+        /* Highlight bricks */
         document.querySelectorAll('.cs-brick').forEach(function(b) {
-            b.classList.toggle('cs-active', b.getAttribute('data-catalogo') === nombreCatalogo);
+            b.classList.toggle('cs-active', b.getAttribute('data-catalogo') === item.nombreCatalogo);
         });
 
-        loadCatalogoSunat(nombreCatalogo);
-    }
+        /* Fill modal header */
+        document.getElementById('m-icon').textContent = icon;
+        document.getElementById('m-title').innerHTML = '<span class="cs-modal-chip">Nº ' + num + '</span>' + escapeHtml(short);
+        document.getElementById('m-sub').innerHTML = '';
+        document.getElementById('m-meta').innerHTML = '<span>⏳ Cargando datos...</span>';
+        document.getElementById('m-body').innerHTML = '<p class="pm-empty">⏳ Cargando registros...</p>';
+        document.getElementById('m-footer').innerHTML = '';
+        document.getElementById('m-search').value = '';
 
-    function loadCatalogoSunat(nombreCatalogo) {
-        var container = document.getElementById('cs-content');
-        var label = document.getElementById('cs-sel-label');
-        var badge = document.getElementById('cs-badge');
-        var meta = document.getElementById('cs-meta');
-        var searchBar = document.getElementById('cs-search-bar');
-        var searchInput = document.getElementById('cs-search');
+        /* Open modal */
+        document.getElementById('cs-modal-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
 
-        if (!nombreCatalogo) {
-            container.innerHTML = '<p class="pm-empty">👆 Selecciona un catálogo del marquesina para ver su contenido</p>';
-            label.textContent = 'Haz clic en un catálogo ↑';
-            badge.textContent = '';
-            meta.style.display = 'none';
-            searchBar.style.display = 'none';
-            document.getElementById('cs-pag').style.display = 'none';
-            allRegistros = []; filteredRegistros = [];
-            return;
-        }
-
-        var num = extractNum(nombreCatalogo);
-        var icon = CATALOGO_ICONS[num] || '📚';
-        label.innerHTML = icon + ' ' + escapeHtml(nombreCatalogo);
-        container.innerHTML = '<p class="pm-empty">⏳ Cargando catálogo...</p>';
-        badge.textContent = '';
-        meta.style.display = 'none';
-        searchBar.style.display = 'none';
-        document.getElementById('cs-pag').style.display = 'none';
-
-        ApiClient.obtenerCatalogoSunat(nombreCatalogo).then(function(data) {
+        /* Fetch data */
+        ApiClient.obtenerCatalogoSunat(item.nombreCatalogo).then(function(data) {
             allRegistros = data.data || [];
             filteredRegistros = allRegistros;
             currentPage = 0;
+            currentCatalogoMeta = {
+                nombre: data.nombre || item.nombreCatalogo,
+                campo: data.campo || '',
+                description: data.description || '',
+                catalogo: data.catalogo || '',
+                registros: data.registros || 0
+            };
 
-            badge.innerHTML = '<span class="badge badge-blue">' + data.registros + ' registros</span>';
+            /* Sub info */
+            document.getElementById('m-sub').innerHTML =
+                '<span>' + escapeHtml(data.description || '') + '</span>' +
+                '<span>📖 ' + escapeHtml(data.catalogo || 'SUNAT') + '</span>';
 
-            document.getElementById('cs-campo').textContent = data.campo || '—';
-            document.getElementById('cs-desc').textContent = data.description || '—';
-            document.getElementById('cs-fuente').textContent = data.catalogo || '—';
-            meta.style.display = '';
-
-            searchInput.value = '';
-            if (allRegistros.length > 0) {
-                searchBar.style.display = '';
-            }
+            /* Meta bar */
+            var metaHtml = '📌 <strong>Campo UBL:</strong> <code>' + escapeHtml(data.campo || '—') + '</code>';
+            metaHtml += '  ·  <span class="badge badge-blue">' + (data.registros || 0) + ' registros</span>';
+            document.getElementById('m-meta').innerHTML = metaHtml;
 
             renderPage();
         }).catch(function(err) {
-            container.innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando catálogo SUNAT</p>';
+            document.getElementById('m-body').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando catálogo</p>';
             console.error(err);
         });
     }
 
+    function closeModal() {
+        document.getElementById('cs-modal-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    /* ═══ TABLE ═══ */
     function filterRegistros(term) {
-        if (!term) {
-            filteredRegistros = allRegistros;
-        } else {
-            var lower = term.toLowerCase();
+        if (!term) filteredRegistros = allRegistros;
+        else {
+            var l = term.toLowerCase();
             filteredRegistros = allRegistros.filter(function(r) {
-                return (r.codigo || '').toLowerCase().indexOf(lower) !== -1 ||
-                       (r.descripcion || '').toLowerCase().indexOf(lower) !== -1;
+                return (r.codigo||'').toLowerCase().indexOf(l) !== -1 || (r.descripcion||'').toLowerCase().indexOf(l) !== -1;
             });
         }
-        currentPage = 0;
-        renderPage();
+        currentPage = 0; renderPage();
     }
-
     function renderPage() {
-        var total = filteredRegistros.length;
-        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var total = filteredRegistros.length, tp = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= tp) currentPage = tp - 1;
         var start = currentPage * PAGE_SIZE;
-        var pageItems = filteredRegistros.slice(start, start + PAGE_SIZE);
-        renderTable(pageItems, total);
-        renderPagination(total, totalPages);
+        renderTable(filteredRegistros.slice(start, start + PAGE_SIZE), total);
+        renderPag(total, tp);
     }
-
     function goToPage(p) { currentPage = p; renderPage(); }
 
     function renderTable(items, total) {
-        var container = document.getElementById('cs-content');
-        if (total === 0) {
-            var searchVal = document.getElementById('cs-search').value;
-            container.innerHTML = '<p class="pm-empty">' +
-                (searchVal ? '📭 No se encontraron registros para "' + escapeHtml(searchVal) + '"'
-                           : '📭 Este catálogo no tiene registros con data cargada (referencia a estándar externo)') + '</p>';
+        var c = document.getElementById('m-body');
+        if (!total) {
+            var sv = document.getElementById('m-search').value;
+            c.innerHTML = '<p class="pm-empty">' + (sv ? '📭 Sin resultados para "'+escapeHtml(sv)+'"' : '📭 Sin registros cargados') + '</p>';
             return;
         }
-
-        var html = '<div class="tbl-wrap"><table class="tbl">';
-        html += '<thead><tr>';
-        html += '<th style="width:120px;">Código</th>';
-        html += '<th>Descripción</th>';
-        html += '</tr></thead><tbody>';
-
-        items.forEach(function(reg) {
-            html += '<tr>';
-            html += '<td><code style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-weight:600;">' + escapeHtml(reg.codigo) + '</code></td>';
-            html += '<td>' + escapeHtml(reg.descripcion) + '</td>';
-            html += '</tr>';
+        var h = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:120px;">Código</th><th>Descripción</th></tr></thead><tbody>';
+        items.forEach(function(r) {
+            h += '<tr><td><code style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-weight:600;">'
+              + escapeHtml(r.codigo) + '</code></td><td>' + escapeHtml(r.descripcion) + '</td></tr>';
         });
-
-        html += '</tbody></table></div>';
-        container.innerHTML = html;
+        h += '</tbody></table></div>';
+        c.innerHTML = h;
     }
-
-    function renderPagination(total, totalPages) {
-        var bar = document.getElementById('cs-pag');
-        if (total === 0) { bar.style.display = 'none'; return; }
-        bar.style.display = 'flex';
-        var start = currentPage * PAGE_SIZE + 1;
-        var end = Math.min((currentPage + 1) * PAGE_SIZE, total);
-        var html = '<div class="pag-info"><span class="badge badge-blue">' + total + ' registro' + (total !== 1 ? 's' : '') + '</span> ' +
-            'Mostrando ' + start + '–' + end + '</div>';
-        html += '<div class="pag-controls">';
-        html += '<button class="pag-btn" onclick="goToPage(0)" ' + (currentPage === 0 ? 'disabled' : '') + '>«</button>';
-        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
-        for (var i = 0; i < totalPages; i++) {
-            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) {
-                if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
+    function renderPag(total, tp) {
+        var bar = document.getElementById('m-footer');
+        if (!total) { bar.innerHTML = ''; return; }
+        var s = currentPage * PAGE_SIZE + 1, e = Math.min((currentPage+1)*PAGE_SIZE, total);
+        var h = '<div class="pag-bar" style="display:flex"><div class="pag-info"><span class="badge badge-blue">'
+            + total + ' registro' + (total!==1?'s':'') + '</span> ' + s + '–' + e + '</div><div class="pag-controls">';
+        h += '<button class="pag-btn" onclick="goToPage(0)" '+(currentPage===0?'disabled':'')+'>«</button>';
+        h += '<button class="pag-btn" onclick="goToPage('+(currentPage-1)+')" '+(currentPage===0?'disabled':'')+'>‹</button>';
+        for (var i = 0; i < tp; i++) {
+            if (tp > 7 && Math.abs(i-currentPage)>2 && i!==0 && i!==tp-1) {
+                if (i===1||i===tp-2) h += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
                 continue;
             }
-            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+            h += '<button class="pag-btn'+(i===currentPage?' pag-active':'')+'" onclick="goToPage('+i+')">'+(i+1)+'</button>';
         }
-        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
-        html += '<button class="pag-btn" onclick="goToPage(' + (totalPages - 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>»</button>';
-        html += '</div>';
-        bar.innerHTML = html;
+        h += '<button class="pag-btn" onclick="goToPage('+(currentPage+1)+')" '+(currentPage>=tp-1?'disabled':'')+'>›</button>';
+        h += '<button class="pag-btn" onclick="goToPage('+(tp-1)+')" '+(currentPage>=tp-1?'disabled':'')+'>»</button>';
+        h += '</div></div>';
+        bar.innerHTML = h;
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
+    /* ═══ EXPORT ═══ */
+    function exportData(format) {
+        if (!allRegistros.length) return;
+        var name = (currentCatalogoMeta.nombre || 'catalogo').replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_');
+        var blob, filename;
+
+        if (format === 'json') {
+            var obj = { catalogo: currentCatalogoMeta.nombre, campo: currentCatalogoMeta.campo, description: currentCatalogoMeta.description, fuente: currentCatalogoMeta.catalogo, registros: allRegistros.length, data: allRegistros };
+            blob = new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+            filename = name + '.json';
+        }
+        else if (format === 'csv') {
+            var csv = 'codigo,descripcion\n';
+            allRegistros.forEach(function(r) {
+                csv += '"' + (r.codigo||'').replace(/"/g,'""') + '","' + (r.descripcion||'').replace(/"/g,'""') + '"\n';
+            });
+            blob = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8'});
+            filename = name + '.csv';
+        }
+        else if (format === 'sql') {
+            var tbl = name.toLowerCase().substring(0, 60);
+            var sql = '-- ' + currentCatalogoMeta.nombre + '\n';
+            sql += '-- Generado por ETIA · ' + new Date().toISOString().slice(0,10) + '\n\n';
+            sql += 'CREATE TABLE IF NOT EXISTS ' + tbl + ' (\n';
+            sql += '    codigo      VARCHAR(20) NOT NULL,\n';
+            sql += '    descripcion VARCHAR(500) NOT NULL,\n';
+            sql += '    PRIMARY KEY (codigo)\n);\n\n';
+            allRegistros.forEach(function(r) {
+                sql += "INSERT INTO " + tbl + " (codigo, descripcion) VALUES ('" + (r.codigo||'').replace(/'/g,"''") + "', '" + (r.descripcion||'').replace(/'/g,"''") + "');\n";
+            });
+            blob = new Blob([sql], {type: 'text/sql;charset=utf-8'});
+            filename = name + '.sql';
+        }
+
+        if (blob) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     }
 </script>
 </body>

@@ -26,7 +26,9 @@ public class CatalogoSunatServiceImpl implements CatalogoSunatService {
     @Override
     public List<CatalogoSunatMenuItem> listarMenu() {
         return repository.getMenu().stream()
-                .map(m -> new CatalogoSunatMenuItem().nombreCatalogo(m.get("nombreCatalogo")))
+                .map(m -> new CatalogoSunatMenuItem()
+                        .nombreCatalogo(m.get("nombreCatalogo"))
+                        .icono(m.get("icono")))
                 .toList();
     }
 
