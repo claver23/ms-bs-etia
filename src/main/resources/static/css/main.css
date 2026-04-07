@@ -1470,9 +1470,21 @@ a { color: inherit; text-decoration: none; }
 
 .dp-footer {
     padding: 1rem 2rem 1.5rem; border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between; gap: 0.75rem;
+    display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
 }
 .dp-footer .btn { font-size: 0.85rem; }
+.dp-export-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.dp-action-group { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.btn-export {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; font-weight: 500; padding: 0.4rem 0.8rem;
+    border-radius: 20px; border: 1px solid var(--border);
+    background: var(--bg-secondary); color: var(--text-secondary);
+    cursor: pointer; transition: var(--transition);
+    font-family: var(--font-main); line-height: 1;
+}
+.btn-export:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+.btn-export:disabled { opacity: 0.4; cursor: not-allowed; }
 .dli-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 .dli-left { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .dli-right { display: flex; align-items: center; gap: 1rem; }
@@ -1501,6 +1513,39 @@ a { color: inherit; text-decoration: none; }
 .dic-desc { color: var(--text-primary); font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dic-meta { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.65rem; }
 .dic-amount { color: var(--accent); font-family: var(--font-mono); font-weight: 600; }
+
+/* ─── Inline Quick Actions (per doc card) ─── */
+.dli-actions {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem;
+    padding-top: 0.55rem; border-top: 1px solid var(--border);
+    justify-content: space-between; align-items: center;
+}
+.dli-actions-export { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.dli-actions-workflow { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.dli-action {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    font-size: 0.72rem; font-weight: 500; padding: 0.3rem 0.7rem;
+    border-radius: 20px; border: 1px solid var(--border);
+    background: var(--bg-card); color: var(--text-secondary);
+    cursor: pointer; transition: var(--transition); text-decoration: none;
+    font-family: var(--font-main); line-height: 1;
+}
+.dli-action:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+.dli-action:disabled { opacity: 0.4; cursor: not-allowed; }
+.dli-action-emit { border-color: var(--accent-dim); color: var(--accent); }
+.dli-action-emit:hover { background: var(--accent-glow); border-color: var(--accent); }
+.dli-action-annul { border-color: rgba(248,81,73,0.3); color: var(--danger); }
+.dli-action-annul:hover { background: rgba(248,81,73,0.08); border-color: var(--danger); }
+.dli-action-delete { border-color: rgba(248,81,73,0.25); color: var(--danger); }
+.dli-action-delete:hover { background: rgba(248,81,73,0.08); border-color: var(--danger); }
+.dli-action-xml { border-color: var(--accent-dim); color: var(--accent); }
+.dli-action-xml:hover { background: var(--accent-glow); border-color: var(--accent); }
+.dli-action-json { border-color: var(--border); color: var(--text-muted); }
+.dli-action-json:hover { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-glow); }
+.dli-action-pdf { border-color: var(--border); color: var(--text-muted); }
+.dli-action-pdf:hover { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-glow); }
+.dli-action-edit { border-color: var(--accent-dim); color: var(--accent); }
+.dli-action-edit:hover { background: var(--accent-glow); border-color: var(--accent); }
 
 /* ─── Pagination Bar (below tables) ─── */
 .pag-bar {

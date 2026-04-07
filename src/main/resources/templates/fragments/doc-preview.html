@@ -14,11 +14,19 @@
             <p class="pm-spinner">⏳ Cargando documento...</p>
         </div>
         <div class="dp-footer" id="dp-footer" style="display:none;">
-            <button class="btn btn-ghost" onclick="closeDocPreview()">Cerrar</button>
-            <div style="display:flex;gap:0.5rem;" id="dp-action-buttons">
+            <!-- Export buttons (left) -->
+            <div class="dp-export-group" id="dp-export-buttons">
+                <button id="dp-json-btn" class="btn-export" style="display:none;" onclick="dpExportJson()">📋 JSON</button>
+                <button id="dp-xml-btn" class="btn-export" style="display:none;" onclick="dpDescargarXml()">📥 XML</button>
+                <button id="dp-pdf-btn" class="btn-export" style="display:none;" onclick="dpExportPdf()">📄 PDF</button>
+            </div>
+            <!-- Action buttons (right) -->
+            <div class="dp-action-group" id="dp-action-buttons">
+                <button class="btn btn-ghost" onclick="closeDocPreview()">Cerrar</button>
                 <a id="dp-edit-btn" class="btn btn-accent" style="display:none;">✏️ Editar</a>
                 <button id="dp-emit-btn" class="btn btn-accent" style="display:none;" onclick="dpEmitirFactura()">📤 Emitir</button>
                 <button id="dp-annul-btn" class="btn btn-ghost" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="dpAnularFactura()">🚫 Anular</button>
+                <button id="dp-delete-btn" class="btn btn-ghost" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="dpEliminarFactura()">🗑️ Eliminar</button>
             </div>
         </div>
     </div>

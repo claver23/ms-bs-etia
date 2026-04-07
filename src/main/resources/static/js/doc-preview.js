@@ -86,10 +86,11 @@ var DocPreview = (function() {
     }
 
     function _hideAllActions() {
-        var ids = ['dp-edit-btn', 'dp-emit-btn', 'dp-annul-btn'];
+        var ids = ['dp-edit-btn', 'dp-emit-btn', 'dp-annul-btn', 'dp-xml-btn', 'dp-delete-btn',
+                   'dp-json-btn', 'dp-pdf-btn'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+            if (el) { el.style.display = 'none'; el.disabled = false; }
         });
     }
 
@@ -235,19 +236,35 @@ var DocPreview = (function() {
         /* ═══════ State-driven action buttons ═══════ */
         _hideAllActions();
 
+        var xmlBtn    = document.getElementById('dp-xml-btn');
+        var deleteBtn = document.getElementById('dp-delete-btn');
+        var jsonBtn   = document.getElementById('dp-json-btn');
+        var pdfBtn    = document.getElementById('dp-pdf-btn');
+
+        /* JSON export: available for ALL states */
+        if (jsonBtn) jsonBtn.style.display = 'inline-flex';
+
+        /* Transmitted docs (post-BORRADOR): XML + PDF exports */
+        var isTransmitted = (estado !== 'BORRADOR');
+
         if (docType === 'factura') {
+            if (isTransmitted) {
+                if (xmlBtn) xmlBtn.style.display = 'inline-flex';
+                if (pdfBtn) pdfBtn.style.display = 'inline-flex';
+            }
             switch (estado) {
                 case 'BORRADOR':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Editar';
                     editBtn.href = '/wizard?type=FACTURA';
                     emitBtn.style.display = 'inline-flex';
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     break;
                 case 'ENVIADA':
                     annulBtn.style.display = 'inline-flex';
                     break;
                 case 'ACEPTADA':
-                    /* Read-only */
+                    annulBtn.style.display = 'inline-flex';
                     break;
                 case 'RECHAZADA':
                     editBtn.style.display = 'inline-flex';
@@ -255,7 +272,7 @@ var DocPreview = (function() {
                     editBtn.href = '/wizard?type=FACTURA';
                     break;
                 case 'ANULADA':
-                    /* Read-only */
+                    /* Read-only — estado terminal */
                     break;
             }
         } else if (docType === 'boleta') {
@@ -319,6 +336,145 @@ var DocPreview = (function() {
             });
     }
 
+    function descargarXml() {
+        if (!_currentDocId) return;
+        var xmlBtn = document.getElementById('dp-xml-btn');
+        if (xmlBtn) { xmlBtn.disabled = true; xmlBtn.textContent = '⏳ Descargando...'; }
+
+        ApiClient.descargarFacturaXml(_currentDocId).then(function(result) {
+            if (!result) {
+                if (ETIA.showError) ETIA.showError({ message: 'Esta factura aún no tiene XML generado.' });
+                if (xmlBtn) { xmlBtn.disabled = false; xmlBtn.textContent = '📥 XML'; }
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(result.blob);
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            if (xmlBtn) { xmlBtn.disabled = false; xmlBtn.textContent = '📥 XML'; }
+            if (ETIA.showSuccess) ETIA.showSuccess('XML descargado: ' + result.filename);
+        }).catch(function() {
+            if (xmlBtn) { xmlBtn.disabled = false; xmlBtn.textContent = '📥 XML'; }
+        });
+    }
+
+    function eliminar() {
+        if (!_currentDocId || !_currentDoc) return;
+        var serie = (_currentDoc.serie || '') + '-' + (_currentDoc.numero || '');
+        if (!confirm('¿Eliminar el borrador ' + serie + '? Esta acción no se puede deshacer.')) return;
+
+        var deleteBtn = document.getElementById('dp-delete-btn');
+        if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = '⏳ Eliminando...'; }
+
+        ApiClient.eliminarFactura(_currentDocId).then(function() {
+            close();
+            if (typeof loadDocs === 'function') loadDocs();
+            if (ETIA.showSuccess) ETIA.showSuccess('Borrador ' + serie + ' eliminado');
+        }).catch(function() {
+            if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.textContent = '🗑️ Eliminar'; }
+        });
+    }
+
+    /* ─── Export functions ─── */
+    function exportJson() {
+        if (!_currentDoc) return;
+        var serie = (_currentDoc.serie || _currentDocType || 'doc') + '-' + (_currentDoc.numero || _currentDocId);
+        var json = JSON.stringify(_currentDoc, null, 2);
+        var blob = new Blob([json], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = serie + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        if (ETIA.showSuccess) ETIA.showSuccess('JSON descargado: ' + serie + '.json');
+    }
+
+    function exportPdf() {
+        if (!_currentDoc) return;
+        var doc = _currentDoc;
+        var meta = _labels[_currentDocType] || { icon: '📄', name: 'Documento' };
+        var serie = (doc.serie || '') + '-' + (doc.numero || '');
+        var monSym = (doc.moneda === 'USD') ? 'US$ ' : 'S/ ';
+        var estado = doc.estado || '';
+
+        /* Parse items */
+        var items = doc.detalle || doc.detalleJson || [];
+        if (typeof items === 'string') {
+            try { items = JSON.parse(items); } catch(e) { items = []; }
+        }
+
+        var itemsHtml = '';
+        if (items && items.length) {
+            itemsHtml = '<table class="tbl"><thead><tr><th>Descripción</th><th>U.M.</th><th>Cant.</th><th>V.Unit.</th><th>IGV</th><th>Subtotal</th></tr></thead><tbody>';
+            items.forEach(function(it) {
+                itemsHtml += '<tr>' +
+                    '<td>' + (it.descripcion || '—') + '</td>' +
+                    '<td>' + (it.unidadMedida || 'ZZ') + '</td>' +
+                    '<td style="text-align:center;">' + (it.cantidad || 1) + '</td>' +
+                    '<td style="text-align:right;">' + _money(it.valorUnitario) + '</td>' +
+                    '<td style="text-align:right;">' + _money(it.igv) + '</td>' +
+                    '<td style="text-align:right;font-weight:600;">' + _money(it.subtotal) + '</td>' +
+                    '</tr>';
+            });
+            itemsHtml += '</tbody></table>';
+        }
+
+        var printHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + meta.name + ' ' + serie + '</title>' +
+            '<style>' +
+            'body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;padding:2rem;max-width:800px;margin:0 auto;font-size:12px;}' +
+            'h1{font-size:1.4rem;margin:0 0 0.3rem;}' +
+            '.subtitle{color:#666;font-size:0.85rem;margin-bottom:1.5rem;}' +
+            '.badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.7rem;font-weight:600;}' +
+            '.badge-green{background:#e6f9ed;color:#1a7f37;}' +
+            '.badge-blue{background:#ddf4ff;color:#0969da;}' +
+            '.badge-red{background:#ffebe9;color:#cf222e;}' +
+            '.badge-yellow{background:#fff8c5;color:#9a6700;}' +
+            '.badge-gray{background:#f0f0f0;color:#656d76;}' +
+            '.section{margin-bottom:1.5rem;}' +
+            '.section-title{font-weight:700;font-size:0.9rem;margin-bottom:0.5rem;border-bottom:2px solid #e0e0e0;padding-bottom:0.3rem;}' +
+            '.grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;}' +
+            '.field label{font-size:0.7rem;color:#888;display:block;}.field span{font-size:0.85rem;}' +
+            '.tbl{width:100%;border-collapse:collapse;font-size:0.8rem;}' +
+            '.tbl th{background:#f6f6f6;text-align:left;padding:0.4rem 0.6rem;border-bottom:2px solid #ddd;font-size:0.72rem;}' +
+            '.tbl td{padding:0.35rem 0.6rem;border-bottom:1px solid #eee;}' +
+            '.total-row{display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.85rem;}' +
+            '.total-row.grand{font-weight:700;font-size:1rem;border-top:2px solid #333;padding-top:0.5rem;margin-top:0.3rem;}' +
+            '@media print{body{padding:1rem;}}' +
+            '</style></head><body>' +
+            '<h1>' + meta.icon + ' ' + meta.name + '</h1>' +
+            '<div class="subtitle">' + serie + ' &nbsp; <span class="badge badge-' +
+                (estado === 'ACEPTADA' ? 'green' : estado === 'ENVIADA' ? 'blue' : estado === 'RECHAZADA' ? 'red' : estado === 'ANULADA' ? 'yellow' : 'gray') +
+                '">' + estado + '</span></div>' +
+            '<div class="section"><div class="section-title">Información General</div><div class="grid">' +
+                '<div class="field"><label>Fecha Emisión</label><span>' + (doc.fechaEmision || doc.fechaCreacion || '—') + '</span></div>' +
+                '<div class="field"><label>Moneda</label><span>' + (doc.moneda || 'PEN') + '</span></div>' +
+                '<div class="field"><label>Forma de Pago</label><span>' + (doc.formaPago || 'CONTADO') + '</span></div>' +
+                (doc.fechaVencimiento ? '<div class="field"><label>Fecha Vencimiento</label><span>' + doc.fechaVencimiento + '</span></div>' : '') +
+            '</div></div>' +
+            (doc.leyenda ? '<div class="section"><div class="section-title">Leyenda</div><p style="font-style:italic;color:#666;">' + doc.leyenda + '</p></div>' : '') +
+            (itemsHtml ? '<div class="section"><div class="section-title">Detalle de Ítems</div>' + itemsHtml + '</div>' : '') +
+            '<div class="section"><div class="section-title">Resumen</div>' +
+                (doc.gravadas !== undefined ? '<div class="total-row"><span>Op. Gravadas</span><span>' + monSym + _num(doc.gravadas) + '</span></div>' : '') +
+                (doc.exoneradas && parseFloat(doc.exoneradas) > 0 ? '<div class="total-row"><span>Op. Exoneradas</span><span>' + monSym + _num(doc.exoneradas) + '</span></div>' : '') +
+                (doc.inafectas && parseFloat(doc.inafectas) > 0 ? '<div class="total-row"><span>Op. Inafectas</span><span>' + monSym + _num(doc.inafectas) + '</span></div>' : '') +
+                (doc.igv !== undefined ? '<div class="total-row"><span>IGV (18%)</span><span>' + monSym + _num(doc.igv) + '</span></div>' : '') +
+                '<div class="total-row grand"><span>TOTAL</span><span>' + monSym + _num(doc.total) + '</span></div>' +
+            '</div>' +
+            '<div style="margin-top:2rem;font-size:0.65rem;color:#aaa;text-align:center;">Generado por ETIA — ' + new Date().toLocaleString() + '</div>' +
+            '</body></html>';
+
+        var printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(function() { printWindow.print(); }, 400);
+    }
+
     /* ─── Helpers ─── */
     function _field(label, value) {
         return '<div class="dp-field"><label>' + label + '</label><span>' + (value || '—') + '</span></div>';
@@ -336,7 +492,7 @@ var DocPreview = (function() {
         return '<div class="dp-total-row"><span style="color:var(--text-secondary);">' + label + '</span><span style="font-family:var(--font-mono);">' + value + '</span></div>';
     }
 
-    return { open: open, close: close, emitir: emitir, anular: anular };
+    return { open: open, close: close, emitir: emitir, anular: anular, descargarXml: descargarXml, eliminar: eliminar, exportJson: exportJson, exportPdf: exportPdf };
 })();
 
 /* Global shortcuts */
@@ -344,3 +500,7 @@ function openDocPreview(type, id) { DocPreview.open(type, id); }
 function closeDocPreview() { DocPreview.close(); }
 function dpEmitirFactura() { DocPreview.emitir(); }
 function dpAnularFactura() { DocPreview.anular(); }
+function dpDescargarXml() { DocPreview.descargarXml(); }
+function dpEliminarFactura() { DocPreview.eliminar(); }
+function dpExportJson() { DocPreview.exportJson(); }
+function dpExportPdf() { DocPreview.exportPdf(); }

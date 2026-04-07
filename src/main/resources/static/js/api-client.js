@@ -229,6 +229,22 @@ var ApiClient = (function() {
         return _put('/factura?facturaId=' + encodeURIComponent(facturaId), payload);
     }
 
+    function eliminarFactura(facturaId) {
+        return _delete('/factura?facturaId=' + encodeURIComponent(facturaId));
+    }
+
+    function descargarFacturaXml(facturaId) {
+        var url = BASE + '/factura/' + encodeURIComponent(facturaId) + '/xml';
+        return fetch(url).then(function(r) {
+            if (r.status === 204) return null;
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            var cd = r.headers.get('Content-Disposition') || '';
+            var match = cd.match(/filename="?([^"]+)"?/);
+            var filename = match ? match[1] : (facturaId + '.xml');
+            return r.blob().then(function(blob) { return { blob: blob, filename: filename }; });
+        });
+    }
+
     /* ═══════ BOLETA ═══════ */
     function emitirBoleta(payload) {
         return _post('/boleta', payload);
@@ -353,6 +369,8 @@ var ApiClient = (function() {
         emitirFactura:      emitirFactura,
         listarFacturas:     listarFacturas,
         anularFactura:      anularFactura,
+        eliminarFactura:    eliminarFactura,
+        descargarFacturaXml: descargarFacturaXml,
         getFactura:         getFactura,
         emitirBoleta:       emitirBoleta,
         listarBoletas:      listarBoletas,

@@ -86,6 +86,33 @@
             var badgeCls = badgeMap[estado] || 'badge-gray';
             var monSym = (d.moneda === 'USD' || d.moneda === 'usd') ? 'US$ ' : 'S/ ';
             var strikeStyle = estado === 'ANULADA' ? 'text-decoration:line-through;opacity:0.6;' : '';
+
+            /* ─── State-driven inline actions ─── */
+            var actions = '';
+            /* Export actions — always JSON; XML+PDF for transmitted (post-BORRADOR) */
+            var exports = '<button class="dli-action dli-action-json" onclick="event.stopPropagation();quickJson(\'' + d.id + '\');">📋 JSON</button>';
+            if (estado !== 'BORRADOR' && estado !== '—') {
+                exports += '<button class="dli-action dli-action-xml" onclick="event.stopPropagation();quickXml(\'' + d.id + '\',this);">📥 XML</button>' +
+                           '<button class="dli-action dli-action-pdf" onclick="event.stopPropagation();quickPdf(\'' + d.id + '\');">📄 PDF</button>';
+            }
+            switch (estado) {
+                case 'BORRADOR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-emit" onclick="event.stopPropagation();quickEmit(\'' + d.id + '\',this);">📤 Emitir</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🗑️</button>';
+                    break;
+                case 'ENVIADA':
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🚫 Anular</button>';
+                    break;
+                case 'ACEPTADA':
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🚫 Anular</button>';
+                    break;
+                case 'RECHAZADA':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA" onclick="event.stopPropagation();">🔧 Corregir</a>';
+                    break;
+                /* ANULADA: no workflow actions, but exports still available */
+            }
+
             html += '<div class="doc-list-item" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
                 '<div class="dli-header">' +
                     '<div class="dli-left">' +
@@ -98,6 +125,10 @@
                     '</div>' +
                 '</div>' +
                 renderItemDetail(d.detalle) +
+                '<div class="dli-actions">' +
+                    '<div class="dli-actions-export">' + exports + '</div>' +
+                    (actions ? '<div class="dli-actions-workflow">' + actions + '</div>' : '') +
+                '</div>' +
             '</div>';
         });
         html += '</div>';
@@ -106,6 +137,110 @@
     }
 
     function goToPage(p) { currentPage = p; renderPage(); }
+
+    /* ─── Quick actions from the list ─── */
+    function quickEmit(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.getFactura(facturaId).then(function(doc) {
+            if (!doc) throw new Error('not found');
+            var payload = {
+                companyId: doc.companyId || ETIA.companyId,
+                clientId: doc.clientId || null,
+                serie: doc.serie || null,
+                moneda: doc.moneda || 'PEN',
+                formaPago: doc.formaPago || 'CONTADO',
+                gravadas: doc.gravadas || 0,
+                igv: doc.igv || 0,
+                total: doc.total || 0,
+                detalle: doc.detalle || []
+            };
+            return ApiClient.emitirFactura(payload);
+        }).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Factura emitida exitosamente');
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '📤 Emitir'; }
+        });
+    }
+
+    function quickAnular(facturaId, serie, btn) {
+        if (!confirm('¿Anular la factura ' + serie + '? Esta acción no se puede deshacer.')) return;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.anularFactura(facturaId, { motivoAnulacion: 'Anulación solicitada por el usuario' })
+            .then(function() {
+                if (ETIA.showSuccess) ETIA.showSuccess('Factura ' + serie + ' anulada');
+                loadDocs();
+            }).catch(function() {
+                if (btn) { btn.disabled = false; btn.textContent = '🚫 Anular'; }
+            });
+    }
+
+    function quickDelete(facturaId, serie, btn) {
+        if (!confirm('¿Eliminar el borrador ' + serie + '? No se puede deshacer.')) return;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.eliminarFactura(facturaId).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Borrador ' + serie + ' eliminado');
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        });
+    }
+
+    function quickXml(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.descargarFacturaXml(facturaId).then(function(result) {
+            if (!result) {
+                if (ETIA.showError) ETIA.showError({ message: 'Esta factura aún no tiene XML generado.' });
+                if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(result.blob);
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        });
+    }
+
+    function quickJson(facturaId) {
+        ApiClient.getFactura(facturaId).then(function(doc) {
+            if (!doc) return;
+            var serie = (doc.serie || 'F001') + '-' + (doc.numero || facturaId);
+            var json = JSON.stringify(doc, null, 2);
+            var blob = new Blob([json], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = serie + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            if (ETIA.showSuccess) ETIA.showSuccess('JSON descargado: ' + serie + '.json');
+        });
+    }
+
+    function quickPdf(facturaId) {
+        ApiClient.getFactura(facturaId).then(function(doc) {
+            if (!doc) return;
+            /* Reuse preview PDF via DocPreview (open preview then export) */
+            openDocPreview('factura', facturaId);
+            /* Wait for data load, then trigger PDF */
+            var tries = 0;
+            var interval = setInterval(function() {
+                tries++;
+                if (DocPreview.exportPdf && document.getElementById('dp-body').children.length > 1) {
+                    clearInterval(interval);
+                    setTimeout(function() { DocPreview.exportPdf(); }, 200);
+                }
+                if (tries > 20) clearInterval(interval);
+            }, 150);
+        });
+    }
 
     function renderPagination(total, totalPages) {
         var bar = document.getElementById('doc-pag');
