@@ -174,6 +174,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         String relativePath = logoStorageService.guardarLogo(entity.getRuc(), archivo);
         entity.setLogoPath(relativePath);
+        entity.setLogoFormat(logoStorageService.getLogoFormat(entity.getRuc()));
         entity.setFechaActualizacion(LocalDateTime.now());
         CompanyEntity saved = companyRepository.save(entity);
 

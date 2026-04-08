@@ -463,6 +463,26 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                 entity.getTotalCargos(), entity.getTotalDescuentos(),
                 entity.getDetalleJson());
 
+        // ── Validar cuotas de crédito ──
+        if ("CREDITO".equalsIgnoreCase(entity.getFormaPago())) {
+            List<CuotaCreditoEntity> cuotasEntity = cuotaCreditoRepository
+                    .findByFacturaIdOrderByNumeroCuota(entity.getId());
+            if (!cuotasEntity.isEmpty() && entity.getTotal() != null) {
+                java.math.BigDecimal sumaCuotas = cuotasEntity.stream()
+                        .map(CuotaCreditoEntity::getMonto)
+                        .filter(java.util.Objects::nonNull)
+                        .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                List<String> cuotaErrors = new java.util.ArrayList<>();
+                SunatValidator.validarSumaCuotas(sumaCuotas, entity.getTotal(), entity.getFormaPago(), cuotaErrors);
+                if (!cuotaErrors.isEmpty()) {
+                    // Merge cuota errors into result
+                    List<String> allErrors = new java.util.ArrayList<>(result.errores());
+                    allErrors.addAll(cuotaErrors);
+                    result = DocumentValidationResult.fail(allErrors, result.advertencias());
+                }
+            }
+        }
+
         if (result.valid()) {
             entity.setEstado("VALIDADO");
             entity.setErroresValidacion(null);

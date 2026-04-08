@@ -16,6 +16,7 @@ public interface CompanyMapper {
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "fechaActualizacion", ignore = true)
     @Mapping(target = "logoPath", ignore = true)
+    @Mapping(target = "logoFormat", ignore = true)
     @Mapping(target = "regimen", expression = "java(request.getRegimen() != null ? request.getRegimen().getValue() : null)")
     CompanyEntity toEntity(CompanyRegisterDto request);
 
@@ -26,6 +27,7 @@ public interface CompanyMapper {
     @Mapping(target = "fechaActualizacion", ignore = true)
     @Mapping(target = "certificadoPath", ignore = true)
     @Mapping(target = "logoPath", ignore = true)
+    @Mapping(target = "logoFormat", ignore = true)
     @Mapping(target = "razonSocial", ignore = true)
     @Mapping(target = "codigoUbigeo", ignore = true)
     @Mapping(target = "urbanizacion", ignore = true)

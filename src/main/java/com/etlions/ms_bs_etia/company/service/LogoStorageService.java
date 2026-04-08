@@ -26,8 +26,8 @@ import java.util.Set;
 public class LogoStorageService {
 
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024; // 10 MB
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".png", ".jpg", ".jpeg");
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/png", "image/jpeg", "image/jpg");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".png", ".jpg", ".jpeg", ".svg");
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/png", "image/jpeg", "image/jpg", "image/svg+xml");
 
     private final Path basePath;
 
@@ -56,7 +56,7 @@ public class LogoStorageService {
 
         // Validate extension
         if (originalFilename == null || !hasAllowedExtension(originalFilename)) {
-            throw new IllegalArgumentException("Solo se permiten archivos .png, .jpg o .jpeg");
+            throw new IllegalArgumentException("Solo se permiten archivos .png, .jpg, .jpeg o .svg");
         }
 
         // Validate content type
@@ -118,11 +118,33 @@ public class LogoStorageService {
                     .map(p -> {
                         String name = p.getFileName().toString().toLowerCase();
                         if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+                        if (name.endsWith(".svg")) return "image/svg+xml";
                         return "image/png";
                     })
                     .orElse("image/png");
         } catch (IOException e) {
             return "image/png";
+        }
+    }
+
+    /**
+     * Obtiene el formato del logo (extensión sin punto).
+     * @return "png", "jpg", "jpeg", "svg" o "png" por defecto
+     */
+    public String getLogoFormat(String ruc) {
+        Path dir = basePath.resolve(ruc);
+        if (!Files.exists(dir)) return "png";
+        try (var files = Files.list(dir)) {
+            return files.filter(p -> p.getFileName().toString().toLowerCase().startsWith("logo"))
+                    .findFirst()
+                    .map(p -> {
+                        String name = p.getFileName().toString().toLowerCase();
+                        int dotIdx = name.lastIndexOf('.');
+                        return dotIdx >= 0 ? name.substring(dotIdx + 1) : "png";
+                    })
+                    .orElse("png");
+        } catch (IOException e) {
+            return "png";
         }
     }
 

@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/head :: head('ETIA — Menú Principal')}"></head>
 <body>
 
-<header th:replace="~{fragments/header :: header(backUrl=null, backLabel=null)}"></header>
+<header th:replace="~{fragments/header :: header(backUrl=null, backLabel=null, breadcrumb=null)}"></header>
 
 <div class="screen">
     <div class="container mc-container">
@@ -146,14 +146,14 @@
                 <span class="mc-go mc-go-muted">En construcción</span>
             </div>
 
-            <!-- REPORTES -->
-            <div class="mc-card mc-purple mc-disabled">
-                <span class="mc-chip mc-chip-soon">Próximamente</span>
+            <!-- LIBROS ELECTRÓNICOS -->
+            <a th:href="@{/libros-electronicos}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
                 <div class="mc-orb mc-orb-purple">📊</div>
-                <h3 class="mc-title">Reportes</h3>
-                <p class="mc-desc">Libros electrónicos, dashboards y analítica contable</p>
-                <span class="mc-go mc-go-muted">En construcción</span>
-            </div>
+                <h3 class="mc-title">Libros Electrónicos</h3>
+                <p class="mc-desc">Genera libros de ventas, compras y anexos para SUNAT</p>
+                <span class="mc-go">Ver libros <span class="mc-arrow">→</span></span>
+            </a>
 
         </div>
 

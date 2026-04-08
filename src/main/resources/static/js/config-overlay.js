@@ -102,19 +102,46 @@ function loadConfigValues() {
         el = document.getElementById('cfg-co-email');     if (el) el.value = co.emailContacto || '';
         el = document.getElementById('cfg-co-telefono');  if (el) el.value = co.telefono || '';
 
+        /* Dynamic estado badge */
+        var badge = document.getElementById('cfg-co-badge');
+        if (badge) {
+            var estado = (co.estado || '').toUpperCase();
+            if (estado === 'ACTIVO') {
+                badge.textContent = '🟢 Activa';
+                badge.style.color = 'var(--accent)';
+            } else if (estado === 'INACTIVO') {
+                badge.textContent = '🔴 Inactiva';
+                badge.style.color = 'var(--danger)';
+            } else {
+                badge.textContent = '⚪ Sin verificar';
+                badge.style.color = 'var(--text-muted)';
+            }
+        }
+
         /* Logo */
         var logoImg = document.getElementById('cfg-co-logo-img');
         var logoPlaceholder = document.getElementById('cfg-co-logo-placeholder');
         var logoWrap = document.getElementById('cfg-co-logo-wrap');
+        var logoFmt = (co.logoFormat || 'png').toLowerCase();
         if (co.tieneLogo && logoImg) {
             logoImg.src = ApiClient.getLogoUrl(ETIA.companyId) + '&t=' + Date.now();
             logoImg.style.display = 'block';
+            logoImg.style.objectFit = (logoFmt === 'svg') ? 'scale-down' : 'contain';
             if (logoPlaceholder) logoPlaceholder.style.display = 'none';
             if (logoWrap) logoWrap.style.borderStyle = 'solid';
         } else if (logoImg) {
             logoImg.style.display = 'none';
             if (logoPlaceholder) logoPlaceholder.style.display = '';
             if (logoWrap) logoWrap.style.borderStyle = 'dashed';
+        }
+
+        /* Pre-select logo type */
+        var typeSelect = document.getElementById('cfg-logo-type-select');
+        if (typeSelect && co.logoFormat) {
+            var fmt = co.logoFormat.toLowerCase();
+            if (fmt === 'jpeg') fmt = 'jpg';
+            typeSelect.value = fmt;
+            onLogoTypeChange(fmt);
         }
 
         /* Credenciales SUNAT */
@@ -216,6 +243,17 @@ function loadConfigValues() {
     /* Reset map so it re-inits with fresh data when Sede tab opens */
     cfgMap = null;
     cfgMapMarker = null;
+
+    /* Toast / Error config (PASO 8) */
+    var toastErrDur = document.getElementById('cfg-toast-error-duration');
+    if (toastErrDur) toastErrDur.value = c.toastDurationError || 12;
+    var toastSuccDur = document.getElementById('cfg-toast-success-duration');
+    if (toastSuccDur) toastSuccDur.value = c.toastDurationSuccess || 4;
+    var errMode = document.getElementById('cfg-error-display-mode');
+    if (errMode) errMode.value = c.errorDisplayMode || 'toast';
+
+    /* Notification preferences (PASO 9) */
+    _loadNotifPreferences();
 }
 
 /* ─── Theme selection ─── */
@@ -271,6 +309,14 @@ function saveConfig() {
     var docFmtEl = document.getElementById('cfg-document-format');
     if (docFmtEl) ETIA.saveConfig('documentFormat', docFmtEl.value);
 
+    /* Toast / Error config (PASO 8) */
+    var toastErrDur = document.getElementById('cfg-toast-error-duration');
+    if (toastErrDur) ETIA.saveConfig('toastDurationError', parseInt(toastErrDur.value) || 12);
+    var toastSuccDur = document.getElementById('cfg-toast-success-duration');
+    if (toastSuccDur) ETIA.saveConfig('toastDurationSuccess', parseInt(toastSuccDur.value) || 4);
+    var errMode = document.getElementById('cfg-error-display-mode');
+    if (errMode) ETIA.saveConfig('errorDisplayMode', errMode.value || 'toast');
+
     /* Sede */
     var serieFac = document.getElementById('cfg-serie-fac');
     var serieBol = document.getElementById('cfg-serie-bol');
@@ -295,6 +341,19 @@ function saveConfig() {
 
     closeConfigOverlay();
 
+    /* ── Sync preferences to backend (write-through) ── */
+    if (ETIA.companyId) {
+        var prefsToSync = ['currency', 'defaultItemType', 'tipoCambioFuente', 'emisionEnEnvio',
+                           'defaultCuotas', 'cuotaDistribucion', 'documentFormat',
+                           'toastDurationError', 'toastDurationSuccess', 'errorDisplayMode'];
+        prefsToSync.forEach(function(key) {
+            var val = String(ETIA.config[key]);
+            ApiClient.savePreference(ETIA.companyId, key, val).catch(function(err) {
+                console.warn('Error syncing preference ' + key + ':', err);
+            });
+        });
+    }
+
     /* Show success toast */
     showConfigToast('✅ Configuración guardada');
 }
@@ -317,6 +376,18 @@ function saveCompanyContact() {
     if (emailEl) payload.emailContacto = emailEl.value.trim();
     if (telEl) payload.telefono = telEl.value.trim();
 
+    /* Client-side validation */
+    if (payload.emailContacto && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.emailContacto)) {
+        showConfigToast('⚠️ El formato del email no es válido');
+        if (emailEl) emailEl.focus();
+        return;
+    }
+    if (payload.telefono && payload.telefono.length < 7) {
+        showConfigToast('⚠️ El teléfono debe tener al menos 7 caracteres');
+        if (telEl) telEl.focus();
+        return;
+    }
+
     ApiClient.updateCompany(ETIA.companyId, payload).then(function(res) {
         /* Update local state */
         if (ETIA.company) {
@@ -329,15 +400,64 @@ function saveCompanyContact() {
     });
 }
 
+/* ─── Logo type selector ─── */
+var _logoTypeAcceptMap = {
+    png: '.png',
+    jpg: '.jpg,.jpeg',
+    svg: '.svg'
+};
+
+function onLogoTypeChange(type) {
+    var input = document.getElementById('cfg-logo-file-input');
+    if (input) {
+        input.accept = _logoTypeAcceptMap[type] || '.png';
+        input.value = ''; // reset file selection
+    }
+}
+
+/* ─── Magic-byte validation ─── */
+function _validateLogoMagicBytes(file, expectedType) {
+    return new Promise(function(resolve) {
+        if (expectedType === 'svg') {
+            /* SVG: read first 1KB as text, check for <svg */
+            var textReader = new FileReader();
+            textReader.onload = function() {
+                var text = (textReader.result || '').toLowerCase();
+                resolve(text.indexOf('<svg') >= 0);
+            };
+            textReader.onerror = function() { resolve(false); };
+            textReader.readAsText(file.slice(0, 1024));
+            return;
+        }
+        /* PNG/JPG: read first 4 bytes */
+        var reader = new FileReader();
+        reader.onload = function() {
+            var arr = new Uint8Array(reader.result);
+            if (expectedType === 'png') {
+                // PNG magic: 89 50 4E 47
+                resolve(arr.length >= 4 && arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4E && arr[3] === 0x47);
+            } else if (expectedType === 'jpg') {
+                // JPEG magic: FF D8 FF
+                resolve(arr.length >= 3 && arr[0] === 0xFF && arr[1] === 0xD8 && arr[2] === 0xFF);
+            } else {
+                resolve(true);
+            }
+        };
+        reader.onerror = function() { resolve(false); };
+        reader.readAsArrayBuffer(file.slice(0, 8));
+    });
+}
+
 /* ─── Logo upload handler ─── */
 function handleLogoFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
     var file = input.files[0];
     var name = file.name.toLowerCase();
-    if (!name.endsWith('.png') && !name.endsWith('.jpg') && !name.endsWith('.jpeg')) {
-        showConfigToast('⚠️ Solo se permiten archivos .png, .jpg o .jpeg');
-        return;
-    }
+
+    /* Determine expected type from selector */
+    var typeSelect = document.getElementById('cfg-logo-type-select');
+    var expectedType = typeSelect ? typeSelect.value : 'png';
+
     if (file.size > 10 * 1024 * 1024) {
         showConfigToast('⚠️ El logo excede el tamaño máximo de 10 MB');
         return;
@@ -345,19 +465,98 @@ function handleLogoFileSelect(input) {
 
     var resultDiv = document.getElementById('cfg-logo-upload-result');
 
+    /* Magic bytes are the source of truth — extension is just a hint */
+    _validateLogoMagicBytes(file, expectedType).then(function(isValid) {
+        if (!isValid) {
+            showConfigToast('⚠️ El contenido del archivo no corresponde a ' + expectedType.toUpperCase() + '. Verifica que sea una imagen válida.');
+            input.value = '';
+            return;
+        }
+
+        /* SVG: skip dimension validation, upload directly */
+        if (expectedType === 'svg') {
+            _doLogoUpload(file, resultDiv, expectedType);
+            return;
+        }
+
+        /* PNG/JPG: validate dimensions before upload */
+        _validateLogoDimensions(file).then(function(dimResult) {
+            if (dimResult.tooSmall) {
+                showConfigToast('⚠️ Imagen muy pequeña (' + dimResult.width + '×' + dimResult.height + '). Mínimo: 50×50');
+                return;
+            }
+            if (dimResult.tooLarge) {
+                if (confirm('⚠️ Imagen muy grande (' + dimResult.width + '×' + dimResult.height + '). ¿Deseas redimensionar automáticamente a máx 2000px?')) {
+                    _resizeLogoFile(file, 2000, 2000).then(function(resized) {
+                        _doLogoUpload(resized, resultDiv, expectedType);
+                    });
+                } else {
+                    _doLogoUpload(file, resultDiv, expectedType);
+                }
+                return;
+            }
+            _doLogoUpload(file, resultDiv, expectedType);
+        });
+    });
+}
+
+function _validateLogoDimensions(file) {
+    return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+            var w = img.naturalWidth, h = img.naturalHeight;
+            resolve({
+                valid: w >= 50 && h >= 50 && w <= 2000 && h <= 2000,
+                tooSmall: w < 50 || h < 50,
+                tooLarge: w > 2000 || h > 2000,
+                width: w, height: h
+            });
+            URL.revokeObjectURL(img.src);
+        };
+        img.onerror = function() { resolve({ valid: true, width: 0, height: 0 }); };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+function _resizeLogoFile(file, maxW, maxH) {
+    return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+            var ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight);
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.naturalWidth * ratio);
+            canvas.height = Math.round(img.naturalHeight * ratio);
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+                var resized = new File([blob], file.name, { type: file.type });
+                resolve(resized);
+            }, file.type);
+            URL.revokeObjectURL(img.src);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+function _doLogoUpload(file, resultDiv, logoType) {
     /* Upload immediately */
     ApiClient.uploadLogo(ETIA.companyId, file).then(function(res) {
-        /* Update preview */
+        /* Update preview with format-aware rendering */
         var logoImg = document.getElementById('cfg-co-logo-img');
         var logoPlaceholder = document.getElementById('cfg-co-logo-placeholder');
         var logoWrap = document.getElementById('cfg-co-logo-wrap');
         if (logoImg) {
             logoImg.src = URL.createObjectURL(file);
             logoImg.style.display = 'block';
+            /* SVG: render as scalable vector; rasters: contain */
+            logoImg.style.objectFit = (logoType === 'svg') ? 'scale-down' : 'contain';
         }
         if (logoPlaceholder) logoPlaceholder.style.display = 'none';
         if (logoWrap) logoWrap.style.borderStyle = 'solid';
-        if (ETIA.company) ETIA.company.tieneLogo = true;
+        if (ETIA.company) {
+            ETIA.company.tieneLogo = true;
+            ETIA.company.logoFormat = logoType || 'png';
+        }
 
         /* Invalidate logo base64 cache so PDF templates re-fetch the new logo */
         if (ETIA.invalidateLogoCache) ETIA.invalidateLogoCache();
@@ -726,4 +925,79 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+/* ═══════════════════════════════════════════════
+   🔔  Notification Preferences (PASO 9)
+   ═══════════════════════════════════════════════ */
+
+function toggleNotifEmail(on) {
+    var onEl = document.getElementById('cfg-notif-email-on');
+    var offEl = document.getElementById('cfg-notif-email-off');
+    if (onEl) onEl.classList.toggle('active', on);
+    if (offEl) offEl.classList.toggle('active', !on);
+}
+
+function toggleNotifSms(on) {
+    var onEl = document.getElementById('cfg-notif-sms-on');
+    var offEl = document.getElementById('cfg-notif-sms-off');
+    if (onEl) onEl.classList.toggle('active', on);
+    if (offEl) offEl.classList.toggle('active', !on);
+}
+
+function _loadNotifPreferences() {
+    var prefs = JSON.parse(localStorage.getItem('etia_notif_prefs') || '{}');
+
+    /* If localStorage is empty, try loading from backend */
+    if (Object.keys(prefs).length === 0 && ETIA.companyId) {
+        var backendPrefs = ETIA._prefCache && ETIA._prefCache['notif_prefs'];
+        if (backendPrefs) {
+            try { prefs = JSON.parse(backendPrefs); } catch(e) { prefs = {}; }
+            localStorage.setItem('etia_notif_prefs', JSON.stringify(prefs));
+        }
+    }
+
+    /* Email toggle */
+    toggleNotifEmail(!!prefs.emailEnabled);
+    var emailEl = document.getElementById('cfg-notif-email');
+    if (emailEl) emailEl.value = prefs.email || '';
+
+    /* SMS toggle */
+    toggleNotifSms(!!prefs.smsEnabled);
+    var phoneEl = document.getElementById('cfg-notif-phone');
+    if (phoneEl) phoneEl.value = prefs.phone || '';
+
+    /* Checkboxes */
+    var chk;
+    chk = document.getElementById('cfg-notif-aceptada');    if (chk) chk.checked = prefs.aceptada !== false;
+    chk = document.getElementById('cfg-notif-rechazada');   if (chk) chk.checked = prefs.rechazada !== false;
+    chk = document.getElementById('cfg-notif-resumen');     if (chk) chk.checked = prefs.resumen !== false;
+    chk = document.getElementById('cfg-notif-cert-expiry'); if (chk) chk.checked = !!prefs.certExpiry;
+}
+
+function saveNotifPreferences() {
+    var emailOn = document.getElementById('cfg-notif-email-on');
+    var smsOn = document.getElementById('cfg-notif-sms-on');
+
+    var prefs = {
+        emailEnabled: emailOn ? emailOn.classList.contains('active') : false,
+        email: (document.getElementById('cfg-notif-email') || {}).value || '',
+        smsEnabled: smsOn ? smsOn.classList.contains('active') : false,
+        phone: (document.getElementById('cfg-notif-phone') || {}).value || '',
+        aceptada: (document.getElementById('cfg-notif-aceptada') || {}).checked !== false,
+        rechazada: (document.getElementById('cfg-notif-rechazada') || {}).checked !== false,
+        resumen: (document.getElementById('cfg-notif-resumen') || {}).checked !== false,
+        certExpiry: !!(document.getElementById('cfg-notif-cert-expiry') || {}).checked
+    };
+
+    localStorage.setItem('etia_notif_prefs', JSON.stringify(prefs));
+
+    /* Sync to backend (write-through) */
+    if (ETIA.companyId) {
+        ApiClient.savePreference(ETIA.companyId, 'notif_prefs', JSON.stringify(prefs)).catch(function(err) {
+            console.warn('Error syncing notif_prefs:', err);
+        });
+    }
+
+    showConfigToast('✅ Preferencias de notificación guardadas');
+}
 

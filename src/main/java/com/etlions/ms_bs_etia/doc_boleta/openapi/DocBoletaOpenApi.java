@@ -4,6 +4,10 @@ import com.etlions.ms_bs_etia.doc_boleta.service.DocBoletaService;
 import com.etlions.openapicodegen.api.v1.BoletaApi;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +49,25 @@ public class DocBoletaOpenApi implements BoletaApi {
     @Override
     public ResponseEntity<DocumentValidationResultDto> validarBoleta(String boletaId) {
         return ResponseEntity.ok(docBoletaService.validarBoleta(boletaId));
+    }
+
+    @Override
+    public ResponseEntity<BoletaResponseDto> actualizarBoletaBorrador(String boletaId, BoletaEmitirDto boletaEmitirDto) {
+        return ResponseEntity.ok(docBoletaService.actualizarBoletaBorrador(boletaId, boletaEmitirDto));
+    }
+
+    @Override
+    public ResponseEntity<Resource> descargarBoletaXml(String boletaId) {
+        var result = docBoletaService.descargarBoletaXml(boletaId);
+        if (!result.hasContent()) {
+            return ResponseEntity.noContent().build();
+        }
+        ByteArrayResource resource = new ByteArrayResource(result.content());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.filename() + "\"")
+                .contentType(MediaType.APPLICATION_XML)
+                .contentLength(result.content().length)
+                .body(resource);
     }
 }
 

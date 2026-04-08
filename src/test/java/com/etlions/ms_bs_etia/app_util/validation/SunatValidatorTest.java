@@ -679,5 +679,60 @@ class SunatValidatorTest {
                             LocalDate.now(), LocalDate.now().minusDays(5)));
         }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    //  Validar suma de cuotas
+    // ──────────────────────────────────────────────────────────────
+    @Nested
+    @DisplayName("validarSumaCuotas")
+    class ValidarSumaCuotas {
+
+        @Test
+        @DisplayName("CRÉDITO con cuotas que suman total → sin error")
+        void creditoCuotasIgualesTotal() {
+            var errores = new java.util.ArrayList<String>();
+            SunatValidator.validarSumaCuotas(
+                    new BigDecimal("1000.00"), new BigDecimal("1000.00"), "CREDITO", errores);
+            assertTrue(errores.isEmpty());
+        }
+
+        @Test
+        @DisplayName("CRÉDITO con cuotas que NO suman total → error")
+        void creditoCuotasDistintasTotal() {
+            var errores = new java.util.ArrayList<String>();
+            SunatValidator.validarSumaCuotas(
+                    new BigDecimal("800.00"), new BigDecimal("1000.00"), "CREDITO", errores);
+            assertEquals(1, errores.size());
+            assertTrue(errores.get(0).contains("suma de las cuotas"));
+        }
+
+        @Test
+        @DisplayName("CONTADO ignora validación de cuotas")
+        void contadoIgnoraCuotas() {
+            var errores = new java.util.ArrayList<String>();
+            SunatValidator.validarSumaCuotas(
+                    new BigDecimal("500.00"), new BigDecimal("1000.00"), "CONTADO", errores);
+            assertTrue(errores.isEmpty());
+        }
+
+        @Test
+        @DisplayName("CRÉDITO con diferencia mínima (<= 0.01) → sin error")
+        void creditoCuotasDiferenciaMinima() {
+            var errores = new java.util.ArrayList<String>();
+            SunatValidator.validarSumaCuotas(
+                    new BigDecimal("999.99"), new BigDecimal("1000.00"), "CREDITO", errores);
+            assertTrue(errores.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Null values no causan error")
+        void nullValues() {
+            var errores = new java.util.ArrayList<String>();
+            SunatValidator.validarSumaCuotas(null, new BigDecimal("1000.00"), "CREDITO", errores);
+            assertTrue(errores.isEmpty());
+            SunatValidator.validarSumaCuotas(new BigDecimal("1000.00"), null, "CREDITO", errores);
+            assertTrue(errores.isEmpty());
+        }
+    }
 }
 

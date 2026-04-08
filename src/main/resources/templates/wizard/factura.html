@@ -3,15 +3,23 @@
 <head th:replace="~{fragments/head :: head('ETIA — Emitir Documento')}"></head>
 <body>
 
-<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos')}"></header>
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos', breadcrumb='Nuevo Comprobante')}"></header>
 
 <div class="screen">
     <div class="container">
 
-        <!-- Wizard header with editing indicator -->
-        <div id="wiz-editing-banner" style="display:none;margin-bottom:0.8rem;">
-            <div class="warn-banner" style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;">
-                ✏️ <strong>Editando</strong> <span id="wiz-editing-id" class="badge badge-blue" style="font-size:0.72rem;"></span>
+        <!-- Wizard Document Header — Stock Ticker Style -->
+        <div id="wiz-doc-header" style="display:none;margin-bottom:1.2rem;">
+            <div class="wiz-ticker">
+                <div class="wiz-ticker-left">
+                    <span class="wiz-ticker-serie" id="wiz-ticker-serie">F001</span>
+                    <span class="wiz-ticker-sep">-</span>
+                    <span class="wiz-ticker-numero" id="wiz-ticker-numero">(Nuevo)</span>
+                </div>
+                <div class="wiz-ticker-right">
+                    <span class="wiz-ticker-badge tk-nuevo" id="wiz-ticker-badge">NUEVO</span>
+                    <span class="wiz-ticker-mode" id="wiz-ticker-mode">✨ Creación</span>
+                </div>
             </div>
         </div>
 
@@ -438,6 +446,9 @@
         var params = new URLSearchParams(window.location.search);
         var docType = params.get('type') || 'FACTURA';
         var editId  = params.get('id') || null;
+        var viewMode = params.get('mode') === 'view';
+        var duplicateId = params.get('duplicate') || null;
+        var duplicateFields = params.get('fields') || '';
 
         ETIA.init().then(function(company) {
             if (company) {
@@ -448,7 +459,7 @@
                 document.getElementById('em-dir').value = company.direccion || '';
             }
             /* Client fields start EMPTY — user selects via modal or edit mode loads from API */
-            initWizard(docType, editId);
+            initWizard(docType, editId, viewMode, duplicateId, duplicateFields);
         });
     });
 </script>

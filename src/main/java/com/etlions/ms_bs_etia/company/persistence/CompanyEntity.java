@@ -73,6 +73,9 @@ public class CompanyEntity {
     @Column(name = "logo_path")
     private String logoPath;
 
+    @Column(name = "logo_format")
+    private String logoFormat;
+
     @Column(name = "emision_en_envio")
     @Builder.Default
     private Boolean emisionEnEnvio = true;

@@ -1154,11 +1154,107 @@ para embebido directo en los PDFs generados.
  REQ-B  Panel Empresa + Logo    ████████████████████████  100% ✅
  REQ-F  Formato Documentos      ████████████████████████  100% ✅
  REQ-C  PDF Preview con Logo    ████████████████████████  100% ✅
- REQ-A  Boleta + Resumen Diario ░░░░░░░░░░░░░░░░░░░░░░░░   0% ❌
+ REQ-A  Boleta + Resumen Diario ████████████████████████  100% ✅
 ```
 
-### Pendiente: REQ-A
+### Fase 2.5 — COMPLETADA ✅
+Todos los REQ (A–G) han sido implementados.
+
+---
+
+## PARTE 27 — REQ-A: Boleta + Resumen Diario — COMPLETADO ✅ (2026-04-08)
+
+### Alcance
+Implementación completa del flujo de boletas (BORRADOR → VALIDADO/CON_ERROR → Resumen Diario → ENVIADA → ACEPTADA)
+y la estructura de Resumen Diario con envío mock a SUNAT.
+
+### Backend (Pasos 1–8) — COMPLETADO ✅
+
+#### A1 — OpenAPI YAML: nuevos endpoints ✅
+| Endpoint | operationId | Descripción |
+|---|---|---|
+| `PUT /boleta/{boletaId}/actualizar` | `actualizarBoletaBorrador` | Actualiza boleta en BORRADOR/CON_ERROR |
+| `GET /boleta/{boletaId}/xml` | `descargarBoletaXml` | Descarga XML UBL 2.1 tipo "03" |
+| `POST /resumen-diario` | `crearResumenDiario` | Crea resumen diario RC-{YYYYMMDD}-NNN |
+| `GET /resumen-diario` | `listarResumenesDiarios` | Lista resúmenes por empresa |
+| `GET /resumen-diario/{resumenId}` | `obtenerResumenDiario` | Obtiene detalle de resumen |
+| `POST /resumen-diario/{resumenId}/consultar-estado` | `consultarEstadoResumen` | Consulta ticket en SUNAT |
+
+#### A2 — BoletaEntity: nuevos campos ✅
+- `xmlContent` (TEXT), `xmlPath`, `erroresValidacion` (TEXT), `resumenDiarioId`
+
+#### A3 — BoletaRepository: nuevas queries ✅
+- `findByCompanyIdAndEstado`, `findByCompanyIdAndEstadoAndFechaEmision`, `findByResumenDiarioId`
+
+#### A4 — UblInvoiceXmlBuilder: refactorizado con XmlBuildContext ✅
+- `buildBoletaXml()` genera XML tipo "03" usando el mismo motor que factura ("01")
+- `XmlBuildContext` record abstrae campos comunes
+
+#### A5 — DocBoletaService reescrito ✅
+- `emitirBoleta()` → guarda como BORRADOR → valida → VALIDADO/CON_ERROR → genera XML si válido
+- `actualizarBoletaBorrador()` → actualiza campos + re-valida
+- `descargarBoletaXml()` → descarga inmutable (disco → BD → 204)
+- `validarBoleta()` → re-ejecuta validación interna
+
+#### A6 — SunatSoapClient + MockSunatSoapClient ✅
+- Interface: `sendSummary(identificador, ruc)` y `getStatus(ticket, ruc)`
+- Mock: siempre exitoso, ticket con timestamp, ACEPTADO en consulta
+
+#### A7 — Resumen Diario completo ✅
+- `ResumenDiarioEntity` + `ResumenDiarioRepository`
+- `ResumenDiarioServiceImpl`: crear (agrupa VALIDADAS), consultar estado (actualiza a ACEPTADO/RECHAZADO)
+- `ResumenDiarioOpenApi`: controller OpenAPI-first
+
+### Frontend (Pasos 9–13) — COMPLETADO ✅
+
+#### A8 — api-client.js ✅
++7 métodos: `actualizarBoletaBorrador`, `eliminarBoleta`, `descargarBoletaXml`, `crearResumenDiario`, `listarResumenesDiarios`, `obtenerResumenDiario`, `consultarEstadoResumen`
+
+#### A9 — boletas.html: acciones completas ✅
+- BORRADOR: Editar + Validar + Eliminar
+- VALIDADO: Editar + "📨 Lista para Resumen Diario" + Eliminar + XML + PDF
+- CON_ERROR: Corregir + Re-validar + Eliminar + banner de errores
+- ENVIADA: "📨 Incluida en Resumen Diario" (readonly) + XML + PDF
+- ACEPTADA/RECHAZADA: readonly + XML + PDF
+- Funciones: `quickDelete`, `quickXml`, `quickPdf`
+
+#### A10 — resumenes-diarios.html: reescrito con APIs reales ✅
+- Lista resúmenes desde `ApiClient.listarResumenesDiarios()`
+- "Generar Resumen del Día" → `ApiClient.crearResumenDiario()`
+- "Consultar Estado" → `ApiClient.consultarEstadoResumen()` (solo estado ENVIADO)
+- Detalle: copia JSON al portapapeles
+- Badges por estado: GENERADO(gray), ENVIADO(blue), ACEPTADO(green), RECHAZADO(red)
+
+#### A11 — wizard.js: adaptado para BOLETA ✅
+- BOLETA modo creación: botón primario "💾 Guardar Boleta", sin "Emitir" directo
+- BOLETA modo edición: "💾 Guardar Cambios" → `ApiClient.actualizarBoletaBorrador()`
+- Hint: "Las boletas se envían a SUNAT mediante Resúmenes Diarios"
+- `resetAll()` redirige a `/boletas` cuando `selectedDocType === 'BOLETA'`
+
+#### A12 — data.sql: seed data ampliada ✅
+- 8 boletas: 2×ACEPTADA, 3×VALIDADO, 1×CON_ERROR, 1×BORRADOR, 1×ENVIADA
+- 2 resúmenes diarios: 1×ACEPTADO (RC-20260405-001), 1×ENVIADO (RC-20260406-001)
+- Correlativo B001 actualizado a 8
+- Errores de validación para bol-demo-005
+
+### Tests ✅
+- `mvn clean compile` → **BUILD SUCCESS**
+- `mvn test` → **217 tests, 0 Failures, 0 Errors**
+
+### Estado actualizado del proyecto
+```
+ REQ-G  Validación Interna      ████████████████████████  100% ✅
+ REQ-D  Settings + Credenciales ████████████████████████  100% ✅
+ REQ-E  UX Fixes REQ-1–8       ████████████████████████  100% ✅
+ REQ-B  Panel Empresa + Logo    ████████████████████████  100% ✅
+ REQ-F  Formato Documentos      ████████████████████████  100% ✅
+ REQ-C  PDF Preview con Logo    ████████████████████████  100% ✅
+ REQ-A  Boleta + Resumen Diario ████████████████████████  100% ✅
+```
+
+### Pendientes para FASE 3:
 | # | Componente | Descripción | Esfuerzo | Estado |
 |---|---|---|---|---|
-| 1 | **Rediseño Flujo Boleta** | BORRADOR → VALIDADO/CON_ERROR, XML UBL tipo "03", ResumenDiario, mock SOAP | 🔴 Alto | ❌ Pendiente |
-| 2 | **Resumen Diario** | RC-{YYYYMMDD}-NNN, agrupa boletas VALIDADAS del día, endpoint | 🔴 Alto | ❌ Pendiente |
+| 1 | **`DigitalSignatureService`** | Firma digital X.509 enveloped-signature. Cargar .pfx/.p12, firmar con RSA-SHA | 🔴 Alto | ❌ Pendiente |
+| 2 | **`RealSunatSoapClient`** | Reemplazar mock con llamada SOAP real a beta SUNAT | 🟡 Medio | ❌ Pendiente |
+| 3 | **Vinculación Sede → XML** | AddressTypeCode del establecimiento emisor | 🟢 Bajo | ❌ Pendiente |

@@ -21,6 +21,17 @@
      * @param {Object} detail - { status, message, url, body }
      */
     ETIA.showError = function(detail) {
+        var mode = (ETIA.config && ETIA.config.errorDisplayMode) || 'toast';
+
+        if (mode === 'toast' || mode === 'both') {
+            _showErrorToast(detail);
+        }
+        if (mode === 'banner' || mode === 'both') {
+            _showPersistentBanner(detail);
+        }
+    };
+
+    function _showErrorToast(detail) {
         var container = ensureContainer();
         var toast = document.createElement('div');
         toast.className = 'etia-toast etia-toast-error etia-toast-enter';
@@ -61,12 +72,50 @@
 
         container.appendChild(toast);
 
-        /* Auto-dismiss after 12s */
-        setTimeout(function() {
-            toast.classList.add('etia-toast-exit');
-            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 400);
-        }, 12000);
-    };
+        /* Auto-dismiss — configurable duration */
+        var duration = (ETIA.config && ETIA.config.toastDurationError)
+            ? parseInt(ETIA.config.toastDurationError) * 1000
+            : 12000;
+        if (duration > 0) {
+            setTimeout(function() {
+                toast.classList.add('etia-toast-exit');
+                setTimeout(function() { if (toast.parentNode) toast.remove(); }, 400);
+            }, duration);
+        }
+    }
+
+    function _showPersistentBanner(detail) {
+        var statusText = detail.status ? ('Error ' + detail.status) : 'Error';
+        var messageText = detail.message || 'Ha ocurrido un error inesperado';
+        var bodyText = '';
+        if (detail.body) {
+            try {
+                var parsed = typeof detail.body === 'string' ? JSON.parse(detail.body) : detail.body;
+                bodyText = parsed.message || parsed.error || JSON.stringify(parsed, null, 2);
+            } catch(e) {
+                bodyText = String(detail.body);
+            }
+        }
+
+        /* Remove existing banner if any */
+        var existing = document.getElementById('etia-persistent-error-banner');
+        if (existing) existing.remove();
+
+        var banner = document.createElement('div');
+        banner.id = 'etia-persistent-error-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(248,81,73,0.12);border-bottom:2px solid var(--danger, #f85149);padding:0.8rem 1.5rem;display:flex;align-items:flex-start;gap:0.8rem;animation:screenIn 0.3s ease;';
+        banner.innerHTML =
+            '<span style="font-size:1.2rem;flex-shrink:0;">❌</span>' +
+            '<div style="flex:1;min-width:0;">' +
+                '<strong style="color:var(--danger, #f85149);font-size:0.85rem;">' + escapeHtml(statusText) + '</strong>' +
+                '<p style="margin:0.2rem 0 0;font-size:0.8rem;color:var(--text-secondary, #8b949e);">' + escapeHtml(messageText) + '</p>' +
+                (bodyText ? '<pre style="margin:0.3rem 0 0;font-size:0.72rem;color:var(--text-muted, #484f58);white-space:pre-wrap;max-height:80px;overflow:auto;">' + escapeHtml(bodyText).substring(0, 300) + '</pre>' : '') +
+            '</div>' +
+            '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-secondary, #8b949e);font-size:1.2rem;cursor:pointer;padding:0;line-height:1;">✕</button>';
+
+        /* Insert at top of body */
+        document.body.insertBefore(banner, document.body.firstChild);
+    }
 
     /**
      * Show a success toast (brief).
@@ -82,10 +131,13 @@
                 '<button class="etia-toast-close" onclick="this.closest(\'.etia-toast\').remove()">✕</button>' +
             '</div>';
         container.appendChild(toast);
+        var successDuration = (ETIA.config && ETIA.config.toastDurationSuccess)
+            ? parseInt(ETIA.config.toastDurationSuccess) * 1000
+            : 4000;
         setTimeout(function() {
             toast.classList.add('etia-toast-exit');
             setTimeout(function() { if (toast.parentNode) toast.remove(); }, 400);
-        }, 4000);
+        }, successDuration);
     };
 
     /**

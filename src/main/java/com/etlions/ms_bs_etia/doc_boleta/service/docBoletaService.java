@@ -25,5 +25,14 @@ public interface DocBoletaService {
 
     /** Ejecuta validación interna de una boleta y actualiza su estado a VALIDADO o CON_ERROR */
     DocumentValidationResultDto validarBoleta(String boletaId);
+
+    /** Actualiza un borrador de boleta sin emitir */
+    BoletaResponseDto actualizarBoletaBorrador(String boletaId, BoletaEmitirDto request);
+
+    /** Descarga el XML UBL 2.1 tipo "03" de la boleta */
+    BoletaXmlResult descargarBoletaXml(String boletaId);
+
+    /** Result record para descarga de XML */
+    record BoletaXmlResult(byte[] content, String filename, boolean hasContent) {}
 }
 

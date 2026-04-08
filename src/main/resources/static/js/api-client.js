@@ -312,6 +312,51 @@ var ApiClient = (function() {
         return _post('/boleta/' + encodeURIComponent(boletaId) + '/validar', {});
     }
 
+    function actualizarBoletaBorrador(boletaId, payload) {
+        return _put('/boleta/' + encodeURIComponent(boletaId) + '/actualizar', payload);
+    }
+
+    function eliminarBoleta(boletaId) {
+        return _delete('/boleta?boletaId=' + encodeURIComponent(boletaId));
+    }
+
+    function descargarBoletaXml(boletaId) {
+        var url = BASE + '/boleta/' + encodeURIComponent(boletaId) + '/xml';
+        return fetch(url).then(function(r) {
+            if (r.status === 204) return null;
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            var cd = r.headers.get('Content-Disposition') || '';
+            var match = cd.match(/filename="?([^"]+)"?/);
+            var filename = match ? match[1] : (boletaId + '.xml');
+            return r.blob().then(function(blob) { return { blob: blob, filename: filename }; });
+        });
+    }
+
+    function anularBoleta(boletaId, payload) {
+        return _put('/boleta?boletaId=' + encodeURIComponent(boletaId), payload);
+    }
+
+    /* ═══════ RESUMEN DIARIO ═══════ */
+    function crearResumenDiario(payload) {
+        return _post('/resumen-diario', payload);
+    }
+
+    function listarResumenesDiarios(companyId) {
+        return _get('/resumen-diario?companyId=' + encodeURIComponent(companyId)).then(function(res) {
+            return (res.data && res.data.content) ? res.data.content : [];
+        });
+    }
+
+    function obtenerResumenDiario(resumenId) {
+        return _get('/resumen-diario/' + encodeURIComponent(resumenId)).then(function(res) {
+            return res.data || null;
+        });
+    }
+
+    function consultarEstadoResumen(resumenId) {
+        return _post('/resumen-diario/' + encodeURIComponent(resumenId) + '/consultar-estado', {});
+    }
+
     /* ═══════ NOTA CREDITO ═══════ */
     function emitirNotaCredito(payload) {
         return _post('/nota_credito', payload);
@@ -323,6 +368,14 @@ var ApiClient = (function() {
         });
     }
 
+    function actualizarNotaCreditoBorrador(notaCreditoId, payload) {
+        return _put('/nota_credito?notaCreditoId=' + encodeURIComponent(notaCreditoId), payload);
+    }
+
+    function eliminarNotaCreditoBorrador(notaCreditoId) {
+        return _delete('/nota_credito?notaCreditoId=' + encodeURIComponent(notaCreditoId));
+    }
+
     /* ═══════ NOTA DEBITO ═══════ */
     function emitirNotaDebito(payload) {
         return _post('/nota_debito', payload);
@@ -330,6 +383,30 @@ var ApiClient = (function() {
 
     function listarNotasDebito(companyId) {
         return _get('/nota_debito?companyId=' + encodeURIComponent(companyId)).then(function(res) {
+            return (res.data && res.data.content) ? res.data.content : [];
+        });
+    }
+
+    function actualizarNotaDebitoBorrador(notaDebitoId, payload) {
+        return _put('/nota_debito?notaDebitoId=' + encodeURIComponent(notaDebitoId), payload);
+    }
+
+    function eliminarNotaDebitoBorrador(notaDebitoId) {
+        return _delete('/nota_debito?notaDebitoId=' + encodeURIComponent(notaDebitoId));
+    }
+
+    /* ═══════ LIBRO ELECTRÓNICO ═══════ */
+    function generarLibroElectronico(payload) {
+        return _post('/libro_electronico', payload);
+    }
+
+    function listarLibrosElectronicos(companyId, tipo, periodo, page, size) {
+        var url = '/libro_electronico?companyId=' + encodeURIComponent(companyId);
+        if (tipo) url += '&tipo=' + encodeURIComponent(tipo);
+        if (periodo) url += '&periodo=' + encodeURIComponent(periodo);
+        if (page !== undefined) url += '&page=' + page;
+        if (size !== undefined) url += '&size=' + size;
+        return _get(url).then(function(res) {
             return (res.data && res.data.content) ? res.data.content : [];
         });
     }
@@ -361,15 +438,6 @@ var ApiClient = (function() {
 
     function generarSeriesSede(sedeId) {
         return _post('/sede/' + encodeURIComponent(sedeId) + '/generar_series', {});
-    }
-
-    /* ═══════ NOTIFICATION / ANNUL ═══════ */
-    function annulDocument(documentId, tipoDocumento, motivoAnulacion) {
-        return _put('/notification/annul', {
-            documentId: documentId,
-            tipoDocumento: tipoDocumento,
-            motivoAnulacion: motivoAnulacion
-        });
     }
 
     /* ═══════ TABLAS SUNAT ═══════ */
@@ -440,14 +508,27 @@ var ApiClient = (function() {
         emitirBoleta:       emitirBoleta,
         listarBoletas:      listarBoletas,
         validarBoleta:      validarBoleta,
+        actualizarBoletaBorrador: actualizarBoletaBorrador,
+        eliminarBoleta:     eliminarBoleta,
+        descargarBoletaXml: descargarBoletaXml,
+        anularBoleta:       anularBoleta,
         getBoleta:          getBoleta,
+        crearResumenDiario:      crearResumenDiario,
+        listarResumenesDiarios:  listarResumenesDiarios,
+        obtenerResumenDiario:    obtenerResumenDiario,
+        consultarEstadoResumen:  consultarEstadoResumen,
         emitirNotaCredito:  emitirNotaCredito,
         listarNotasCredito: listarNotasCredito,
         getNotaCredito:     getNotaCredito,
+        actualizarNotaCreditoBorrador: actualizarNotaCreditoBorrador,
+        eliminarNotaCreditoBorrador: eliminarNotaCreditoBorrador,
         emitirNotaDebito:   emitirNotaDebito,
         listarNotasDebito:  listarNotasDebito,
         getNotaDebito:      getNotaDebito,
-        annulDocument:      annulDocument,
+        actualizarNotaDebitoBorrador: actualizarNotaDebitoBorrador,
+        eliminarNotaDebitoBorrador: eliminarNotaDebitoBorrador,
+        generarLibroElectronico: generarLibroElectronico,
+        listarLibrosElectronicos: listarLibrosElectronicos,
         listMenuTablasSunat:    listMenuTablasSunat,
         obtenerTablaSunat:      obtenerTablaSunat,
         listMenuCatalogosSunat: listMenuCatalogosSunat,

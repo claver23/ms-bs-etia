@@ -1,19 +1,23 @@
 <!-- ═══════ ETIA — Header Fragment ═══════ -->
-<header th:fragment="header(backUrl, backLabel)" class="g-header"
+<header th:fragment="header(backUrl, backLabel, breadcrumb)" class="g-header"
         xmlns:th="http://www.thymeleaf.org">
 
-    <!-- ═══ LEFT: Logo + Back nav ═══ -->
+    <!-- ═══ LEFT: Logo + Breadcrumb ═══ -->
     <div class="g-header-left">
-        <a th:href="@{/menu}" class="g-brand-link">
-            <span class="g-logo">🧾</span>
-            <div class="g-brand">
-                <h1>ETIA</h1>
-                <sub>Facturación Electrónica · v0.1.0</sub>
-            </div>
+        <a th:href="@{/menu}" class="g-brand-link" title="Ir al menú">
+            <span class="g-logo" id="hdr-logo">
+                <img id="hdr-logo-img" class="g-logo-img" style="display:none;" alt="Logo"/>
+                <span id="hdr-logo-emoji">🧾</span>
+            </span>
         </a>
-        <a th:if="${backUrl != null}" th:href="@{__${backUrl}__}" class="g-back">
-            ← <span th:text="${backLabel} ?: 'Atrás'">Atrás</span>
-        </a>
+        <nav class="g-breadcrumb" id="hdr-breadcrumb" th:if="${breadcrumb != null}">
+            <span class="g-bc-sep">▸</span>
+            <a th:if="${backUrl != null}" th:href="@{__${backUrl}__}" class="g-bc-item"
+               th:text="${backLabel} ?: 'Menú'">Menú</a>
+            <span th:if="${backUrl != null}" class="g-bc-sep">▸</span>
+            <span class="g-bc-current"><span class="g-bc-dot"></span><span th:text="${breadcrumb}">Página</span></span>
+        </nav>
+        <span th:if="${breadcrumb == null}" class="g-bc-brand">ETIA <sub style="font-size:.55rem;color:var(--text-muted);">v0.1.0</sub></span>
     </div>
 
     <!-- ═══ RIGHT: Company · Sede · 🔔 · ⚙️ · Logout ═══ -->
@@ -55,7 +59,16 @@
     <div class="g-notif-panel" id="hdr-notif-panel" style="display:none;">
         <div class="g-notif-header">
             <span>🔔 Notificaciones</span>
-            <button class="g-notif-close" onclick="toggleNotifPanel()">✕</button>
+            <div style="display:flex;gap:0.4rem;align-items:center;">
+                <button class="g-notif-action-btn" onclick="markAllNotifsRead()" title="Marcar todas como leídas">✓ Leídas</button>
+                <button class="g-notif-action-btn" onclick="clearAllNotifs()" title="Limpiar notificaciones">🗑️</button>
+                <button class="g-notif-close" onclick="toggleNotifPanel()">✕</button>
+            </div>
+        </div>
+        <!-- Config pending section -->
+        <div class="g-notif-section" id="hdr-notif-config" style="display:none;">
+            <div class="g-notif-section-title">⚙️ Configuración pendiente</div>
+            <div class="g-notif-list" id="hdr-notif-config-list"></div>
         </div>
         <div class="g-notif-section" id="hdr-notif-transmissions">
             <div class="g-notif-section-title">📤 Transmisiones recientes</div>

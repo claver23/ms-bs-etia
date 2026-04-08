@@ -6,12 +6,12 @@
 -- ══════ COMPANY ══════
 INSERT INTO companies (id, ruc, razon_social, nombre_comercial, codigo_ubigeo, direccion, urbanizacion,
     departamento, provincia, distrito, usuario_sol, clave_sol, email_contacto, telefono, regimen, estado,
-     emision_en_envio, fecha_creacion, fecha_actualizacion)
+     emision_en_envio, logo_format, fecha_creacion, fecha_actualizacion)
 VALUES ('cmp-demo-001', '20601234567', 'ETLIONS S.A.C.', 'ETLIONS', '150131',
     'Av. Javier Prado Este 1234, Piso 8', 'San Isidro Business Center',
     'LIMA', 'LIMA', 'SAN ISIDRO', 'MODDATOS', 'MODDATOS',
     'facturacion@etlions.com', '+51 999 888 777', 'general', 'ACTIVO',
-    TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    TRUE, 'png', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ══════ CLIENT ══════
 INSERT INTO clients (id, company_id, tipo_documento, numero_documento, denominacion, direccion, email, telefono, fecha_creacion) VALUES
@@ -239,6 +239,30 @@ INSERT INTO boletas (id, company_id, client_id, serie, numero, fecha_emision, mo
 ('bol-demo-002', 'cmp-demo-001', 'cli-demo-002', 'B001', 2, DATE '2026-04-02', 'PEN', 2500.00, 450.00, 2950.00, 'BORRADOR',
     'SON DOS MIL NOVECIENTOS CINCUENTA Y 00/100 SOLES',
     '[{"descripcion":"Servicio de Consultoría en TI","unidadMedida":"ZZ","cantidad":1,"valorUnitario":2500.00,"precioUnitario":2950.00,"igv":450.00,"subtotal":2500.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":2500.00,"montoImpuesto":450.00}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-003', 'cmp-demo-001', 'cli-demo-008', 'B001', 3, DATE '2026-04-07', 'PEN', 180.00, 32.40, 212.40, 'VALIDADO',
+    'SON DOSCIENTOS DOCE Y 40/100 SOLES',
+    '[{"descripcion":"Corte de cabello premium","unidadMedida":"ZZ","cantidad":1,"valorUnitario":120.00,"precioUnitario":141.60,"igv":21.60,"subtotal":120.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":120.00,"montoImpuesto":21.60},{"descripcion":"Tratamiento capilar","unidadMedida":"ZZ","cantidad":1,"valorUnitario":60.00,"precioUnitario":70.80,"igv":10.80,"subtotal":60.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":60.00,"montoImpuesto":10.80}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-004', 'cmp-demo-001', 'cli-demo-010', 'B001', 4, DATE '2026-04-07', 'PEN', 450.00, 81.00, 531.00, 'VALIDADO',
+    'SON QUINIENTOS TREINTA Y UNO Y 00/100 SOLES',
+    '[{"descripcion":"Almuerzo ejecutivo ×3","unidadMedida":"ZZ","cantidad":3,"valorUnitario":150.00,"precioUnitario":177.00,"igv":27.00,"subtotal":450.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":450.00,"montoImpuesto":81.00}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-005', 'cmp-demo-001', 'cli-demo-002', 'B001', 5, DATE '2026-04-07', 'PEN', 0.00, 0.00, 75.00, 'CON_ERROR',
+    'SON SETENTA Y CINCO Y 00/100 SOLES',
+    '[{"descripcion":"Estacionamiento mensual","unidadMedida":"MON","cantidad":1,"valorUnitario":75.00,"precioUnitario":75.00,"igv":0,"subtotal":75.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":75.00,"montoImpuesto":0}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-006', 'cmp-demo-001', 'cli-demo-008', 'B001', 6, DATE '2026-04-06', 'PEN', 800.00, 144.00, 944.00, 'ENVIADA',
+    'SON NOVECIENTOS CUARENTA Y CUATRO Y 00/100 SOLES',
+    '[{"descripcion":"Reparación de laptop","unidadMedida":"ZZ","cantidad":1,"valorUnitario":500.00,"precioUnitario":590.00,"igv":90.00,"subtotal":500.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":500.00,"montoImpuesto":90.00},{"descripcion":"Repuestos","unidadMedida":"NIU","cantidad":2,"valorUnitario":150.00,"precioUnitario":177.00,"igv":27.00,"subtotal":300.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":300.00,"montoImpuesto":54.00}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-007', 'cmp-demo-001', 'cli-demo-010', 'B001', 7, DATE '2026-04-05', 'PEN', 1200.00, 216.00, 1416.00, 'ACEPTADA',
+    'SON MIL CUATROCIENTOS DIECISEIS Y 00/100 SOLES',
+    '[{"descripcion":"Servicio de catering evento corporativo","unidadMedida":"ZZ","cantidad":1,"valorUnitario":1200.00,"precioUnitario":1416.00,"igv":216.00,"subtotal":1200.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":1200.00,"montoImpuesto":216.00}]',
+    CURRENT_TIMESTAMP),
+('bol-demo-008', 'cmp-demo-001', 'cli-demo-002', 'B001', 8, DATE '2026-04-08', 'PEN', 320.00, 57.60, 377.60, 'VALIDADO',
+    'SON TRESCIENTOS SETENTA Y SIETE Y 60/100 SOLES',
+    '[{"descripcion":"Mantenimiento preventivo PC","unidadMedida":"ZZ","cantidad":2,"valorUnitario":160.00,"precioUnitario":188.80,"igv":28.80,"subtotal":320.00,"tipoAfectacionIgv":"10","codigoTributo":"1000","tipoPrecio":"01","porcentajeIgv":18.00,"baseImponible":320.00,"montoImpuesto":57.60}]',
     CURRENT_TIMESTAMP);
 
 -- ══════ NOTAS DE CRÉDITO (documentos de prueba) ══════
@@ -266,7 +290,7 @@ INSERT INTO notas_debito (id, company_id, factura_referencia_id, motivo, monto_i
 -- ══════ CORRELATIVOS (sincronizar con facturas/boletas seed) ══════
 INSERT INTO correlativos (id, company_id, serie, ultimo_numero) VALUES
 ('cor-001', 'cmp-demo-001', 'F001', 18),
-('cor-002', 'cmp-demo-001', 'B001', 2),
+('cor-002', 'cmp-demo-001', 'B001', 8),
 ('cor-003', 'cmp-demo-001', 'F002', 7),
 ('cor-004', 'cmp-demo-001', 'B002', 0);
 
@@ -526,4 +550,30 @@ WHERE id = 'fac-demo-026';
 -- Todas las ACEPTADAS y ENVIADAS restantes: generar xml_path mínimo
 UPDATE facturas SET xml_path = '20601234567/01/' || serie || '/' || LPAD(CAST(numero AS VARCHAR), 8, '0') || '/20601234567-01-' || serie || '-' || LPAD(CAST(numero AS VARCHAR), 8, '0') || '.xml'
 WHERE estado IN ('ACEPTADA', 'ENVIADA') AND xml_path IS NULL;
+
+-- ══════ BOLETAS: Enriquecimiento REQ-A ══════
+
+-- bol-demo-005 CON_ERROR: errores de validación
+UPDATE boletas SET errores_validacion = '["El IGV calculado (0.00) no coincide con el total esperado","La base gravada debe ser mayor a 0 si tipoAfectacionIgv=10"]'
+WHERE id = 'bol-demo-005';
+
+-- Boletas VALIDADAS: generar forma_pago y xml_path
+UPDATE boletas SET forma_pago = 'CONTADO', fecha_vencimiento = fecha_emision WHERE forma_pago IS NULL;
+
+-- Boletas ACEPTADAS/VALIDADAS/ENVIADAS: generar xml_path
+UPDATE boletas SET xml_path = '20601234567/03/' || serie || '/' || LPAD(CAST(numero AS VARCHAR), 8, '0') || '/20601234567-03-' || serie || '-' || LPAD(CAST(numero AS VARCHAR), 8, '0') || '.xml'
+WHERE estado IN ('ACEPTADA', 'VALIDADO', 'ENVIADA') AND xml_path IS NULL;
+
+-- ══════ RESÚMENES DIARIOS (seed) ══════
+INSERT INTO resumenes_diarios (id, company_id, identificador, fecha_generacion, fecha_referencia, estado, ticket_sunat, codigo_respuesta, descripcion_respuesta, cantidad_boletas, fecha_creacion) VALUES
+('rd-demo-001', 'cmp-demo-001', 'RC-20260405-001', DATE '2026-04-05', DATE '2026-04-05', 'ACEPTADO',
+    'mock-ticket-1712300000001', '0', 'El Resumen diario RC-20260405-001 ha sido aceptado',
+    2, TIMESTAMP '2026-04-05 18:00:00'),
+('rd-demo-002', 'cmp-demo-001', 'RC-20260406-001', DATE '2026-04-06', DATE '2026-04-06', 'ENVIADO',
+    'mock-ticket-1712400000001', NULL, NULL,
+    1, TIMESTAMP '2026-04-06 19:00:00');
+
+-- Asociar boletas a resúmenes diarios
+UPDATE boletas SET resumen_diario_id = 'rd-demo-001' WHERE id IN ('bol-demo-001', 'bol-demo-007');
+UPDATE boletas SET resumen_diario_id = 'rd-demo-002' WHERE id = 'bol-demo-006';
 

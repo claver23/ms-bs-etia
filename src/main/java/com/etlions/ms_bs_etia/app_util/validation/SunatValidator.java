@@ -314,5 +314,26 @@ public final class SunatValidator {
             }
         }
     }
+
+    /**
+     * Valida que la suma de cuotas sea igual al total del comprobante (para CRÉDITO).
+     * Modo "soft-fail": acumula errores sin lanzar excepción.
+     *
+     * @param sumaCuotas  Suma de los montos de todas las cuotas
+     * @param total       Total del comprobante
+     * @param formaPago   Forma de pago (CONTADO/CREDITO)
+     * @param errores     Lista donde se agregan errores encontrados
+     */
+    public static void validarSumaCuotas(BigDecimal sumaCuotas, BigDecimal total,
+                                          String formaPago, List<String> errores) {
+        if (!"CREDITO".equalsIgnoreCase(formaPago)) return;
+        if (sumaCuotas == null || total == null) return;
+        BigDecimal diff = sumaCuotas.subtract(total).abs();
+        if (diff.compareTo(new BigDecimal("0.01")) > 0) {
+            errores.add("La suma de las cuotas (" + sumaCuotas.setScale(2, RoundingMode.HALF_UP)
+                    + ") debe ser igual al total del comprobante ("
+                    + total.setScale(2, RoundingMode.HALF_UP) + ")");
+        }
+    }
 }
 

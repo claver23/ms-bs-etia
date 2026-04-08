@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/head :: head('ETIA — Mis Facturas')}"></head>
 <body>
 
-<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos')}"></header>
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos', breadcrumb='Facturas')}"></header>
 
 <div class="screen">
     <div class="container">
@@ -290,8 +290,11 @@
             if (result && result.valid) {
                 if (ETIA.showSuccess) ETIA.showSuccess('✅ Factura validada correctamente — Lista para emitir');
             } else {
-                var errCount = (result && result.errores) ? result.errores.length : 0;
-                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+                var errList = (result && result.errores) ? result.errores : [];
+                if (ETIA.showError) ETIA.showError({
+                    message: '⚠ Validación encontró ' + errList.length + ' error(es). Revisa el documento.',
+                    body: errList.join('\n')
+                });
             }
             highlightDocId = facturaId;
             sessionStorage.setItem('etia_fac_highlight_id', facturaId);

@@ -37,6 +37,11 @@
                     <span class="cfg-label">Credenciales SUNAT</span>
                     <span class="cfg-arrow">›</span>
                 </div>
+                <div class="cfg-sidebar-item" data-tab="notificaciones" onclick="switchConfigTab('notificaciones')">
+                    <span class="cfg-icon">🔔</span>
+                    <span class="cfg-label">Notificaciones</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
             </nav>
 
             <!-- ─── Content ─── -->
@@ -49,20 +54,28 @@
                 <!-- ══ PANEL: Empresa ══ -->
                 <div class="cfg-panel active" id="cfg-panel-empresa">
                     <div class="cfg-company-card">
-                        <!-- Logo preview (click to upload) -->
-                        <div id="cfg-co-logo-wrap" style="position:relative;width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;border:2px dashed var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);transition:all 0.2s;"
-                             onclick="document.getElementById('cfg-logo-file-input').click()"
-                             title="Subir logo de empresa">
-                            <img id="cfg-co-logo-img" style="width:100%;height:100%;object-fit:contain;display:none;" alt="Logo"/>
-                            <span id="cfg-co-logo-placeholder" style="font-size:1.8rem;">🏢</span>
-                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:0.55rem;text-align:center;padding:1px 0;">📷 Logo</div>
-                            <input type="file" id="cfg-logo-file-input" accept=".png,.jpg,.jpeg" style="display:none;" onchange="handleLogoFileSelect(this)"/>
+                        <!-- Logo type selector + preview -->
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <select id="cfg-logo-type-select" onchange="onLogoTypeChange(this.value)"
+                                    style="font-size:0.72rem;padding:2px 4px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);width:60px;">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="svg">SVG</option>
+                            </select>
+                            <div id="cfg-co-logo-wrap" style="position:relative;width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;border:2px dashed var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);transition:all 0.2s;"
+                                 onclick="document.getElementById('cfg-logo-file-input').click()"
+                                 title="Subir logo de empresa">
+                                <img id="cfg-co-logo-img" style="width:100%;height:100%;object-fit:contain;display:none;" alt="Logo"/>
+                                <span id="cfg-co-logo-placeholder" style="font-size:1.8rem;">🏢</span>
+                                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:0.55rem;text-align:center;padding:1px 0;">📷 Logo</div>
+                                <input type="file" id="cfg-logo-file-input" accept="image/png,image/jpeg,image/svg+xml,.png,.PNG,.jpg,.JPG,.jpeg,.JPEG,.svg,.SVG" style="display:none;" onchange="handleLogoFileSelect(this)"/>
+                            </div>
                         </div>
                         <div class="cfg-co-info">
                             <h4 id="cfg-co-razon">Cargando...</h4>
                             <span id="cfg-co-ruc">RUC: ---</span>
                         </div>
-                        <span class="cfg-co-badge">🟢 Activa</span>
+                        <span class="cfg-co-badge" id="cfg-co-badge">⚪ Cargando...</span>
                     </div>
                     <!-- Logo upload result -->
                     <div id="cfg-logo-upload-result" style="display:none;font-size:0.78rem;padding:0.4rem 0.8rem;border-radius:var(--radius-sm);margin-bottom:0.5rem;"></div>
@@ -103,7 +116,7 @@
                         ⚠️ Cambiar de empresa implica cerrar sesión y reiniciar el flujo completo.
                     </div>
                     <div class="cfg-save-bar">
-                        <a th:href="@{/}" class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);">🔓 Cambiar Empresa</a>
+                        <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="ETIA.cambiarEmpresa()">🔓 Cambiar Empresa</button>
                         <button class="btn btn-accent" onclick="saveCompanyContact()">💾 Guardar Contacto</button>
                     </div>
                 </div>
@@ -194,6 +207,33 @@
                                 Formato de tus comprobantes impresos y PDFs.
                                 <a th:href="@{/formato-documentos}" style="color:var(--accent);text-decoration:none;font-weight:600;">Ver formatos disponibles →</a>
                             </p>
+                        </div>
+                    </div>
+
+                    <!-- Notificaciones de error (PASO 8) -->
+                    <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.5rem;">
+                        <h3 style="font-size:0.85rem;font-weight:700;color:var(--accent);margin:0 0 1rem;">
+                            🔔 Notificaciones y Errores
+                        </h3>
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Duración toast de error (segundos)</span>
+                                <input type="number" id="cfg-toast-error-duration" min="0" max="60" value="12" step="1" style="width:80px;"/>
+                                <p class="cfg-field-hint">Cuánto tiempo se muestra el toast de error. 0 = no auto-cerrar.</p>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Duración toast de éxito (segundos)</span>
+                                <input type="number" id="cfg-toast-success-duration" min="1" max="30" value="4" step="1" style="width:80px;"/>
+                            </div>
+                        </div>
+                        <div class="cfg-field" style="margin-top:0.8rem;">
+                            <span class="cfg-field-label">Modo de notificación de errores</span>
+                            <select id="cfg-error-display-mode">
+                                <option value="toast">🔔 Solo Toast (auto-desaparece)</option>
+                                <option value="banner">📌 Solo Banner persistente</option>
+                                <option value="both">🔔📌 Ambos (Toast + Banner)</option>
+                            </select>
+                            <p class="cfg-field-hint">El banner persistente queda visible hasta que el usuario lo cierre.</p>
                         </div>
                     </div>
 
@@ -430,6 +470,76 @@
                     <div class="cfg-save-bar">
                         <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
                         <button class="btn btn-accent" onclick="saveCredentials()">💾 Guardar Credenciales</button>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Notificaciones ══ -->
+                <div class="cfg-panel" id="cfg-panel-notificaciones">
+                    <div style="background:var(--accent-glow, rgba(0,255,136,0.06));border:1px solid var(--accent);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.5rem;">
+                        <p style="font-size:0.82rem;color:var(--accent);margin:0;">
+                            📧 <strong>Próximamente:</strong> Recibirás alertas cuando SUNAT responda tus comprobantes.
+                        </p>
+                    </div>
+
+                    <div class="cfg-field">
+                        <span class="cfg-field-label">📧 Notificaciones por email</span>
+                        <div class="cfg-theme-toggle" style="margin-top:0.4rem;">
+                            <div class="cfg-theme-option" id="cfg-notif-email-on" onclick="toggleNotifEmail(true)">
+                                <span class="cfg-th-icon">✅</span>
+                                <span class="cfg-th-label">Activado</span>
+                            </div>
+                            <div class="cfg-theme-option active" id="cfg-notif-email-off" onclick="toggleNotifEmail(false)">
+                                <span class="cfg-th-icon">⛔</span>
+                                <span class="cfg-th-label">Desactivado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cfg-field" style="margin-top:0.8rem;">
+                        <span class="cfg-field-label">Email para notificaciones</span>
+                        <input type="email" id="cfg-notif-email" placeholder="facturacion@empresa.com"/>
+                        <p class="cfg-field-hint">Se enviará a este correo cuando SUNAT responda tus comprobantes</p>
+                    </div>
+
+                    <div class="cfg-field" style="margin-top:1rem;">
+                        <span class="cfg-field-label">📱 Notificaciones por SMS</span>
+                        <div class="cfg-theme-toggle" style="margin-top:0.4rem;">
+                            <div class="cfg-theme-option" id="cfg-notif-sms-on" onclick="toggleNotifSms(true)">
+                                <span class="cfg-th-icon">✅</span>
+                                <span class="cfg-th-label">Activado</span>
+                            </div>
+                            <div class="cfg-theme-option active" id="cfg-notif-sms-off" onclick="toggleNotifSms(false)">
+                                <span class="cfg-th-icon">⛔</span>
+                                <span class="cfg-th-label">Desactivado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cfg-field" style="margin-top:0.8rem;">
+                        <span class="cfg-field-label">Teléfono para SMS</span>
+                        <input type="tel" id="cfg-notif-phone" placeholder="+51 999 888 777"/>
+                    </div>
+
+                    <h3 style="font-size:0.8rem;font-weight:700;color:var(--accent);margin:1.5rem 0 0.8rem;border-top:1px solid var(--border);padding-top:1rem;">
+                        📋 Tipos de notificación
+                    </h3>
+
+                    <div class="cfg-field" style="margin-bottom:0.3rem;">
+                        <label style="font-size:0.82rem;cursor:pointer;"><input type="checkbox" id="cfg-notif-aceptada" checked/> ✅ Comprobante aceptado por SUNAT</label>
+                    </div>
+                    <div class="cfg-field" style="margin-bottom:0.3rem;">
+                        <label style="font-size:0.82rem;cursor:pointer;"><input type="checkbox" id="cfg-notif-rechazada" checked/> ❌ Comprobante rechazado por SUNAT</label>
+                    </div>
+                    <div class="cfg-field" style="margin-bottom:0.3rem;">
+                        <label style="font-size:0.82rem;cursor:pointer;"><input type="checkbox" id="cfg-notif-resumen" checked/> 📊 Resumen diario procesado</label>
+                    </div>
+                    <div class="cfg-field" style="margin-bottom:0.3rem;">
+                        <label style="font-size:0.82rem;cursor:pointer;"><input type="checkbox" id="cfg-notif-cert-expiry"/> 📜 Certificado próximo a vencer</label>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveNotifPreferences()">💾 Guardar preferencias</button>
                     </div>
                 </div>
 

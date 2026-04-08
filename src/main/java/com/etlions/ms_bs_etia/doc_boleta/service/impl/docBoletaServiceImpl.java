@@ -3,20 +3,24 @@ package com.etlions.ms_bs_etia.doc_boleta.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
 import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
 import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
+import com.etlions.ms_bs_etia.company.persistence.CompanyRepository;
 import com.etlions.ms_bs_etia.doc_boleta.mapper.BoletaMapper;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaEntity;
 import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaRepository;
 import com.etlions.ms_bs_etia.doc_boleta.service.DocBoletaService;
 import com.etlions.ms_bs_etia.doc_factura.persistence.*;
+import com.etlions.ms_bs_etia.doc_factura.xml.UblInvoiceXmlBuilder;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocBoletaServiceImpl implements DocBoletaService {
@@ -37,9 +42,12 @@ public class DocBoletaServiceImpl implements DocBoletaService {
     private final CorrelativoService correlativoService;
     private final NotificationService notificationService;
     private final ClientRepository clientRepository;
+    private final CompanyRepository companyRepository;
     private final CuotaCreditoRepository cuotaCreditoRepository;
     private final AllowanceChargeRepository allowanceChargeRepository;
     private final DocumentValidatorService documentValidatorService;
+    private final UblInvoiceXmlBuilder ublInvoiceXmlBuilder;
+    private final XmlStorageService xmlStorageService;
 
     private static final String DEFAULT_SERIE_BOLETA = "B001";
 
@@ -136,6 +144,8 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         if (valResult.valid()) {
             saved.setEstado("VALIDADO");
             saved.setErroresValidacion(null);
+            // ── Generar XML UBL 2.1 tipo "03" al validar ──
+            saved = generateBoletaXml(saved, cuotaEntities, acEntities);
         } else {
             saved.setEstado("CON_ERROR");
             saved.setErroresValidacion(documentValidatorService.erroresAJson(valResult.errores()));
@@ -262,6 +272,10 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         if (result.valid()) {
             entity.setEstado("VALIDADO");
             entity.setErroresValidacion(null);
+            // ── Generar XML UBL 2.1 tipo "03" al validar ──
+            List<CuotaCreditoEntity> cuotas = cuotaCreditoRepository.findByBoletaIdOrderByNumeroCuota(boletaId);
+            List<AllowanceChargeEntity> acs = allowanceChargeRepository.findByBoletaId(boletaId);
+            entity = generateBoletaXml(entity, cuotas, acs);
         } else {
             entity.setEstado("CON_ERROR");
             entity.setErroresValidacion(documentValidatorService.erroresAJson(result.errores()));
@@ -274,7 +288,187 @@ public class DocBoletaServiceImpl implements DocBoletaService {
                 .advertencias(result.advertencias());
     }
 
+    // ═══════ ACTUALIZAR BORRADOR ═══════
+
+    @Override
+    @Transactional
+    public BoletaResponseDto actualizarBoletaBorrador(String boletaId, BoletaEmitirDto request) {
+        BoletaEntity entity = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
+
+        if (!"BORRADOR".equals(entity.getEstado()) && !"VALIDADO".equals(entity.getEstado())
+                && !"CON_ERROR".equals(entity.getEstado())) {
+            throw new SunatValidationException(
+                    "Solo se pueden actualizar boletas en estado BORRADOR, VALIDADO o CON_ERROR. Estado actual: " + entity.getEstado());
+        }
+
+        // ── Calcular totalCargos / totalDescuentos ──
+        BigDecimal sumCargos = BigDecimal.ZERO;
+        BigDecimal sumDescuentos = BigDecimal.ZERO;
+        if (request.getCargosDescuentos() != null) {
+            for (AllowanceChargeItem ac : request.getCargosDescuentos()) {
+                if (Boolean.TRUE.equals(ac.getChargeIndicator())) {
+                    sumCargos = sumCargos.add(ac.getAmount());
+                } else {
+                    sumDescuentos = sumDescuentos.add(ac.getAmount());
+                }
+            }
+        }
+
+        SunatValidator.validarMontosNoNegativos(request.getGravadas(), request.getIgv(), request.getTotal());
+        SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal(),
+                sumCargos, sumDescuentos);
+        SunatValidator.validarDetalleNoVacio(request.getDetalle());
+
+        // ── Actualizar campos mutables ──
+        if (request.getClientId() != null) {
+            clientRepository.findById(request.getClientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente", request.getClientId()));
+            entity.setClientId(request.getClientId());
+        }
+        String moneda = request.getMoneda() != null ? request.getMoneda().getValue() : null;
+        if (moneda != null) {
+            SunatValidator.validarMonedaYTipoCambio(moneda, request.getTipoCambio());
+            entity.setMoneda(moneda);
+        }
+        String formaPagoStr = request.getFormaPago() != null ? request.getFormaPago().getValue() : null;
+        if (formaPagoStr != null) entity.setFormaPago(formaPagoStr);
+        if (request.getTipoCambio() != null) entity.setTipoCambio(request.getTipoCambio());
+        if (request.getFechaVencimiento() != null) {
+            entity.setFechaVencimiento(new java.sql.Date(request.getFechaVencimiento().getTime()).toLocalDate());
+        }
+        if (request.getTipoOperacion() != null) entity.setTipoOperacion(request.getTipoOperacion());
+        if (request.getGravadas() != null) entity.setGravadas(request.getGravadas());
+        if (request.getExoneradas() != null) entity.setExoneradas(request.getExoneradas());
+        if (request.getInafectas() != null) entity.setInafectas(request.getInafectas());
+        if (request.getIgv() != null) entity.setIgv(request.getIgv());
+        if (request.getTotal() != null) entity.setTotal(request.getTotal());
+        if (request.getSubtotal() != null) entity.setSubtotal(request.getSubtotal());
+        if (request.getTotalConImpuestos() != null) entity.setTotalConImpuestos(request.getTotalConImpuestos());
+        if (request.getLeyenda() != null) entity.setLeyenda(request.getLeyenda());
+        if (request.getCodigoUbigeo() != null) entity.setCodigoUbigeo(request.getCodigoUbigeo());
+        entity.setTotalCargos(sumCargos);
+        entity.setTotalDescuentos(sumDescuentos);
+
+        if (request.getDetalle() != null) {
+            entity.setDetalleJson(boletaMapper.detalleToJson(request.getDetalle()));
+        }
+
+        if ("CONTADO".equalsIgnoreCase(entity.getFormaPago())) {
+            entity.setFechaVencimiento(entity.getFechaEmision());
+        }
+
+        BoletaEntity saved = boletaRepository.save(entity);
+
+        // ── Reemplazar cuotas y cargos/descuentos ──
+        cuotaCreditoRepository.deleteByBoletaId(boletaId);
+        allowanceChargeRepository.deleteByBoletaId(boletaId);
+        List<CuotaCreditoEntity> cuotaEntities = persistCuotas(
+                request.getCuotas(), null, saved.getId(), saved.getMoneda());
+        List<AllowanceChargeEntity> acEntities = persistAllowanceCharges(
+                request.getCargosDescuentos(), null, saved.getId(), saved.getMoneda());
+
+        // ── Re-validar ──
+        saved = runInternalValidation(saved, cuotaEntities, acEntities);
+
+        BoletaData data = boletaMapper.toData(saved);
+        enrichBoletaData(data, cuotaEntities, acEntities);
+
+        String serieNumero = SunatFormatter.formatNumeroComprobante(saved.getSerie(), saved.getNumero());
+        return new BoletaResponseDto()
+                .isSuccess(true)
+                .status("OK")
+                .message("Borrador actualizado exitosamente — " + serieNumero)
+                .timestamp(new Date())
+                .data(data);
+    }
+
+    // ═══════ DESCARGAR XML ═══════
+
+    @Override
+    public BoletaXmlResult descargarBoletaXml(String boletaId) {
+        BoletaEntity boleta = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
+
+        var company = companyRepository.findById(boleta.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", boleta.getCompanyId()));
+
+        String filename = SunatFormatter.formatFilename(
+                company.getRuc(), "03", boleta.getSerie(), boleta.getNumero());
+
+        // 1) Leer desde disco (xmlPath)
+        var fromDisk = xmlStorageService.leerXml(boleta.getXmlPath());
+        if (fromDisk.isPresent()) {
+            return new BoletaXmlResult(
+                    fromDisk.get().getBytes(java.nio.charset.StandardCharsets.UTF_8), filename, true);
+        }
+
+        // 2) Fallback: leer desde BD (xmlContent)
+        if (boleta.getXmlContent() != null && !boleta.getXmlContent().isBlank()) {
+            return new BoletaXmlResult(
+                    boleta.getXmlContent().getBytes(java.nio.charset.StandardCharsets.UTF_8), filename, true);
+        }
+
+        // 3) Sin XML — boleta aún no validada
+        return new BoletaXmlResult(null, filename, false);
+    }
+
     // ═══════ HELPERS ═══════
+
+    /** Genera XML UBL 2.1 tipo "03" y lo persiste en disco + BD */
+    private BoletaEntity generateBoletaXml(BoletaEntity boleta,
+                                            List<CuotaCreditoEntity> cuotas,
+                                            List<AllowanceChargeEntity> acs) {
+        try {
+            var company = companyRepository.findById(boleta.getCompanyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Empresa", boleta.getCompanyId()));
+            ClientEntity client = null;
+            if (boleta.getClientId() != null && !boleta.getClientId().isBlank()) {
+                client = clientRepository.findById(boleta.getClientId()).orElse(null);
+            }
+            if (client == null) {
+                // Cliente anónimo por defecto para boletas
+                client = new ClientEntity();
+                client.setTipoDocumento("-");
+                client.setNumeroDocumento("00000000");
+                client.setDenominacion("CLIENTE VARIOS");
+                client.setCodigoPais("PE");
+            }
+            String xmlContent = ublInvoiceXmlBuilder.buildBoletaXml(boleta, company, client, cuotas, acs);
+            boleta.setXmlContent(xmlContent);
+
+            String xmlRelPath = xmlStorageService.guardarXml(
+                    company.getRuc(), "03", boleta.getSerie(), boleta.getNumero(), xmlContent);
+            boleta.setXmlPath(xmlRelPath);
+        } catch (Exception e) {
+            log.error("Error generando XML para boleta {}-{}: {}", boleta.getSerie(), boleta.getNumero(), e.getMessage(), e);
+        }
+        return boleta;
+    }
+
+    /** Ejecuta validación interna y genera XML si pasa */
+    private BoletaEntity runInternalValidation(BoletaEntity entity,
+                                                List<CuotaCreditoEntity> cuotas,
+                                                List<AllowanceChargeEntity> acs) {
+        DocumentValidationResult result = documentValidatorService.validarBoleta(
+                entity.getSerie(), entity.getNumero(), entity.getClientId(),
+                entity.getMoneda(), entity.getTipoCambio(),
+                entity.getFormaPago(), entity.getFechaEmision(), entity.getFechaVencimiento(),
+                entity.getTipoOperacion(), entity.getLeyenda(),
+                entity.getGravadas(), entity.getIgv(), entity.getTotal(),
+                entity.getTotalCargos(), entity.getTotalDescuentos(),
+                entity.getDetalleJson());
+
+        if (result.valid()) {
+            entity.setEstado("VALIDADO");
+            entity.setErroresValidacion(null);
+            entity = generateBoletaXml(entity, cuotas, acs);
+        } else {
+            entity.setEstado("CON_ERROR");
+            entity.setErroresValidacion(documentValidatorService.erroresAJson(result.errores()));
+        }
+        return boletaRepository.save(entity);
+    }
 
     private BoletaData buildBoletaData(BoletaEntity entity) {
         BoletaData data = boletaMapper.toData(entity);

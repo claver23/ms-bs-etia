@@ -19,6 +19,16 @@
                 <button id="dp-json-btn" class="btn-export" style="display:none;" onclick="dpExportJson()">📋 JSON</button>
                 <button id="dp-xml-btn" class="btn-export" style="display:none;" onclick="dpDescargarXml()">📥 XML</button>
                 <button id="dp-pdf-btn" class="btn-export" style="display:none;" onclick="dpExportPdf()">📄 PDF</button>
+                <button id="dp-duplicate-btn" class="btn-export" style="display:none;" onclick="dpShowDuplicateOptions()">📄 Duplicar</button>
+            </div>
+            <!-- Duplicate options dropdown -->
+            <div id="dp-dup-options" style="display:none;position:absolute;bottom:70px;left:16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;z-index:50;min-width:220px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                <p style="font-weight:600;margin:0 0 0.5rem;font-size:0.85rem;">📄 Duplicar — ¿Qué copiar?</p>
+                <label style="display:block;font-size:0.8rem;margin-bottom:0.3rem;cursor:pointer;"><input type="checkbox" id="dp-dup-cliente" checked/> 👤 Cliente</label>
+                <label style="display:block;font-size:0.8rem;margin-bottom:0.3rem;cursor:pointer;"><input type="checkbox" id="dp-dup-detalle" checked/> 📋 Detalle (ítems)</label>
+                <label style="display:block;font-size:0.8rem;margin-bottom:0.3rem;cursor:pointer;"><input type="checkbox" id="dp-dup-cuotas"/> 💳 Cuotas</label>
+                <label style="display:block;font-size:0.8rem;margin-bottom:0.5rem;cursor:pointer;"><input type="checkbox" id="dp-dup-cargos"/> 📊 Cargos/Descuentos</label>
+                <button class="btn btn-accent" style="width:100%;font-size:0.8rem;" onclick="dpExecuteDuplicate()">✨ Crear Clon</button>
             </div>
             <!-- Action buttons (right) -->
             <div class="dp-action-group" id="dp-action-buttons">

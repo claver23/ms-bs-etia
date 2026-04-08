@@ -9,7 +9,7 @@ let editDocId = null;
 let editDocEstado = null;
 
 /* ═══════ INIT WIZARD ═══════ */
-function initWizard(docType, editId) {
+function initWizard(docType, editId, viewMode, duplicateId, duplicateFields) {
     selectedDocType = docType || 'FACTURA';
     editMode = !!editId;
     editDocId = editId || null;
@@ -68,13 +68,18 @@ function initWizard(docType, editId) {
     /* Show/hide nota-specific fields */
     _setupNotaFields(docType);
 
-    /* Editing banner */
-    var editBanner = document.getElementById('wiz-editing-banner');
-    if (editBanner) editBanner.style.display = editMode ? 'block' : 'none';
+    /* Stock-ticker document header */
+    _updateTickerHeader(editMode, editDocId);
 
     /* If edit mode → load existing document data */
     if (editMode && editDocId) {
-        _loadDraftForEdit(docType, editDocId);
+        _loadDraftForEdit(docType, editDocId).then(function() {
+            if (viewMode) _applyReadOnlyMode();
+        });
+    } else if (duplicateId) {
+        /* Duplicate mode — load source document and clone selected fields */
+        var fields = duplicateFields ? duplicateFields.split(',') : ['cliente', 'detalle'];
+        _loadDocumentForDuplicate(docType, duplicateId, fields);
     }
 }
 
@@ -172,9 +177,9 @@ function _loadDraftForEdit(docType, docId) {
     else if (docType === 'BOLETA') fetchFn = ApiClient.getBoleta;
     else if (docType === 'NOTA_CREDITO') fetchFn = ApiClient.getNotaCredito;
     else if (docType === 'NOTA_DEBITO') fetchFn = ApiClient.getNotaDebito;
-    else return;
+    else return Promise.resolve();
 
-    fetchFn(docId).then(function(doc) {
+    return fetchFn(docId).then(function(doc) {
         if (!doc) { console.warn('Draft not found:', docId); return; }
         console.log('[wizard] _loadDraftForEdit doc:', JSON.stringify(doc, null, 2));
         editDocEstado = doc.estado || null;
@@ -858,6 +863,193 @@ async function saveDraft() {
     await _submitDoc(false);
 }
 
+/* ═══════ STOCK-TICKER DOCUMENT HEADER ═══════ */
+function _updateTickerHeader(editMode, editDocId) {
+    var header = document.getElementById('wiz-doc-header');
+    if (!header) return;
+    header.style.display = 'block';
+
+    var elSerie   = document.getElementById('wiz-ticker-serie');
+    var elNumero  = document.getElementById('wiz-ticker-numero');
+    var elBadge   = document.getElementById('wiz-ticker-badge');
+    var elMode    = document.getElementById('wiz-ticker-mode');
+
+    if (editMode && editDocId) {
+        /* Editing existing draft */
+        var parts = editDocId.split('-');
+        if (elSerie)  elSerie.textContent  = parts[0] || '';
+        if (elNumero) elNumero.textContent = parts.slice(1).join('-') || editDocId;
+        if (elBadge) {
+            elBadge.textContent = 'BORRADOR';
+            elBadge.className = 'wiz-ticker-badge tk-borrador';
+        }
+        if (elMode) elMode.textContent = '✏️ Editando';
+    } else {
+        /* New document */
+        var serieSelect = document.getElementById('fac-serie');
+        var serie = serieSelect ? serieSelect.value : 'F001';
+        if (elSerie)  elSerie.textContent  = serie || 'F001';
+        if (elNumero) elNumero.textContent = '(Nuevo)';
+        if (elBadge) {
+            elBadge.textContent = 'NUEVO';
+            elBadge.className = 'wiz-ticker-badge tk-nuevo';
+        }
+        if (elMode) elMode.textContent = '✨ Creación';
+    }
+}
+
+/** Update ticker serie when serie selector changes */
+function _onSerieChange() {
+    var serieSelect = document.getElementById('fac-serie');
+    var elSerie = document.getElementById('wiz-ticker-serie');
+    if (serieSelect && elSerie) {
+        elSerie.textContent = serieSelect.value || 'F001';
+    }
+}
+
+/* ═══════ READ-ONLY MODE (PASO 6) ═══════ */
+function _applyReadOnlyMode() {
+    /* Disable all inputs, selects, textareas in wizard panels */
+    document.querySelectorAll('#wizard-panels input, #wizard-panels select, #wizard-panels textarea')
+        .forEach(function(el) { el.disabled = true; el.style.opacity = '0.7'; });
+
+    /* Hide action buttons */
+    ['btn-emit', 'btn-draft', 'search-btn-wrap', 'add-qty'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    /* Hide add/remove buttons */
+    document.querySelectorAll('.ab-add, .item-remove, .cuota-remove, .ac-remove, .ab-search')
+        .forEach(function(el) { el.style.display = 'none'; });
+
+    /* Hide "Agregar" buttons for cargos and cuotas */
+    document.querySelectorAll('#wizard-panels .btn-ghost').forEach(function(btn) {
+        var text = btn.textContent || '';
+        if (text.includes('+ Agregar') || text.includes('Agregar Cuota')) {
+            btn.style.display = 'none';
+        }
+    });
+
+    /* Update ticker to show read-only mode */
+    var mode = document.getElementById('wiz-ticker-mode');
+    if (mode) mode.textContent = '👁️ Modo Lectura';
+
+    /* Change step 5 buttons to only "← Volver" */
+    var btnRow = document.querySelector('#wiz-5 .btn-row');
+    if (btnRow) {
+        btnRow.innerHTML = '<button class="btn btn-ghost" onclick="wizGo(4)">← Anterior</button>' +
+            '<a class="btn btn-accent" href="/documents">📋 Volver a Documentos</a>';
+    }
+}
+
+/* ═══════ DUPLICATE DOCUMENT (PASO 7) ═══════ */
+function _loadDocumentForDuplicate(docType, sourceDocId, fields) {
+    var fetchFn;
+    if (docType === 'FACTURA') fetchFn = ApiClient.getFactura;
+    else if (docType === 'BOLETA') fetchFn = ApiClient.getBoleta;
+    else return;
+
+    fetchFn(sourceDocId).then(function(doc) {
+        if (!doc) { console.warn('Source doc not found for duplicate:', sourceDocId); return; }
+
+        /* Clone client data */
+        if (fields.indexOf('cliente') !== -1 && doc.clientId) {
+            ETIA.clientId = doc.clientId;
+            var client = ETIA.findClientById(doc.clientId);
+            if (client) {
+                _applyClientToWizard(client);
+            } else {
+                ApiClient.listClients(ETIA.companyId).then(function(clients) {
+                    ETIA.clients = clients || [];
+                    var cl = ETIA.findClientById(doc.clientId);
+                    if (cl) _applyClientToWizard(cl);
+                }).catch(function() {});
+            }
+        }
+
+        /* Clone items */
+        if (fields.indexOf('detalle') !== -1) {
+            var detalle = doc.detalle || [];
+            if (detalle.length > 0) {
+                items = [];
+                itemCounter = 0;
+                detalle.forEach(function(d) {
+                    itemCounter++;
+                    var valorUnit = parseFloat(d.valorUnitario || 0);
+                    var precioUnit = parseFloat(d.precioUnitario || 0);
+                    var cantidad = parseFloat(d.cantidad || 1);
+                    var afect = d.tipoAfectacionIgv || '10';
+                    var igvInfo = IGV_MAP[afect] || IGV_MAP['10'];
+                    var baseImp = parseFloat(d.baseImponible || d.subtotal || (cantidad * valorUnit) || 0);
+                    var montoImp = parseFloat(d.montoImpuesto || d.igv || 0);
+                    items.push({
+                        id: itemCounter, descripcion: d.descripcion || '', unidadMedida: d.unidadMedida || 'NIU',
+                        cantidad: cantidad, valorUnitario: valorUnit,
+                        precioUnitario: precioUnit || (valorUnit * (1 + (igvInfo.porcentajeIgv / 100))),
+                        tipoAfectacionIgv: afect, codigoTributo: d.codigoTributo || igvInfo.codigoTributo,
+                        porcentajeIgv: d.porcentajeIgv != null ? d.porcentajeIgv : igvInfo.porcentajeIgv,
+                        tipoPrecio: d.tipoPrecio || '01', baseImponible: baseImp,
+                        montoImpuesto: montoImp, igv: montoImp, subtotal: baseImp
+                    });
+                });
+                renderItems();
+            }
+        }
+
+        /* Clone cuotas */
+        if (fields.indexOf('cuotas') !== -1 && doc.cuotas && doc.cuotas.length > 0) {
+            cuotas = [];
+            cuotaCounter = 0;
+            doc.cuotas.forEach(function(c) {
+                cuotaCounter++;
+                cuotas.push({
+                    id: cuotaCounter, numeroCuota: cuotaCounter,
+                    monto: parseFloat(c.monto || 0), fechaVencimiento: ''
+                });
+            });
+            if (typeof renderCuotas === 'function') renderCuotas();
+            var fpEl = document.getElementById('fac-forma-pago');
+            if (fpEl) { fpEl.value = 'CREDITO'; onFormaPagoChange(); }
+        }
+
+        /* Clone cargos/descuentos */
+        if (fields.indexOf('cargos') !== -1 && doc.cargosDescuentos && doc.cargosDescuentos.length > 0) {
+            cargosDescuentos = [];
+            acCounter = 0;
+            doc.cargosDescuentos.forEach(function(ac) {
+                acCounter++;
+                cargosDescuentos.push({
+                    id: acCounter, chargeIndicator: ac.chargeIndicator,
+                    reasonCode: ac.reasonCode || '', reasonDescription: ac.reasonDescription || '',
+                    multiplierFactor: parseFloat(ac.multiplierFactor || 0),
+                    amount: parseFloat(ac.amount || 0), baseAmount: parseFloat(ac.baseAmount || 0)
+                });
+            });
+            if (typeof renderCargosDescuentos === 'function') renderCargosDescuentos();
+        }
+
+        /* Copy moneda if present */
+        if (doc.moneda) {
+            var monedaEl = document.getElementById('fac-moneda');
+            if (monedaEl) { monedaEl.value = doc.moneda; onMonedaChange(); }
+        }
+
+        /* Update ticker for clone mode */
+        var elMode = document.getElementById('wiz-ticker-mode');
+        if (elMode) {
+            var srcSerie = doc.serie || '';
+            var srcNum = String(doc.numero || '').padStart(8, '0');
+            elMode.textContent = '📄 Clonado de ' + srcSerie + '-' + srcNum;
+        }
+        var elBadge = document.getElementById('wiz-ticker-badge');
+        if (elBadge) { elBadge.textContent = 'NUEVO'; elBadge.className = 'wiz-ticker-badge tk-nuevo'; }
+
+    }).catch(function(err) {
+        console.error('Error loading document for duplicate:', err);
+    });
+}
+
 /* ═══════ ADAPT WIZARD UI BASED ON EMISIÓN EN ENVÍO ═══════ */
 function _updateWizardEmisionUI() {
     var emisionActiva = ETIA.config.emisionEnEnvio !== false;
@@ -867,8 +1059,35 @@ function _updateWizardEmisionUI() {
     var stepLabel = document.querySelectorAll('.wiz-step')[4]; /* step 5 now */
     var stepLabelText = stepLabel ? stepLabel.querySelector('.wiz-label') : null;
 
+    /* ── BOLETA: always "Guardar" — emission is via Resumen Diario ── */
+    if (selectedDocType === 'BOLETA') {
+        if (editMode) {
+            if (btnDraft) {
+                btnDraft.className = 'btn btn-accent';
+                btnDraft.innerHTML = '<span class="spinner" id="spinner-draft" style="display:none;"></span> 💾 Guardar Cambios';
+                btnDraft.style.cssText = 'order:2;';
+                btnDraft.style.display = '';
+            }
+            if (btnEmit) { btnEmit.style.display = 'none'; }
+        } else {
+            if (btnDraft) {
+                btnDraft.className = 'btn btn-accent';
+                btnDraft.innerHTML = '<span class="spinner" id="spinner-draft" style="display:none;"></span> 💾 Guardar Boleta';
+                btnDraft.style.cssText = 'order:2;';
+                btnDraft.style.display = '';
+            }
+            if (btnEmit) { btnEmit.style.display = 'none'; }
+        }
+        if (emisionHint) {
+            emisionHint.style.display = 'block';
+            emisionHint.innerHTML = '<div style="display:flex;align-items:center;gap:8px;"><span class="badge badge-blue">📨 Resumen Diario</span> Las boletas se envían a SUNAT mediante Resúmenes Diarios. Al guardar, se validará automáticamente. <a href="/resumenes-diarios" style="color:var(--accent);">Ir a Resúmenes →</a></div>';
+        }
+        if (stepLabelText) stepLabelText.textContent = 'Guardar';
+        return;
+    }
+
     if (editMode) {
-        /* In edit mode: "Emitir" uses emitirBorrador, "Guardar" re-saves draft */
+        /* In edit mode (FACTURA): "Emitir" uses emitirBorrador, "Guardar" re-saves draft */
         if (btnEmit) {
             btnEmit.className = 'btn btn-accent';
             btnEmit.innerHTML = '<span class="spinner" id="spinner" style="display:none;"></span> 🚀 Emitir Borrador';
@@ -1059,6 +1278,19 @@ async function _submitDoc(emitir) {
         return;
     }
 
+    /* ── Edit mode (BOLETA): actualizar borrador — no emite directamente ── */
+    if (editMode && editDocId && selectedDocType === 'BOLETA') {
+        try {
+            var saveResult = await ApiClient.actualizarBoletaBorrador(editDocId, payload);
+            _showResultModal(true, false, saveResult);
+        } catch (err) {
+            _showResultModal(false, false, err);
+        } finally {
+            _resetButtons(spinner, btn, otherBtn);
+        }
+        return;
+    }
+
     try {
         var data = await emitFn(payload);
         _showResultModal(true, emitir, data);
@@ -1071,26 +1303,29 @@ async function _submitDoc(emitir) {
 
 /* ═══════ RESULT MODAL HELPER ═══════ */
 function _showResultModal(isOk, emitir, dataOrErr) {
+    if (!isOk || (isOk && dataOrErr && dataOrErr.isSuccess === false)) {
+        /* Error: NO mostrar modal, solo re-habilitar botones.
+           El toast del error-handler.js ya muestra el error detallado. */
+        _resetButtons(
+            document.getElementById(emitir ? 'spinner' : 'spinner-draft'),
+            document.getElementById(emitir ? 'btn-emit' : 'btn-draft'),
+            document.getElementById(emitir ? 'btn-draft' : 'btn-emit')
+        );
+        return;
+    }
+    /* Solo mostrar modal para ÉXITO */
     var card = document.getElementById('modal-card');
     var title = document.getElementById('modal-title');
-    if (isOk && dataOrErr && dataOrErr.isSuccess !== false) {
-        card.className = 'modal-card success';
-        if (editMode && emitir) {
-            title.innerHTML = '✅ <span style="color:var(--accent);">Borrador emitido exitosamente</span>';
-        } else if (emitir) {
-            title.innerHTML = '✅ <span style="color:var(--accent);">Comprobante emitido exitosamente</span>';
-        } else {
-            title.innerHTML = '💾 <span style="color:var(--accent);">Borrador guardado exitosamente</span>';
-        }
-        if (ETIA.refreshNotifications) ETIA.refreshNotifications();
-    } else if (isOk && dataOrErr && dataOrErr.isSuccess === false) {
-        card.className = 'modal-card error';
-        title.innerHTML = '❌ <span style="color:var(--danger);">Error al ' + (emitir ? 'emitir' : 'guardar') + '</span>';
+    card.className = 'modal-card success';
+    if (editMode && emitir) {
+        title.innerHTML = '✅ <span style="color:var(--accent);">Borrador emitido exitosamente</span>';
+    } else if (emitir) {
+        title.innerHTML = '✅ <span style="color:var(--accent);">Comprobante emitido exitosamente</span>';
     } else {
-        card.className = 'modal-card error';
-        title.innerHTML = '❌ <span style="color:var(--danger);">Error de conexión</span>';
+        title.innerHTML = '💾 <span style="color:var(--accent);">Borrador guardado exitosamente</span>';
     }
-    document.getElementById('modal-body').textContent = isOk ? JSON.stringify(dataOrErr, null, 2) : String(dataOrErr);
+    if (ETIA.refreshNotifications) ETIA.refreshNotifications();
+    document.getElementById('modal-body').textContent = JSON.stringify(dataOrErr, null, 2);
     document.getElementById('modal').classList.add('show');
 }
 
@@ -1108,5 +1343,7 @@ function resetAll() {
     clearSelectedProduct();
     var sedeSel = document.getElementById('hdr-sede-select');
     if (sedeSel) sedeSel.disabled = false;
-    window.location.href = '/documents';
+    /* Redirect based on document type */
+    var redirectMap = { 'FACTURA': '/facturas', 'BOLETA': '/boletas', 'NOTA_CREDITO': '/notas-credito', 'NOTA_DEBITO': '/notas-debito' };
+    window.location.href = redirectMap[selectedDocType] || '/documents';
 }

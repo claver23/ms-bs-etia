@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/head :: head('ETIA — Mis Boletas')}"></head>
 <body>
 
-<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos')}"></header>
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos', breadcrumb='Boletas')}"></header>
 
 <div class="screen">
     <div class="container">
@@ -167,19 +167,45 @@
 
             /* ─── State-driven inline actions ─── */
             var actions = '';
+            var hasXml = ['VALIDADO','ENVIADA','ACEPTADA','RECHAZADA'].indexOf(estado) !== -1;
             var exports = '<button class="dli-action dli-action-json" onclick="event.stopPropagation();quickJson(\'' + d.id + '\');">📋 JSON</button>';
+            if (hasXml) {
+                exports += '<button class="dli-action dli-action-xml" onclick="event.stopPropagation();quickXml(\'' + d.id + '\',this);">📥 XML</button>' +
+                           '<button class="dli-action dli-action-pdf" onclick="event.stopPropagation();quickPdf(\'' + d.id + '\');">📄 PDF</button>';
+            }
+
+            /* ─── Error info ─── */
+            var errorInfo = '';
+            if (estado === 'CON_ERROR' && d.erroresValidacion) {
+                try {
+                    var errArr = typeof d.erroresValidacion === 'string' ? JSON.parse(d.erroresValidacion) : d.erroresValidacion;
+                    if (!Array.isArray(errArr) && errArr && errArr.errores) errArr = errArr.errores;
+                    if (Array.isArray(errArr) && errArr.length > 0) {
+                        errorInfo = '<div class="dli-errors" style="margin-top:4px;padding:6px 10px;background:var(--danger-bg,#fef2f2);border-radius:6px;font-size:.8rem;color:var(--danger,#dc2626);">' +
+                            '⚠ ' + errArr.length + ' error(es): ' + errArr.slice(0, 3).join(' · ') +
+                            (errArr.length > 3 ? ' …y ' + (errArr.length - 3) + ' más' : '') + '</div>';
+                    }
+                } catch(e) {}
+            }
 
             switch (estado) {
                 case 'BORRADOR':
                     actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
-                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Validar</button>';
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Validar</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
                     break;
                 case 'VALIDADO':
-                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>';
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<span class="dli-hint" style="font-size:.75rem;color:var(--text-muted);margin-left:4px;">📨 Lista para Resumen Diario</span>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
                     break;
                 case 'CON_ERROR':
                     actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Corregir</a>' +
-                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Re-validar</button>';
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Re-validar</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'ENVIADA':
+                    actions = '<span class="dli-hint" style="font-size:.75rem;color:var(--text-muted);">📨 Incluida en Resumen Diario</span>';
                     break;
                 case 'ACEPTADA':
                 case 'RECHAZADA':
@@ -200,6 +226,7 @@
                     '</div>' +
                 '</div>' +
                 renderItemDetail(d.detalle) +
+                errorInfo +
                 '<div class="dli-actions">' +
                     '<div class="dli-actions-export">' + exports + '</div>' +
                     (actions ? '<div class="dli-actions-workflow">' + actions + '</div>' : '') +
@@ -226,8 +253,11 @@
             if (result && result.valid) {
                 if (ETIA.showSuccess) ETIA.showSuccess('✅ Boleta validada correctamente');
             } else {
-                var errCount = (result && result.errores) ? result.errores.length : 0;
-                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+                var errList = (result && result.errores) ? result.errores : [];
+                if (ETIA.showError) ETIA.showError({
+                    message: '⚠ Validación encontró ' + errList.length + ' error(es). Revisa el documento.',
+                    body: errList.join('\n')
+                });
             }
             highlightDocId = boletaId;
             sessionStorage.setItem('etia_bol_highlight_id', boletaId);
@@ -253,6 +283,54 @@
                 catch(e) { window.open(URL.createObjectURL(new Blob([json], { type: 'application/json' }))); }
                 document.body.removeChild(ta);
             }
+        });
+    }
+
+    function quickDelete(boletaId, serie, btn) {
+        if (!confirm('¿Eliminar el borrador ' + serie + '? No se puede deshacer.')) return;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.eliminarBoleta(boletaId).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Borrador ' + serie + ' eliminado');
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        });
+    }
+
+    function quickXml(boletaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.descargarBoletaXml(boletaId).then(function(result) {
+            if (!result) {
+                if (ETIA.showError) ETIA.showError({ message: 'Esta boleta aún no tiene XML generado.' });
+                if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(result.blob);
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        });
+    }
+
+    function quickPdf(boletaId) {
+        ApiClient.getBoleta(boletaId).then(function(doc) {
+            if (!doc) return;
+            openDocPreview('boleta', boletaId);
+            var tries = 0;
+            var interval = setInterval(function() {
+                tries++;
+                if (DocPreview.exportPdf && document.getElementById('dp-body').children.length > 1) {
+                    clearInterval(interval);
+                    setTimeout(function() { DocPreview.exportPdf(); }, 200);
+                }
+                if (tries > 20) clearInterval(interval);
+            }, 150);
         });
     }
 

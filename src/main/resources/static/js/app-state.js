@@ -31,7 +31,10 @@ ETIA.config = {
     emisionEnEnvio: localStorage.getItem('etia_emisionEnEnvio') !== 'false',
     defaultCuotas:    localStorage.getItem('etia_defaultCuotas')    || '1',
     cuotaDistribucion:localStorage.getItem('etia_cuotaDistribucion')|| 'FIJA_30D',
-    documentFormat:   localStorage.getItem('etia_documentFormat')   || 'standard'
+    documentFormat:   localStorage.getItem('etia_documentFormat')   || 'standard',
+    toastDurationError:   parseInt(localStorage.getItem('etia_toastDurationError') || '12'),
+    toastDurationSuccess: parseInt(localStorage.getItem('etia_toastDurationSuccess') || '4'),
+    errorDisplayMode:     localStorage.getItem('etia_errorDisplayMode') || 'toast'
 };
 
 /* ─── Save a config key ─── */
@@ -143,10 +146,16 @@ ETIA.init = function() {
         var loadNotifs = _loadRejectedDocs(cid);
         var loadTxNotifs = _loadTransmissionNotifs(cid);
 
+        /* Config notifications — check what's missing */
+        _checkConfigNotifications(company);
+
+        /* Preferences — load from backend and sync to localStorage */
+        var loadPrefs = _loadPreferencesFromBackend(cid);
+
         /* Tipo de cambio — for header badge */
         var loadTc = _loadTcBadge();
 
-        return Promise.all([loadClients, loadSedes, loadNotifs, loadTxNotifs, loadTc]).then(function() { return company; });
+        return Promise.all([loadClients, loadSedes, loadNotifs, loadTxNotifs, loadTc, loadPrefs]).then(function() { return company; });
     }).catch(function(err) {
         console.error('ETIA.init error:', err);
         return null;
@@ -159,6 +168,31 @@ function _applyCompanyData(c) {
     ETIA.companyId = c.id;
     var hdrCompany = document.getElementById('hdr-company');
     if (hdrCompany) hdrCompany.textContent = c.razonSocial || '';
+
+    /* ── Dynamic logo in header (format-aware) ── */
+    var hdrLogoImg = document.getElementById('hdr-logo-img');
+    var hdrLogoEmoji = document.getElementById('hdr-logo-emoji');
+    var logoFormat = (c.logoFormat || 'png').toLowerCase();
+    if (hdrLogoImg && c.tieneLogo && c.id) {
+        hdrLogoImg.src = ApiClient.getLogoUrl(c.id) + '&t=' + Date.now();
+        hdrLogoImg.style.display = 'block';
+        /* SVG: scale-down preserves vector quality; rasters: contain for bitmap */
+        hdrLogoImg.style.objectFit = (logoFormat === 'svg') ? 'scale-down' : 'contain';
+        if (hdrLogoEmoji) hdrLogoEmoji.style.display = 'none';
+    } else if (hdrLogoImg) {
+        hdrLogoImg.style.display = 'none';
+        if (hdrLogoEmoji) hdrLogoEmoji.style.display = '';
+    }
+
+    /* ── Pre-select logo type in Settings selector ── */
+    var cfgLogoTypeSelect = document.getElementById('cfg-logo-type-select');
+    if (cfgLogoTypeSelect && c.logoFormat) {
+        var fmt = c.logoFormat.toLowerCase();
+        if (fmt === 'jpeg') fmt = 'jpg';
+        cfgLogoTypeSelect.value = fmt;
+        /* Update file input accept accordingly */
+        if (typeof onLogoTypeChange === 'function') onLogoTypeChange(fmt);
+    }
 }
 
 function _applyClientsData(clients) {
@@ -337,7 +371,11 @@ function _loadRejectedDocs(companyId) {
 function _renderNotifBadge(docs) {
     var list = document.getElementById('hdr-notif-list');
     if (docs.length === 0) {
-        if (list) list.innerHTML = '<p class="g-notif-empty" style="padding:0.6rem;text-align:center;color:var(--text-muted);font-size:0.8rem;">✅ No hay comprobantes rechazados</p>';
+        if (list) list.innerHTML = '<div class="g-notif-empty-state">' +
+            '<div class="g-notif-empty-icon">✅</div>' +
+            '<p class="g-notif-empty-title">Sin comprobantes rechazados</p>' +
+            '<p class="g-notif-empty-hint">Los documentos rechazados por SUNAT aparecerán aquí para que puedas anularlos</p>' +
+        '</div>';
     } else if (list) {
         list.innerHTML = docs.map(function(d) {
             var label = { FACTURA:'Factura', BOLETA:'Boleta', NOTA_CREDITO:'Nota Crédito', NOTA_DEBITO:'Nota Débito' }[d.tipo] || d.tipo;
@@ -363,8 +401,18 @@ function toggleNotifPanel() {
 
 function anularDocumento(tipo, id) {
     if (!confirm('¿Estás seguro de anular este comprobante? El correlativo quedará inutilizado.')) return;
-    var msg = 'Anulación de comprobante rechazado por SUNAT';
-    ApiClient.annulDocument(id, tipo, msg)
+    var payload = { motivoAnulacion: 'Anulación de comprobante rechazado por SUNAT' };
+
+    /* Dispatch to the correct endpoint based on document type */
+    var anulFn;
+    if (tipo === 'FACTURA')      anulFn = ApiClient.anularFactura(id, payload);
+    else if (tipo === 'BOLETA')  anulFn = ApiClient.anularBoleta(id, payload);
+    else {
+        console.warn('anularDocumento: tipo no soportado:', tipo);
+        return;
+    }
+
+    anulFn
         .then(function() {
             ETIA.rejectedDocs = ETIA.rejectedDocs.filter(function(d) { return d.id !== id; });
             _renderNotifBadge(ETIA.rejectedDocs);
@@ -373,6 +421,7 @@ function anularDocumento(tipo, id) {
         })
         .catch(function(err) {
             console.error('Error anulando documento:', err);
+            if (ETIA.showError) ETIA.showError({ message: 'Error al anular: ' + (err.message || 'desconocido') });
         });
 }
 
@@ -393,23 +442,45 @@ function _renderTxNotifs(notifs) {
     var list = document.getElementById('hdr-notif-tx-list');
     if (!list) return;
     if (!notifs || notifs.length === 0) {
-        list.innerHTML = '<p class="g-notif-empty" style="padding:0.6rem;text-align:center;color:var(--text-muted);font-size:0.8rem;">Sin transmisiones recientes</p>';
+        list.innerHTML = '<div class="g-notif-empty-state">' +
+            '<div class="g-notif-empty-icon">📭</div>' +
+            '<p class="g-notif-empty-title">Sin transmisiones recientes</p>' +
+            '<p class="g-notif-empty-hint">Las emisiones y anulaciones aparecerán aquí automáticamente</p>' +
+        '</div>';
         return;
     }
     var icons = { FACTURA:'📄', BOLETA:'🧾', NOTA_CREDITO:'📋', NOTA_DEBITO:'📋' };
     var acciones = { EMITIDA:'✅', ANULADA:'🚫' };
+    var navUrls = { FACTURA:'/facturas', BOLETA:'/boletas', NOTA_CREDITO:'/notas-credito', NOTA_DEBITO:'/notas-debito' };
     list.innerHTML = notifs.slice(0, 20).map(function(n) {
         var icon = icons[n.tipoDocumento] || '📄';
         var accionIcon = acciones[n.accion] || '';
         var time = n.timestamp ? new Date(n.timestamp).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'}) : '';
         var readClass = n.leida ? ' g-notif-item-read' : '';
-        return '<div class="g-notif-item' + readClass + '">' +
+        var navUrl = navUrls[n.tipoDocumento] || '/menu';
+        var clickAttr = ' onclick="_handleTxNotifClick(\'' + (n.id || '') + '\',\'' + navUrl + '\')" style="cursor:pointer;"';
+        return '<div class="g-notif-item g-notif-item-clickable' + readClass + '"' + clickAttr + '>' +
             '<div class="g-notif-item-info">' +
                 '<strong>' + icon + ' ' + accionIcon + ' ' + (n.mensaje || '') + '</strong>' +
                 '<span>' + (n.serie || '') + ' · ' + time + '</span>' +
             '</div>' +
+            '<span class="g-notif-item-go">→</span>' +
         '</div>';
     }).join('');
+}
+
+/* ─── Handle TX notification click → mark read + navigate ─── */
+function _handleTxNotifClick(notifId, navUrl) {
+    if (notifId) {
+        ApiClient.markNotifRead(notifId).then(function() {
+            var n = (ETIA.txNotifications || []).find(function(x) { return x.id === notifId; });
+            if (n) n.leida = true;
+            _renderTxNotifs(ETIA.txNotifications);
+            _updateGlobalBadge();
+        }).catch(function() {});
+    }
+    toggleNotifPanel();
+    window.location.href = navUrl;
 }
 
 function _updateGlobalBadge() {
@@ -417,7 +488,8 @@ function _updateGlobalBadge() {
     if (!count) return;
     var rejectedCount = (ETIA.rejectedDocs || []).length;
     var unreadTx = (ETIA.txNotifications || []).filter(function(n) { return !n.leida; }).length;
-    var total = rejectedCount + unreadTx;
+    var configCount = (ETIA.configNotifications || []).length;
+    var total = rejectedCount + unreadTx + configCount;
     if (total > 0) {
         count.style.display = '';
         count.textContent = total;
@@ -431,7 +503,128 @@ ETIA.refreshNotifications = function() {
     if (ETIA.companyId) {
         _loadRejectedDocs(ETIA.companyId);
         _loadTransmissionNotifs(ETIA.companyId);
+        if (ETIA.company) _checkConfigNotifications(ETIA.company);
     }
+};
+
+/* ─── Config Notifications (missing configuration checks) ─── */
+ETIA.configNotifications = [];
+
+function _checkConfigNotifications(company) {
+    if (!company) return;
+    var items = [];
+
+    if (!company.tieneLogo) {
+        items.push({ icon: '🖼️', title: 'Sube el logo de tu empresa', hint: 'Personaliza tus comprobantes y PDFs', tab: 'empresa' });
+    }
+    if (!company.tieneUsuarioSol || !company.tieneClaveSol) {
+        items.push({ icon: '🔐', title: 'Configura tus credenciales SOL', hint: 'Necesarias para conectar con SUNAT', tab: 'credenciales' });
+    }
+    if (!company.tieneCertificado) {
+        items.push({ icon: '📜', title: 'Sube tu certificado digital', hint: 'Archivo .p12/.pfx para firma electrónica', tab: 'credenciales' });
+    }
+    if (!company.emailContacto) {
+        items.push({ icon: '📧', title: 'Agrega un email de contacto', hint: 'Correo para notificaciones de facturación', tab: 'empresa' });
+    }
+    if (!company.telefono) {
+        items.push({ icon: '📱', title: 'Agrega un teléfono de contacto', hint: 'Teléfono de la empresa', tab: 'empresa' });
+    }
+
+    ETIA.configNotifications = items;
+    _renderConfigNotifs(items);
+    _updateGlobalBadge();
+}
+
+function _renderConfigNotifs(items) {
+    var section = document.getElementById('hdr-notif-config');
+    var list = document.getElementById('hdr-notif-config-list');
+    if (!section || !list) return;
+
+    if (items.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    list.innerHTML = items.map(function(item) {
+        return '<div class="g-notif-config-item" onclick="toggleNotifPanel();openConfigOverlay();switchConfigTab(\'' + item.tab + '\')">' +
+            '<span class="g-nci-icon">' + item.icon + '</span>' +
+            '<div class="g-nci-text">' +
+                '<strong>' + item.title + '</strong>' +
+                '<span>' + item.hint + '</span>' +
+            '</div>' +
+            '<span class="g-nci-arrow">→</span>' +
+        '</div>';
+    }).join('');
+}
+
+/* ─── Mark All Notifications Read ─── */
+function markAllNotifsRead() {
+    if (!ETIA.companyId) return;
+    ApiClient.markAllNotifRead(ETIA.companyId).then(function() {
+        /* Update local state */
+        (ETIA.txNotifications || []).forEach(function(n) { n.leida = true; });
+        _renderTxNotifs(ETIA.txNotifications);
+        _updateGlobalBadge();
+    }).catch(function(err) {
+        console.error('Error marking notifications as read:', err);
+    });
+}
+
+/* ─── Clear All Notifications ─── */
+function clearAllNotifs() {
+    if (!ETIA.companyId) return;
+    if (!confirm('¿Limpiar todas las notificaciones de transmisión?')) return;
+    ApiClient.clearNotifications(ETIA.companyId).then(function() {
+        ETIA.txNotifications = [];
+        _renderTxNotifs([]);
+        _updateGlobalBadge();
+    }).catch(function(err) {
+        console.error('Error clearing notifications:', err);
+    });
+}
+
+/* ─── Load Preferences from Backend (sync to localStorage) ─── */
+function _loadPreferencesFromBackend(companyId) {
+    return ApiClient.listPreferences(companyId).then(function(res) {
+        var prefs = res.data || res;
+        if (Array.isArray(prefs)) {
+            prefs.forEach(function(p) {
+                if (p.clave && p.valor != null) {
+                    var current = localStorage.getItem('etia_' + p.clave);
+                    /* Only sync from backend if localStorage has no value (first visit / new browser) */
+                    if (!current || current === 'undefined') {
+                        localStorage.setItem('etia_' + p.clave, p.valor);
+                        ETIA.config[p.clave] = p.valor;
+                    }
+                }
+            });
+        }
+    }).catch(function(err) {
+        console.warn('ETIA: Error loading preferences from backend:', err);
+    });
+}
+
+/* ─── Cambiar Empresa (with proper cleanup) ─── */
+ETIA.cambiarEmpresa = function() {
+    if (!confirm('¿Cerrar sesión y cambiar de empresa? Se perderá la configuración local.')) return;
+    /* Keep theme preference across company switch */
+    var savedTheme = localStorage.getItem('etia_theme');
+    /* Use shared cleanup if available (navigation.js), otherwise inline */
+    if (typeof _clearAllEtiaState === 'function') {
+        _clearAllEtiaState();
+    } else {
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf('etia_') === 0) keysToRemove.push(key);
+        }
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+        sessionStorage.clear();
+    }
+    /* Restore theme */
+    if (savedTheme) localStorage.setItem('etia_theme', savedTheme);
+    /* Redirect */
+    window.location.href = '/';
 };
 
 /* ─── Numero Formatting Utility ─── */
@@ -519,6 +712,7 @@ ETIA.getLogoBase64 = function() {
 ETIA.invalidateLogoCache = function() {
     ETIA._logoBase64Cache = null;
     ETIA._logoBase64Promise = null;
+    sessionStorage.removeItem('etia_company'); // force re-fetch of company data
 };
 
 /* ─── Close TC popup on outside click ─── */

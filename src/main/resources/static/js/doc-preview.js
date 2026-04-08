@@ -89,11 +89,13 @@ var DocPreview = (function() {
 
     function _hideAllActions() {
         var ids = ['dp-edit-btn', 'dp-emit-btn', 'dp-annul-btn', 'dp-xml-btn', 'dp-delete-btn',
-                   'dp-json-btn', 'dp-pdf-btn', 'dp-validate-btn'];
+                   'dp-json-btn', 'dp-pdf-btn', 'dp-validate-btn', 'dp-duplicate-btn'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) { el.style.display = 'none'; el.disabled = false; }
         });
+        var dupOpts = document.getElementById('dp-dup-options');
+        if (dupOpts) dupOpts.style.display = 'none';
     }
 
     function _renderDoc(docType, doc) {
@@ -124,7 +126,19 @@ var DocPreview = (function() {
                 banner.style.display = 'block';
                 var errores = [];
                 if (doc.erroresValidacion) {
-                    try { errores = JSON.parse(doc.erroresValidacion); } catch(e) { errores = [doc.erroresValidacion]; }
+                    var raw = doc.erroresValidacion;
+                    if (typeof raw === 'string') {
+                        try {
+                            var parsed = JSON.parse(raw);
+                            errores = Array.isArray(parsed) ? parsed : (parsed.errores || [String(raw)]);
+                        } catch(e) {
+                            errores = [raw];
+                        }
+                    } else if (raw && typeof raw === 'object') {
+                        errores = Array.isArray(raw) ? raw : (raw.errores || [JSON.stringify(raw)]);
+                    } else if (raw) {
+                        errores = [String(raw)];
+                    }
                 }
                 var errHtml = '<div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.3);border-radius:var(--radius-sm);padding:1rem 1.5rem;margin:0;">' +
                     '<div style="display:flex;align-items:flex-start;gap:0.6rem;">' +
@@ -327,6 +341,10 @@ var DocPreview = (function() {
         /* JSON export: available for ALL states */
         if (jsonBtn) jsonBtn.style.display = 'inline-flex';
 
+        /* Duplicate: available for facturas and boletas */
+        var dupBtn = document.getElementById('dp-duplicate-btn');
+        if (dupBtn && (docType === 'factura' || docType === 'boleta')) dupBtn.style.display = 'inline-flex';
+
         /* XML + PDF: only for transmitted docs with XML (ENVIADA, ACEPTADA, RECHAZADA) */
         var hasXml = (estado === 'ENVIADA' || estado === 'ACEPTADA' || estado === 'RECHAZADA');
 
@@ -348,6 +366,7 @@ var DocPreview = (function() {
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Editar';
                     editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
                     emitBtn.style.display = 'inline-flex';
                     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     break;
@@ -360,59 +379,147 @@ var DocPreview = (function() {
                     break;
                 case 'ENVIADA':
                     annulBtn.style.display = 'inline-flex';
+                    if (editBtn) {
+                        editBtn.style.display = 'inline-flex';
+                        editBtn.textContent = '👁️ Ver detalle';
+                        editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId) + '&mode=view';
+                    }
                     break;
                 case 'ACEPTADA':
                     annulBtn.style.display = 'inline-flex';
+                    if (editBtn) {
+                        editBtn.style.display = 'inline-flex';
+                        editBtn.textContent = '👁️ Ver detalle';
+                        editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId) + '&mode=view';
+                    }
                     break;
                 case 'RECHAZADA':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '🔧 Corregir y Re-emitir';
                     editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
                     break;
                 case 'ANULADA':
                     /* Read-only — estado terminal */
                     break;
             }
         } else if (docType === 'boleta') {
+            if (hasXml) {
+                if (xmlBtn) xmlBtn.style.display = 'inline-flex';
+                if (pdfBtn) pdfBtn.style.display = 'inline-flex';
+            }
             switch (estado) {
                 case 'BORRADOR':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Editar';
                     editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
                     if (validateBtn) validateBtn.style.display = 'inline-flex';
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     break;
                 case 'VALIDADO':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Editar';
                     editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     break;
                 case 'CON_ERROR':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Corregir';
                     editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
                     if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                    break;
+                case 'ENVIADA':
+                    annulBtn.style.display = 'inline-flex';
+                    if (editBtn) {
+                        editBtn.style.display = 'inline-flex';
+                        editBtn.textContent = '👁️ Ver detalle';
+                        editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId) + '&mode=view';
+                    }
+                    break;
+                case 'ACEPTADA':
+                    annulBtn.style.display = 'inline-flex';
+                    if (editBtn) {
+                        editBtn.style.display = 'inline-flex';
+                        editBtn.textContent = '👁️ Ver detalle';
+                        editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId) + '&mode=view';
+                    }
+                    break;
+                case 'RECHAZADA':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '🔧 Corregir';
+                    editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
+                    break;
+                case 'ANULADA':
+                    /* Read-only — estado terminal */
                     break;
             }
         } else {
-            if (estado === 'BORRADOR' || estado === 'CREADO') {
-                editBtn.style.display = 'inline-flex';
-                editBtn.textContent = '✏️ Editar';
-                editBtn.href = '/wizard-nota?type=' + (docType === 'nota_credito' ? 'NOTA_CREDITO' : 'NOTA_DEBITO') + '&id=' + encodeURIComponent(_currentDocId);
+            /* ── Notas de Crédito / Notas de Débito ── */
+            var wizType = (docType === 'nota_credito') ? 'NOTA_CREDITO' : 'NOTA_DEBITO';
+            switch (estado) {
+                case 'BORRADOR':
+                case 'CREADO':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.href = '/wizard-nota?type=' + wizType + '&id=' + encodeURIComponent(_currentDocId);
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                    break;
+                case 'CON_ERROR':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Corregir';
+                    editBtn.href = '/wizard-nota?type=' + wizType + '&id=' + encodeURIComponent(_currentDocId);
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                    break;
+                case 'ENVIADA':
+                case 'ACEPTADA':
+                    if (editBtn) {
+                        editBtn.style.display = 'inline-flex';
+                        editBtn.textContent = '👁️ Ver detalle';
+                        editBtn.href = '/wizard-nota?type=' + wizType + '&id=' + encodeURIComponent(_currentDocId) + '&mode=view';
+                    }
+                    break;
+                case 'RECHAZADA':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '🔧 Corregir y Re-emitir';
+                    editBtn.href = '/wizard-nota?type=' + wizType + '&id=' + encodeURIComponent(_currentDocId);
+                    break;
+                case 'ANULADA':
+                    /* Read-only — estado terminal */
+                    break;
+                default:
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.href = '/wizard-nota?type=' + wizType + '&id=' + encodeURIComponent(_currentDocId);
+                    break;
             }
+        }
+
+        /* ── Global: Validate/Re-validate for ALL states except ENVIADA/ACEPTADA ── */
+        if (validateBtn && estado !== 'ENVIADA' && estado !== 'ACEPTADA') {
+            validateBtn.style.display = 'inline-flex';
+            validateBtn.textContent = (estado === 'VALIDADO') ? '🔍 Re-validar' : '🔍 Validar';
         }
     }
 
-    /* ─── Actions ─── */
+    /* ─── Actions (multi-type dispatch) ─── */
+    function _docLabel() {
+        return (_labels[_currentDocType] || { name: 'Documento' }).name;
+    }
+
     function emitir() {
         if (!_currentDocId || !_currentDoc) return;
+        /* Only facturas can be emitted from preview (boletas go via Resumen Diario) */
+        if (_currentDocType !== 'factura') return;
         var emitBtn = document.getElementById('dp-emit-btn');
         if (emitBtn) { emitBtn.disabled = true; emitBtn.textContent = '⏳ Emitiendo...'; }
 
-        /* Use emitirFacturaBorrador to transition BORRADOR → EMITIDA with XML generation */
         ApiClient.emitirFacturaBorrador(_currentDocId).then(function() {
             close();
             if (typeof loadDocs === 'function') loadDocs();
-            if (ETIA.showSuccess) ETIA.showSuccess('Factura emitida exitosamente');
+            if (ETIA.showSuccess) ETIA.showSuccess(_docLabel() + ' emitida exitosamente');
         }).catch(function() {
             if (emitBtn) { emitBtn.disabled = false; emitBtn.textContent = '📤 Emitir'; }
         });
@@ -421,16 +528,17 @@ var DocPreview = (function() {
     function anular() {
         if (!_currentDocId || !_currentDoc) return;
         var serie = ETIA.formatNumero(_currentDoc.serie, _currentDoc.numero);
-        if (!confirm('¿Anular la factura ' + serie + '? Esta acción no se puede deshacer.')) return;
+        if (!confirm('¿Anular ' + _docLabel().toLowerCase() + ' ' + serie + '? Esta acción no se puede deshacer.')) return;
 
         var annulBtn = document.getElementById('dp-annul-btn');
         if (annulBtn) { annulBtn.disabled = true; annulBtn.textContent = '⏳ Anulando...'; }
 
-        ApiClient.anularFactura(_currentDocId, { motivoAnulacion: 'Anulación solicitada por el usuario' })
+        var anulFn = (_currentDocType === 'boleta') ? ApiClient.anularBoleta : ApiClient.anularFactura;
+        anulFn(_currentDocId, { motivoAnulacion: 'Anulación solicitada por el usuario' })
             .then(function() {
                 close();
                 if (typeof loadDocs === 'function') loadDocs();
-                if (ETIA.showSuccess) ETIA.showSuccess('Factura ' + serie + ' anulada exitosamente');
+                if (ETIA.showSuccess) ETIA.showSuccess(_docLabel() + ' ' + serie + ' anulada exitosamente');
             }).catch(function() {
                 if (annulBtn) { annulBtn.disabled = false; annulBtn.textContent = '🚫 Anular'; }
             });
@@ -441,9 +549,10 @@ var DocPreview = (function() {
         var xmlBtn = document.getElementById('dp-xml-btn');
         if (xmlBtn) { xmlBtn.disabled = true; xmlBtn.textContent = '⏳ Descargando...'; }
 
-        ApiClient.descargarFacturaXml(_currentDocId).then(function(result) {
+        var xmlFn = (_currentDocType === 'boleta') ? ApiClient.descargarBoletaXml : ApiClient.descargarFacturaXml;
+        xmlFn(_currentDocId).then(function(result) {
             if (!result) {
-                if (ETIA.showError) ETIA.showError({ message: 'Esta factura aún no tiene XML generado.' });
+                if (ETIA.showError) ETIA.showError({ message: _docLabel() + ' aún no tiene XML generado.' });
                 if (xmlBtn) { xmlBtn.disabled = false; xmlBtn.textContent = '📥 XML'; }
                 return;
             }
@@ -469,7 +578,13 @@ var DocPreview = (function() {
         var deleteBtn = document.getElementById('dp-delete-btn');
         if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = '⏳ Eliminando...'; }
 
-        ApiClient.eliminarFactura(_currentDocId).then(function() {
+        var delFn;
+        if (_currentDocType === 'boleta')             delFn = ApiClient.eliminarBoleta;
+        else if (_currentDocType === 'nota_credito')  delFn = ApiClient.eliminarNotaCreditoBorrador;
+        else if (_currentDocType === 'nota_debito')   delFn = ApiClient.eliminarNotaDebitoBorrador;
+        else                                          delFn = ApiClient.eliminarFactura;
+
+        delFn(_currentDocId).then(function() {
             close();
             if (typeof loadDocs === 'function') loadDocs();
             if (ETIA.showSuccess) ETIA.showSuccess('Borrador ' + serie + ' eliminado');
@@ -492,8 +607,11 @@ var DocPreview = (function() {
             if (result && result.valid) {
                 if (ETIA.showSuccess) ETIA.showSuccess('✅ Documento validado correctamente — Listo para emitir');
             } else {
-                var errCount = (result && result.errores) ? result.errores.length : 0;
-                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+                var errList = (result && result.errores) ? result.errores : [];
+                if (ETIA.showError) ETIA.showError({
+                    message: '⚠ Validación encontró ' + errList.length + ' error(es). Revisa el documento.',
+                    body: errList.join('\n')
+                });
             }
             /* Refresh preview with updated state */
             open(_currentDocType, _currentDocId);
@@ -604,7 +722,26 @@ var DocPreview = (function() {
         return '<div class="dp-total-row"><span style="color:var(--text-secondary);">' + label + '</span><span style="font-family:var(--font-mono);">' + value + '</span></div>';
     }
 
-    return { open: open, close: close, emitir: emitir, anular: anular, validar: validar, descargarXml: descargarXml, eliminar: eliminar, exportJson: exportJson, exportPdf: exportPdf };
+    /* ─── Duplicate functions ─── */
+    function showDuplicateOptions() {
+        var opts = document.getElementById('dp-dup-options');
+        if (opts) opts.style.display = opts.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function executeDuplicate() {
+        var fields = [];
+        if (document.getElementById('dp-dup-cliente') && document.getElementById('dp-dup-cliente').checked) fields.push('cliente');
+        if (document.getElementById('dp-dup-detalle') && document.getElementById('dp-dup-detalle').checked) fields.push('detalle');
+        if (document.getElementById('dp-dup-cuotas') && document.getElementById('dp-dup-cuotas').checked) fields.push('cuotas');
+        if (document.getElementById('dp-dup-cargos') && document.getElementById('dp-dup-cargos').checked) fields.push('cargos');
+
+        var type = _currentDocType === 'boleta' ? 'BOLETA' : 'FACTURA';
+        window.location.href = '/wizard?type=' + type
+            + '&duplicate=' + encodeURIComponent(_currentDocId)
+            + '&fields=' + fields.join(',');
+    }
+
+    return { open: open, close: close, emitir: emitir, anular: anular, validar: validar, descargarXml: descargarXml, eliminar: eliminar, exportJson: exportJson, exportPdf: exportPdf, showDuplicateOptions: showDuplicateOptions, executeDuplicate: executeDuplicate };
 })();
 
 /* Global shortcuts */
@@ -617,3 +754,5 @@ function dpDescargarXml() { DocPreview.descargarXml(); }
 function dpEliminarFactura() { DocPreview.eliminar(); }
 function dpExportJson() { DocPreview.exportJson(); }
 function dpExportPdf() { DocPreview.exportPdf(); }
+function dpShowDuplicateOptions() { DocPreview.showDuplicateOptions(); }
+function dpExecuteDuplicate() { DocPreview.executeDuplicate(); }

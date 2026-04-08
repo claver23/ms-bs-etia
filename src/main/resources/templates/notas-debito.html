@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/head :: head('ETIA — Notas de Débito')}"></head>
 <body>
 
-<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos')}"></header>
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos', breadcrumb='Notas de Débito')}"></header>
 
 <div class="screen">
     <div class="container">
@@ -60,7 +60,14 @@
         var html = '<div class="doc-list-cards">';
         pageItems.forEach(function(d) {
             var estado = d.estado||'—', badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ACEPTADA' ? 'badge-green' : estado === 'RECHAZADA' ? 'badge-red' : 'badge-blue';
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'nota_debito\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">ND</strong><span class="badge ' + badgeCls + '">' + estado + '</span><span class="dli-motivo">' + (d.motivo||'—') + '</span></div><div class="dli-right"><span class="dli-total" style="color:var(--warning);">+S/ ' + (parseFloat(d.montoIncremento)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaCreacion) + '</span></div></div><div class="dli-ref">📎 Ref: ' + (d.facturaReferenciaId||'—') + '</div>' + renderItemDetail(d.detalle) + '</div>';
+            var actions = '';
+            if (estado === 'BORRADOR' || estado === 'CREADO') {
+                actions = '<div class="dli-actions" style="margin-top:0.4rem;display:flex;gap:0.5rem;">' +
+                    '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();deleteDoc(\'' + d.id + '\')">🗑️ Eliminar</button>' +
+                    '<a class="btn btn-sm btn-outline" href="/wizard-nota?type=NOTA_DEBITO&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                '</div>';
+            }
+            html += '<div class="doc-list-item" onclick="openDocPreview(\'nota_debito\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">ND</strong><span class="badge ' + badgeCls + '">' + estado + '</span><span class="dli-motivo">' + (d.motivo||'—') + '</span></div><div class="dli-right"><span class="dli-total" style="color:var(--warning);">+S/ ' + (parseFloat(d.montoIncremento)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaCreacion) + '</span></div></div><div class="dli-ref">📎 Ref: ' + (d.facturaReferenciaId||'—') + '</div>' + renderItemDetail(d.detalle) + actions + '</div>';
         });
         document.getElementById('doc-content').innerHTML = html + '</div>';
         var bar = document.getElementById('doc-pag'); bar.style.display = 'flex';
@@ -72,6 +79,15 @@
         bar.innerHTML = ph;
     }
     function goToPage(p) { currentPage = p; renderPage(); }
+    function deleteDoc(id) {
+        if (!confirm('¿Eliminar este borrador de nota de débito? Esta acción no se puede deshacer.')) return;
+        ApiClient.eliminarNotaDebitoBorrador(id).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Borrador eliminado');
+            loadDocs();
+        }).catch(function(err) {
+            if (ETIA.showError) ETIA.showError({ message: 'Error al eliminar: ' + (err.message || 'desconocido') });
+        });
+    }
 </script>
 </body>
 </html>

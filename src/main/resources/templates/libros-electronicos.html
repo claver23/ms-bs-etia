@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Libros Electrónicos')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Libros Electrónicos')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>📊 Libros Electrónicos</h2>
+            <p>Genera los libros electrónicos de ventas, compras y anexos para SUNAT</p>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="view-toolbar">
+            <div class="vt-search-wrap" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                <select class="vt-search" id="le-tipo" style="max-width:160px;">
+                    <option value="ventas">📈 Ventas</option>
+                    <option value="compras">📉 Compras</option>
+                    <option value="anexo">📎 Anexo</option>
+                </select>
+                <input class="vt-search" id="le-periodo" type="month" style="max-width:170px;" title="Periodo (mes/año)" />
+                <select class="vt-search" id="le-formato" style="max-width:120px;">
+                    <option value="TXT">TXT</option>
+                    <option value="XML">XML</option>
+                    <option value="CSV">CSV</option>
+                </select>
+            </div>
+            <div class="vt-actions">
+                <button class="btn btn-accent" id="btn-generar" onclick="generarLibro()">✨ Generar Libro</button>
+            </div>
+        </div>
+
+        <!-- Info banner -->
+        <div id="le-info" class="warn-banner" style="margin-bottom:1rem;">
+            ℹ️ Selecciona el tipo de libro, periodo y formato, luego genera el archivo. Los libros generados aparecerán debajo.
+        </div>
+
+        <!-- List -->
+        <div id="le-content">
+            <p class="pm-empty">⏳ Cargando libros electrónicos...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var allLibros = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            /* Set current period as default */
+            var now = new Date();
+            var y = now.getFullYear();
+            var m = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('le-periodo').value = y + '-' + m;
+            loadLibros();
+        });
+    });
+
+    function loadLibros() {
+        if (!ETIA.companyId) return;
+        ApiClient.listarLibrosElectronicos(ETIA.companyId).then(function(list) {
+            allLibros = list || [];
+            renderLibros();
+        }).catch(function(err) {
+            document.getElementById('le-content').innerHTML =
+                '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando libros: ' + (err.message || '') + '</p>';
+        });
+    }
+
+    function renderLibros() {
+        var container = document.getElementById('le-content');
+        if (allLibros.length === 0) {
+            container.innerHTML = '<p class="pm-empty">📭 No hay libros electrónicos generados. Usa el botón de arriba para crear uno.</p>';
+            return;
+        }
+
+        var html = '<div class="doc-list-cards">';
+        allLibros.forEach(function(lib) {
+            var estado = lib.estado || '—';
+            var badgeMap = { 'GENERADO': 'badge-green', 'ERROR': 'badge-red', 'PENDIENTE': 'badge-gray' };
+            var badgeCls = badgeMap[estado] || 'badge-gray';
+            var estadoIcon = { 'GENERADO': '✅', 'ERROR': '❌', 'PENDIENTE': '⏳' };
+            var icon = estadoIcon[estado] || '';
+
+            var tipoLabel = { 'ventas': '📈 Ventas', 'compras': '📉 Compras', 'anexo': '📎 Anexo' };
+            var fechaGen = lib.fechaGeneracion ? ETIA.formatDate(lib.fechaGeneracion) : '—';
+
+            html += '<div class="doc-list-item">' +
+                '<div class="dli-header">' +
+                    '<div class="dli-left">' +
+                        '<strong class="dli-serie" style="color:var(--info);">' + (tipoLabel[lib.tipo] || lib.tipo) + '</strong>' +
+                        '<span class="badge ' + badgeCls + '">' + icon + ' ' + estado + '</span>' +
+                        '<span class="badge badge-gray">📅 ' + (lib.periodo || '—') + '</span>' +
+                        '<span class="badge badge-gray">📄 ' + (lib.formato || 'TXT') + '</span>' +
+                    '</div>' +
+                    '<div class="dli-right">' +
+                        '<span class="dli-date">' + fechaGen + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="font-size:.78rem;color:var(--text-muted);margin-top:4px;">' +
+                    '📊 ' + (lib.totalRegistros || 0) + ' registro(s)' +
+                    (lib.archivoUrl ? ' · <a href="' + lib.archivoUrl + '" target="_blank" style="color:var(--accent);">📥 Descargar</a>' : '') +
+                '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function generarLibro() {
+        var tipo = document.getElementById('le-tipo').value;
+        var periodoInput = document.getElementById('le-periodo').value;
+        var formato = document.getElementById('le-formato').value;
+        var btn = document.getElementById('btn-generar');
+
+        if (!periodoInput) {
+            if (ETIA.showError) ETIA.showError({ message: 'Selecciona un periodo (mes/año)' });
+            return;
+        }
+
+        /* Convert YYYY-MM from input to expected format */
+        var periodo = periodoInput;
+
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+
+        var payload = {
+            companyId: ETIA.companyId,
+            tipo: tipo,
+            periodo: periodo,
+            formato: formato,
+            incluirDetalle: true
+        };
+
+        ApiClient.generarLibroElectronico(payload).then(function(res) {
+            var data = (res && res.data) ? res.data : res;
+            var regs = data ? (data.totalRegistros || 0) : 0;
+            if (ETIA.showSuccess) ETIA.showSuccess('✅ Libro de ' + tipo + ' generado — ' + regs + ' registro(s)');
+            loadLibros();
+        }).catch(function(err) {
+            /* Error already shown by _handleResponse */
+        }).finally(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '✨ Generar Libro'; }
+        });
+    }
+</script>
+</body>
+</html>
+

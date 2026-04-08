@@ -45,6 +45,8 @@ tags:
     description: Catálogo de tablas parametrizadas SUNAT
   - name: catalogo_sunat
     description: Catálogos oficiales SUNAT para comprobantes electrónicos (CPE)
+  - name: resumen_diario
+    description: Resúmenes diarios de boletas para envío masivo a SUNAT
 
 paths:
   # ==================== COMPANY ====================
@@ -250,7 +252,7 @@ paths:
 
   /company/logo:
     post:
-      summary: Subir logo de empresa (PNG)
+      summary: Subir logo de empresa (PNG, JPG, SVG)
       operationId: subirLogo
       tags:
         - company
@@ -272,7 +274,7 @@ paths:
                 archivo:
                   type: string
                   format: binary
-                  description: "Archivo de logo (PNG preferido, max 10MB)"
+                  description: "Archivo de logo (PNG, JPG o SVG, max 10MB)"
       responses:
         "200":
           description: Logo subido exitosamente
@@ -302,6 +304,14 @@ paths:
           description: Imagen del logo
           content:
             image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
               schema:
                 type: string
                 format: binary
@@ -869,6 +879,177 @@ paths:
                 $ref: '#/components/schemas/DocumentValidationResultDto'
         "404":
           description: Boleta no encontrada
+
+  /boleta/{boletaId}/actualizar:
+    put:
+      tags:
+        - boleta
+      summary: Actualizar datos de una boleta en estado BORRADOR o CON_ERROR
+      description: |
+        Actualiza todos los campos mutables de una boleta existente.
+        Reemplaza cuotas y cargos/descuentos. Re-ejecuta validación interna.
+        No modifica serie, número, fecha de emisión ni fecha de creación.
+      operationId: actualizarBoletaBorrador
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta borrador a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoletaEmitirDto'
+      responses:
+        "200":
+          description: Borrador actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoletaResponseDto'
+        "400":
+          description: La boleta no está en estado editable
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/xml:
+    get:
+      tags:
+        - boleta
+      summary: Descargar XML UBL 2.1 de una boleta
+      description: |
+        Descarga el XML UBL 2.1 tipo "03" generado para la boleta.
+        Si la boleta aún no tiene XML generado (BORRADOR), retorna 204.
+      operationId: descargarBoletaXml
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: XML UBL 2.1 de la boleta
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: "attachment; filename=\"20601234567-03-B001-00000001.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La boleta aún no tiene XML generado
+        "404":
+          description: Boleta no encontrada
+
+  # ==================== RESUMEN DIARIO ====================
+  /resumen-diario:
+    post:
+      tags:
+        - resumen_diario
+      summary: Crear resumen diario de boletas
+      description: |
+        Agrupa boletas VALIDADAS de la fecha indicada y crea un resumen diario
+        con identificador RC-{YYYYMMDD}-{NNN}. Cambia estado de boletas a ENVIADA.
+        Envía a SUNAT y almacena el ticket recibido.
+      operationId: crearResumenDiario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResumenDiarioCrearDto'
+      responses:
+        "200":
+          description: Resumen diario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioResponseDto'
+        "400":
+          description: No hay boletas VALIDADAS para incluir
+
+    get:
+      tags:
+        - resumen_diario
+      summary: Listar resúmenes diarios
+      operationId: listarResumenesDiarios
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de resúmenes diarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioListResponseDto'
+
+  /resumen-diario/{resumenId}:
+    get:
+      tags:
+        - resumen_diario
+      summary: Obtener resumen diario por ID
+      operationId: obtenerResumenDiario
+      parameters:
+        - name: resumenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resumen diario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioResponseDto'
+        "404":
+          description: Resumen diario no encontrado
+
+  /resumen-diario/{resumenId}/consultar-estado:
+    post:
+      tags:
+        - resumen_diario
+      summary: Consultar estado del resumen diario en SUNAT
+      description: |
+        Consulta el ticket en SUNAT. Si ACEPTADO, actualiza estado del resumen
+        y de las boletas asociadas a ACEPTADA.
+      operationId: consultarEstadoResumen
+      parameters:
+        - name: resumenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultado de la consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaEstadoResultDto'
+        "404":
+          description: Resumen no encontrado
 
   # ==================== NOTA CRÉDITO ====================
   /nota_credito:
@@ -2853,6 +3034,10 @@ components:
           type: string
           description: "Ruta relativa del logo de la empresa (readonly, se actualiza via upload)"
           example: "company_logos/20601234567/logo.png"
+        logoFormat:
+          type: string
+          description: "Formato del logo (png, jpg, jpeg, svg)"
+          example: "png"
         tieneLogo:
           type: boolean
           description: "Indica si la empresa tiene logo configurado"
@@ -3150,6 +3335,15 @@ components:
           description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
           items:
             $ref: '#/components/schemas/AllowanceChargeItem'
+        xmlContent:
+          type: string
+          description: "XML UBL 2.1 generado (tipo 03)"
+        xmlPath:
+          type: string
+          description: "Ruta del XML en disco"
+        resumenDiarioId:
+          type: string
+          description: "ID del resumen diario que incluyó esta boleta"
         fechaCreacion:
           type: string
           format: date-time
@@ -4265,4 +4459,115 @@ components:
           items:
             type: string
           example: []
+
+    # ===== RESUMEN DIARIO =====
+    ResumenDiarioCrearDto:
+      type: object
+      required:
+        - companyId
+      properties:
+        companyId:
+          type: string
+          description: ID de la empresa
+          example: "cmp-demo-001"
+        fechaReferencia:
+          type: string
+          format: date
+          description: "Fecha de emisión de las boletas a incluir (default: hoy)"
+          example: "2026-04-08"
+        boletaIds:
+          type: array
+          description: "IDs específicos de boletas a incluir (si vacío, toma todas las VALIDADAS del día)"
+          items:
+            type: string
+          example: []
+
+    ResumenDiarioData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "rd-001"
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        identificador:
+          type: string
+          description: "RC-{YYYYMMDD}-{NNN}"
+          example: "RC-20260408-001"
+        fechaGeneracion:
+          type: string
+          format: date
+          example: "2026-04-08"
+        fechaReferencia:
+          type: string
+          format: date
+          example: "2026-04-08"
+        estado:
+          type: string
+          enum: [GENERADO, ENVIADO, ACEPTADO, RECHAZADO, CON_ERROR]
+          example: "ENVIADO"
+        ticketSunat:
+          type: string
+          nullable: true
+          example: "mock-ticket-20260408-001"
+        codigoRespuesta:
+          type: string
+          nullable: true
+        descripcionRespuesta:
+          type: string
+          nullable: true
+        cantidadBoletas:
+          type: integer
+          example: 5
+        boletas:
+          type: array
+          description: "Boletas incluidas en este resumen"
+          items:
+            $ref: '#/components/schemas/BoletaData'
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    ResumenDiarioResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResumenDiarioData'
+
+    ResumenDiarioListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ResumenDiarioData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ConsultaEstadoResultDto:
+      type: object
+      properties:
+        exitoso:
+          type: boolean
+          example: true
+        estado:
+          type: string
+          example: "ACEPTADO"
+        codigoRespuesta:
+          type: string
+          example: "0"
+        descripcionRespuesta:
+          type: string
+          example: "La Comunicación de baja RA-20260408-1, ha sido aceptada"
+        ticket:
+          type: string
+          example: "mock-ticket-20260408-001"
 

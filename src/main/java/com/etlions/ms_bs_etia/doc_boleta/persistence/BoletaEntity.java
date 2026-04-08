@@ -89,16 +89,38 @@ public class BoletaEntity {
 
     private String estado;
 
+    @Column(name = "hash_cdr")
+    private String hashCdr;
+
+    @Column(name = "codigo_respuesta_sunat")
+    private String codigoRespuestaSunat;
+
+    @Column(name = "descripcion_respuesta_sunat")
+    private String descripcionRespuestaSunat;
+
     private String leyenda;
 
     @Lob
     @Column(columnDefinition = "TEXT")
     private String detalleJson;
 
+    /** XML UBL 2.1 generado (tipo 03 — Boleta) */
+    @Lob
+    @Column(name = "xml_content", columnDefinition = "TEXT")
+    private String xmlContent;
+
+    /** Ruta relativa donde se persistió el XML en disco */
+    @Column(name = "xml_path")
+    private String xmlPath;
+
     /** Errores de validación interna (JSON array de strings). Solo si estado=CON_ERROR */
     @Lob
     @Column(name = "errores_validacion", columnDefinition = "TEXT")
     private String erroresValidacion;
+
+    /** ID del resumen diario que incluyó esta boleta (null si aún no se envió) */
+    @Column(name = "resumen_diario_id")
+    private String resumenDiarioId;
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;

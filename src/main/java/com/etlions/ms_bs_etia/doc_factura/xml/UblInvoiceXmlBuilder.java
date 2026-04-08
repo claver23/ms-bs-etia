@@ -3,6 +3,7 @@ package com.etlions.ms_bs_etia.doc_factura.xml;
 import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.company.persistence.CompanyEntity;
+import com.etlions.ms_bs_etia.doc_boleta.persistence.BoletaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.AllowanceChargeEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.CuotaCreditoEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
@@ -64,20 +65,35 @@ public class UblInvoiceXmlBuilder {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * Genera el XML UBL 2.1 completo para una factura electrónica.
-     *
-     * @param factura  Entidad de factura con todos los datos
-     * @param company  Empresa emisora
-     * @param client   Cliente receptor
-     * @param cuotas   Cuotas de crédito (puede estar vacío)
-     * @param cargosDescuentos Cargos/descuentos globales (puede estar vacío)
-     * @return XML como String listo para firmar
+     * Genera el XML UBL 2.1 completo para una factura electrónica (tipo "01").
      */
     public String buildInvoiceXml(FacturaEntity factura,
                                    CompanyEntity company,
                                    ClientEntity client,
                                    List<CuotaCreditoEntity> cuotas,
                                    List<AllowanceChargeEntity> cargosDescuentos) {
+        return buildXml(XmlBuildContext.fromFactura(factura), company, client, cuotas, cargosDescuentos);
+    }
+
+    /**
+     * Genera el XML UBL 2.1 completo para una boleta de venta (tipo "03").
+     */
+    public String buildBoletaXml(BoletaEntity boleta,
+                                  CompanyEntity company,
+                                  ClientEntity client,
+                                  List<CuotaCreditoEntity> cuotas,
+                                  List<AllowanceChargeEntity> cargosDescuentos) {
+        return buildXml(XmlBuildContext.fromBoleta(boleta), company, client, cuotas, cargosDescuentos);
+    }
+
+    /**
+     * Método unificado: genera XML UBL 2.1 desde XmlBuildContext (factura "01" o boleta "03").
+     */
+    public String buildXml(XmlBuildContext ctx,
+                            CompanyEntity company,
+                            ClientEntity client,
+                            List<CuotaCreditoEntity> cuotas,
+                            List<AllowanceChargeEntity> cargosDescuentos) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -93,33 +109,33 @@ public class UblInvoiceXmlBuilder {
             invoice.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ds", NS_DS);
             doc.appendChild(invoice);
 
-            String moneda = factura.getMoneda() != null ? factura.getMoneda() : "PEN";
+            String moneda = ctx.moneda() != null ? ctx.moneda() : "PEN";
 
             // ── Parsear detalle items
-            List<Map<String, Object>> items = parseDetalleJson(factura.getDetalleJson());
+            List<Map<String, Object>> items = parseDetalleJson(ctx.detalleJson());
 
             // ═══ Secciones del XML ═══
             buildUblExtensions(doc, invoice);
             buildMetadata(doc, invoice);
-            buildDocumentId(doc, invoice, factura);
-            buildInvoiceTypeCode(doc, invoice, factura);
-            buildNote(doc, invoice, factura);
+            buildDocumentId(doc, invoice, ctx);
+            buildInvoiceTypeCode(doc, invoice, ctx);
+            buildNote(doc, invoice, ctx);
             buildCurrencyCode(doc, invoice, moneda);
             buildLineCountNumeric(doc, invoice, items.size());
             buildSupplierParty(doc, invoice, company);
             buildCustomerParty(doc, invoice, client);
-            buildPaymentTerms(doc, invoice, factura, cuotas, moneda);
+            buildPaymentTerms(doc, invoice, ctx, cuotas, moneda);
             buildAllowanceCharges(doc, invoice, cargosDescuentos, moneda);
-            buildTaxTotal(doc, invoice, factura, moneda);
-            buildLegalMonetaryTotal(doc, invoice, factura, moneda);
+            buildTaxTotal(doc, invoice, ctx, moneda);
+            buildLegalMonetaryTotal(doc, invoice, ctx, moneda);
             buildInvoiceLines(doc, invoice, items, moneda);
 
             // ── Serializar a String
             return serializeToString(doc);
 
         } catch (Exception e) {
-            log.error("Error generando XML UBL 2.1 para factura {}-{}: {}",
-                    factura.getSerie(), factura.getNumero(), e.getMessage(), e);
+            log.error("Error generando XML UBL 2.1 para {} {}-{}: {}",
+                    ctx.tipoDocumento(), ctx.serie(), ctx.numero(), e.getMessage(), e);
             throw new RuntimeException("Error generando XML UBL 2.1: " + e.getMessage(), e);
         }
     }
@@ -143,26 +159,26 @@ public class UblInvoiceXmlBuilder {
     }
 
     /** ID, IssueDate, IssueTime, DueDate */
-    private void buildDocumentId(Document doc, Element invoice, FacturaEntity f) {
-        String id = SunatFormatter.formatNumeroComprobante(f.getSerie(), f.getNumero());
+    private void buildDocumentId(Document doc, Element invoice, XmlBuildContext ctx) {
+        String id = SunatFormatter.formatNumeroComprobante(ctx.serie(), ctx.numero());
         appendTextElement(doc, invoice, NS_CBC, "cbc:ID", id);
         appendTextElement(doc, invoice, NS_CBC, "cbc:IssueDate",
-                f.getFechaEmision().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        if (f.getHoraEmision() != null) {
+                ctx.fechaEmision().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        if (ctx.horaEmision() != null) {
             appendTextElement(doc, invoice, NS_CBC, "cbc:IssueTime",
-                    f.getHoraEmision().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                    ctx.horaEmision().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         }
-        if (f.getFechaVencimiento() != null) {
+        if (ctx.fechaVencimiento() != null) {
             appendTextElement(doc, invoice, NS_CBC, "cbc:DueDate",
-                    f.getFechaVencimiento().format(DateTimeFormatter.ISO_LOCAL_DATE));
+                    ctx.fechaVencimiento().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
     }
 
     /** InvoiceTypeCode — Cat.01 (tipo doc) + Cat.51 (tipo operación) */
-    private void buildInvoiceTypeCode(Document doc, Element invoice, FacturaEntity f) {
-        Element typeCode = appendTextElement(doc, invoice, NS_CBC, "cbc:InvoiceTypeCode", "01");
+    private void buildInvoiceTypeCode(Document doc, Element invoice, XmlBuildContext ctx) {
+        Element typeCode = appendTextElement(doc, invoice, NS_CBC, "cbc:InvoiceTypeCode", ctx.tipoDocumento());
         typeCode.setAttribute("listAgencyName", SUNAT_AGENCY);
-        typeCode.setAttribute("listID", f.getTipoOperacion() != null ? f.getTipoOperacion() : "0101");
+        typeCode.setAttribute("listID", ctx.tipoOperacion() != null ? ctx.tipoOperacion() : "0101");
         typeCode.setAttribute("listName", "Tipo de Documento");
         typeCode.setAttribute("listSchemeURI", CAT51_URI);
         typeCode.setAttribute("listURI", CAT01_URI);
@@ -170,9 +186,9 @@ public class UblInvoiceXmlBuilder {
     }
 
     /** Note — Leyenda / monto en letras (Cat.52) */
-    private void buildNote(Document doc, Element invoice, FacturaEntity f) {
-        if (f.getLeyenda() != null && !f.getLeyenda().isBlank()) {
-            Element note = appendTextElement(doc, invoice, NS_CBC, "cbc:Note", f.getLeyenda());
+    private void buildNote(Document doc, Element invoice, XmlBuildContext ctx) {
+        if (ctx.leyenda() != null && !ctx.leyenda().isBlank()) {
+            Element note = appendTextElement(doc, invoice, NS_CBC, "cbc:Note", ctx.leyenda());
             note.setAttribute("languageLocaleID", "1000");
         }
     }
@@ -267,15 +283,15 @@ public class UblInvoiceXmlBuilder {
     }
 
     /** PaymentTerms — Forma de pago + cuotas crédito */
-    private void buildPaymentTerms(Document doc, Element invoice, FacturaEntity f,
+    private void buildPaymentTerms(Document doc, Element invoice, XmlBuildContext ctx,
                                     List<CuotaCreditoEntity> cuotas, String moneda) {
         // Forma de pago principal
         Element pt = appendElement(doc, invoice, NS_CAC, "cac:PaymentTerms");
         appendTextElement(doc, pt, NS_CBC, "cbc:ID", "FormaPago");
-        String formaPago = f.getFormaPago() != null ? f.getFormaPago() : "Contado";
+        String formaPago = ctx.formaPago() != null ? ctx.formaPago() : "Contado";
         appendTextElement(doc, pt, NS_CBC, "cbc:PaymentMeansID", formaPago);
         if ("Credito".equalsIgnoreCase(formaPago) || "CREDITO".equalsIgnoreCase(formaPago)) {
-            Element amount = appendTextElement(doc, pt, NS_CBC, "cbc:Amount", formatDecimal(f.getTotal()));
+            Element amount = appendTextElement(doc, pt, NS_CBC, "cbc:Amount", formatDecimal(ctx.total()));
             amount.setAttribute("currencyID", moneda);
         }
 
@@ -326,37 +342,37 @@ public class UblInvoiceXmlBuilder {
     }
 
     /** TaxTotal — Impuestos a nivel documento */
-    private void buildTaxTotal(Document doc, Element invoice, FacturaEntity f, String moneda) {
+    private void buildTaxTotal(Document doc, Element invoice, XmlBuildContext ctx, String moneda) {
         Element taxTotal = appendElement(doc, invoice, NS_CAC, "cac:TaxTotal");
         Element totalTax = appendTextElement(doc, taxTotal, NS_CBC, "cbc:TaxAmount",
-                formatDecimal(f.getIgv() != null ? f.getIgv() : BigDecimal.ZERO));
+                formatDecimal(ctx.igv() != null ? ctx.igv() : BigDecimal.ZERO));
         totalTax.setAttribute("currencyID", moneda);
 
         // IGV (Gravado) — Cat.05 código 1000
-        if (f.getGravadas() != null && f.getGravadas().compareTo(BigDecimal.ZERO) > 0) {
+        if (ctx.gravadas() != null && ctx.gravadas().compareTo(BigDecimal.ZERO) > 0) {
             buildTaxSubtotal(doc, taxTotal, moneda,
-                    f.getGravadas(), f.getIgv() != null ? f.getIgv() : BigDecimal.ZERO,
+                    ctx.gravadas(), ctx.igv() != null ? ctx.igv() : BigDecimal.ZERO,
                     "1000", "IGV", "VAT");
         }
 
         // Exonerado — Cat.05 código 9997
-        if (f.getExoneradas() != null && f.getExoneradas().compareTo(BigDecimal.ZERO) > 0) {
+        if (ctx.exoneradas() != null && ctx.exoneradas().compareTo(BigDecimal.ZERO) > 0) {
             buildTaxSubtotal(doc, taxTotal, moneda,
-                    f.getExoneradas(), BigDecimal.ZERO,
+                    ctx.exoneradas(), BigDecimal.ZERO,
                     "9997", "EXO", "VAT");
         }
 
         // Inafecto — Cat.05 código 9998
-        if (f.getInafectas() != null && f.getInafectas().compareTo(BigDecimal.ZERO) > 0) {
+        if (ctx.inafectas() != null && ctx.inafectas().compareTo(BigDecimal.ZERO) > 0) {
             buildTaxSubtotal(doc, taxTotal, moneda,
-                    f.getInafectas(), BigDecimal.ZERO,
+                    ctx.inafectas(), BigDecimal.ZERO,
                     "9998", "INA", "FRE");
         }
 
         // Gratuito — Cat.05 código 9996
-        if (f.getGratuitas() != null && f.getGratuitas().compareTo(BigDecimal.ZERO) > 0) {
+        if (ctx.gratuitas() != null && ctx.gratuitas().compareTo(BigDecimal.ZERO) > 0) {
             buildTaxSubtotal(doc, taxTotal, moneda,
-                    f.getGratuitas(), BigDecimal.ZERO,
+                    ctx.gratuitas(), BigDecimal.ZERO,
                     "9996", "GRA", "FRE");
         }
     }
@@ -386,22 +402,22 @@ public class UblInvoiceXmlBuilder {
     }
 
     /** LegalMonetaryTotal */
-    private void buildLegalMonetaryTotal(Document doc, Element invoice, FacturaEntity f, String moneda) {
+    private void buildLegalMonetaryTotal(Document doc, Element invoice, XmlBuildContext ctx, String moneda) {
         Element lmt = appendElement(doc, invoice, NS_CAC, "cac:LegalMonetaryTotal");
 
         appendCurrencyElement(doc, lmt, "cbc:LineExtensionAmount", moneda,
-                f.getSubtotal() != null ? f.getSubtotal() : BigDecimal.ZERO);
+                ctx.subtotal() != null ? ctx.subtotal() : BigDecimal.ZERO);
         appendCurrencyElement(doc, lmt, "cbc:TaxInclusiveAmount", moneda,
-                f.getTotalConImpuestos() != null ? f.getTotalConImpuestos() : BigDecimal.ZERO);
+                ctx.totalConImpuestos() != null ? ctx.totalConImpuestos() : BigDecimal.ZERO);
 
-        if (f.getTotalDescuentos() != null && f.getTotalDescuentos().compareTo(BigDecimal.ZERO) > 0) {
-            appendCurrencyElement(doc, lmt, "cbc:AllowanceTotalAmount", moneda, f.getTotalDescuentos());
+        if (ctx.totalDescuentos() != null && ctx.totalDescuentos().compareTo(BigDecimal.ZERO) > 0) {
+            appendCurrencyElement(doc, lmt, "cbc:AllowanceTotalAmount", moneda, ctx.totalDescuentos());
         }
-        if (f.getTotalCargos() != null && f.getTotalCargos().compareTo(BigDecimal.ZERO) > 0) {
-            appendCurrencyElement(doc, lmt, "cbc:ChargeTotalAmount", moneda, f.getTotalCargos());
+        if (ctx.totalCargos() != null && ctx.totalCargos().compareTo(BigDecimal.ZERO) > 0) {
+            appendCurrencyElement(doc, lmt, "cbc:ChargeTotalAmount", moneda, ctx.totalCargos());
         }
 
-        appendCurrencyElement(doc, lmt, "cbc:PayableAmount", moneda, f.getTotal());
+        appendCurrencyElement(doc, lmt, "cbc:PayableAmount", moneda, ctx.total());
     }
 
     /** InvoiceLine — Líneas de detalle */
