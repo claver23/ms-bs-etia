@@ -41,5 +41,10 @@ public class DocBoletaOpenApi implements BoletaApi {
     public ResponseEntity<BoletaResponseDto> obtenerBoleta(String boletaId) {
         return ResponseEntity.ok(docBoletaService.obtenerBoleta(boletaId));
     }
+
+    @Override
+    public ResponseEntity<DocumentValidationResultDto> validarBoleta(String boletaId) {
+        return ResponseEntity.ok(docBoletaService.validarBoleta(boletaId));
+    }
 }
 

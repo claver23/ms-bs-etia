@@ -136,6 +136,8 @@ function recalcTotals() {
     el = document.getElementById('t-total'); if (el) el.textContent = sym + t.toFixed(2);
     // Update cuotas sum check
     validateCuotasSum(t);
+    // Auto-update leyenda (monto en letras)
+    if (typeof updateLeyenda === 'function') updateLeyenda();
 }
 
 /* ═══════ CUOTAS DE CRÉDITO ═══════ */
@@ -229,16 +231,22 @@ let cargosDescuentos = [];
 let acCounter = 0;
 
 function addCargoDescuento() {
+    /* Auto-calculate base from items subtotal */
+    var subtotal = 0;
+    items.forEach(function(i) { subtotal += i.subtotal; });
+    var factor = 0.10;
+    var monto = parseFloat((subtotal * factor).toFixed(2));
     cargosDescuentos.push({
         id: ++acCounter,
         chargeIndicator: true,
         reasonCode: '46',
         reasonDescription: 'Recargo al consumo',
-        multiplierFactor: 0.10,
-        amount: 0,
-        baseAmount: 0
+        multiplierFactor: factor,
+        amount: monto,
+        baseAmount: subtotal
     });
     renderCargosDescuentos();
+    recalcTotals();
 }
 
 function rmCargoDescuento(id) {
@@ -254,7 +262,8 @@ function updAC(id, field, val) {
     else if (field === 'reasonCode') ac.reasonCode = val;
     else if (field === 'reasonDescription') ac.reasonDescription = val;
     else if (field === 'multiplierFactor') {
-        ac.multiplierFactor = parseFloat(val) || 0;
+        /* Input is in % (e.g. 10), store as decimal (0.10) */
+        ac.multiplierFactor = (parseFloat(val) || 0) / 100;
         ac.amount = parseFloat((ac.baseAmount * ac.multiplierFactor).toFixed(2));
     }
     else if (field === 'baseAmount') {
@@ -270,7 +279,17 @@ function renderCargosDescuentos() {
     var tbody = document.getElementById('ac-body');
     if (!tbody) return;
     tbody.innerHTML = '';
+    /* Calculate items subtotal for validation */
+    var itemsSubtotal = 0;
+    items.forEach(function(i) { itemsSubtotal += i.subtotal; });
+
     cargosDescuentos.forEach(function(ac) {
+        var factorPct = (ac.multiplierFactor * 100);
+        /* Colors: cargo = warning, descuento = danger */
+        var color = ac.chargeIndicator ? 'var(--warning)' : 'var(--danger)';
+        /* Validation: descuento cannot exceed subtotal */
+        var warn = (!ac.chargeIndicator && ac.amount > itemsSubtotal)
+            ? '<div style="color:var(--danger);font-size:0.65rem;">⚠ Excede subtotal</div>' : '';
         var tr = document.createElement('tr');
         tr.innerHTML =
             '<td><select style="font-size:0.75rem;width:90px;" onchange="updAC(' + ac.id + ',\'chargeIndicator\',this.value)">' +
@@ -286,10 +305,63 @@ function renderCargosDescuentos() {
                 '<option value="50"' + (ac.reasonCode === '50' ? ' selected' : '') + '>50</option>' +
             '</select></td>' +
             '<td><input value="' + (ac.reasonDescription || '') + '" style="width:120px;font-size:0.75rem;" onchange="updAC(' + ac.id + ',\'reasonDescription\',this.value)"/></td>' +
-            '<td><input type="number" step="0.01" value="' + ac.multiplierFactor + '" style="width:60px;" onchange="updAC(' + ac.id + ',\'multiplierFactor\',this.value)"/></td>' +
+            '<td><div style="display:flex;align-items:center;gap:2px;"><input type="number" step="0.01" value="' + factorPct.toFixed(2) + '" style="width:55px;" onchange="updAC(' + ac.id + ',\'multiplierFactor\',this.value)"/><span style="font-size:0.75rem;color:var(--text-muted);">%</span></div></td>' +
             '<td><input type="number" step="0.01" value="' + ac.baseAmount.toFixed(2) + '" style="width:85px;" onchange="updAC(' + ac.id + ',\'baseAmount\',this.value)"/></td>' +
-            '<td style="font-family:var(--font-mono);font-weight:600;' + (ac.chargeIndicator ? 'color:var(--danger);' : 'color:var(--accent);') + '">' + ac.amount.toFixed(2) + '</td>' +
+            '<td style="font-family:var(--font-mono);font-weight:600;color:' + color + ';">' + ac.amount.toFixed(2) + warn + '</td>' +
             '<td><button class="btn btn-danger-sm" onclick="rmCargoDescuento(' + ac.id + ')">✕</button></td>';
         tbody.appendChild(tr);
     });
 }
+
+/**
+ * Auto-generate installments (cuotas) proportionally.
+ * @param {number} nroCuotas - Number of installments
+ * @param {string} fechaEmision - Emission date (yyyy-MM-dd)
+ * @param {string} fechaVenc - Due date (yyyy-MM-dd)
+ * @param {number} total - Total amount to distribute
+ * @param {string} modo - 'FIJA_30D' or 'PROPORCIONAL'
+ */
+function autoGenerarCuotas(nroCuotas, fechaEmision, fechaVenc, total, modo) {
+    if (!nroCuotas || nroCuotas < 1 || !total) return;
+    cuotas = [];
+    cuotaCounter = 0;
+    var montoPorCuota = Math.floor(total / nroCuotas * 100) / 100;
+    var sumaAcum = 0;
+
+    for (var i = 0; i < nroCuotas; i++) {
+        cuotaCounter++;
+        var monto;
+        if (i === nroCuotas - 1) {
+            /* Last installment absorbs rounding */
+            monto = parseFloat((total - sumaAcum).toFixed(2));
+        } else {
+            monto = montoPorCuota;
+        }
+        sumaAcum += monto;
+
+        /* Calculate date for this installment */
+        var fecha;
+        if (modo === 'PROPORCIONAL' && fechaEmision && fechaVenc) {
+            var start = new Date(fechaEmision);
+            var end = new Date(fechaVenc);
+            var totalMs = end.getTime() - start.getTime();
+            var stepMs = totalMs / nroCuotas;
+            var cuotaDate = new Date(start.getTime() + stepMs * (i + 1));
+            fecha = cuotaDate.toISOString().split('T')[0];
+        } else {
+            /* FIJA_30D mode: 30-day intervals from emission */
+            var d = new Date(fechaEmision || new Date().toISOString().split('T')[0]);
+            d.setDate(d.getDate() + 30 * (i + 1));
+            fecha = d.toISOString().split('T')[0];
+        }
+
+        cuotas.push({
+            id: cuotaCounter,
+            numeroCuota: 'Cuota' + String(i + 1).padStart(3, '0'),
+            monto: monto,
+            fechaVencimiento: fecha
+        });
+    }
+    renderCuotas();
+}
+

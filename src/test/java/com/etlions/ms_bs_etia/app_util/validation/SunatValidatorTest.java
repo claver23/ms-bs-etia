@@ -27,11 +27,17 @@ class SunatValidatorTest {
         @ParameterizedTest(name = "de {0} a {1} → OK")
         @CsvSource({
                 "BORRADOR,  ENVIADA",
+                "BORRADOR,  VALIDADO",
+                "BORRADOR,  CON_ERROR",
+                "VALIDADO,  ENVIADA",
+                "VALIDADO,  BORRADOR",
+                "CON_ERROR, BORRADOR",
                 "ENVIADA,   ACEPTADA",
                 "ENVIADA,   RECHAZADA",
                 "ENVIADA,   ANULADA",
                 "ACEPTADA,  ANULADA",
-                "RECHAZADA, BORRADOR"
+                "RECHAZADA, BORRADOR",
+                "RECHAZADA, ENVIADA"
         })
         void transicionesPermitidas(String actual, String nuevo) {
             assertDoesNotThrow(() ->
@@ -43,16 +49,32 @@ class SunatValidatorTest {
                 "BORRADOR,  ACEPTADA",
                 "BORRADOR,  ANULADA",
                 "BORRADOR,  RECHAZADA",
+                "VALIDADO,  ACEPTADA",
+                "VALIDADO,  ANULADA",
+                "VALIDADO,  CON_ERROR",
+                "VALIDADO,  RECHAZADA",
+                "CON_ERROR, ENVIADA",
+                "CON_ERROR, ACEPTADA",
+                "CON_ERROR, ANULADA",
+                "CON_ERROR, VALIDADO",
+                "CON_ERROR, RECHAZADA",
                 "ENVIADA,   BORRADOR",
+                "ENVIADA,   VALIDADO",
+                "ENVIADA,   CON_ERROR",
                 "ACEPTADA,  BORRADOR",
                 "ACEPTADA,  ENVIADA",
                 "ACEPTADA,  RECHAZADA",
-                "RECHAZADA, ENVIADA",
+                "ACEPTADA,  VALIDADO",
+                "ACEPTADA,  CON_ERROR",
                 "RECHAZADA, ANULADA",
+                "RECHAZADA, VALIDADO",
+                "RECHAZADA, CON_ERROR",
                 "ANULADA,   BORRADOR",
                 "ANULADA,   ENVIADA",
                 "ANULADA,   ACEPTADA",
-                "ANULADA,   RECHAZADA"
+                "ANULADA,   RECHAZADA",
+                "ANULADA,   VALIDADO",
+                "ANULADA,   CON_ERROR"
         })
         void transicionesNoPermitidas(String actual, String nuevo) {
             SunatValidationException ex = assertThrows(SunatValidationException.class, () ->
@@ -92,7 +114,7 @@ class SunatValidatorTest {
         }
 
         @ParameterizedTest(name = "anular desde {0} → RECHAZADA")
-        @CsvSource({"BORRADOR", "RECHAZADA", "ANULADA"})
+        @CsvSource({"BORRADOR", "VALIDADO", "CON_ERROR", "RECHAZADA", "ANULADA"})
         void anulacionDesdeEstadosNoPermitidos(String estado) {
             assertThrows(SunatValidationException.class, () ->
                     SunatValidator.validarAnulacionPermitida(estado, "Factura", "F-1"));
@@ -106,19 +128,19 @@ class SunatValidatorTest {
     @DisplayName("validarEliminacionPermitida")
     class EliminacionPermitida {
 
-        @Test
-        @DisplayName("eliminar BORRADOR → OK")
-        void eliminarBorradorPermitido() {
+        @ParameterizedTest(name = "eliminar desde {0} → OK")
+        @CsvSource({"BORRADOR", "CON_ERROR"})
+        void eliminarDesdeEstadosPermitidos(String estado) {
             assertDoesNotThrow(() ->
-                    SunatValidator.validarEliminacionPermitida("BORRADOR", "Factura", "F-1"));
+                    SunatValidator.validarEliminacionPermitida(estado, "Factura", "F-1"));
         }
 
         @ParameterizedTest(name = "eliminar desde {0} → RECHAZADA")
-        @CsvSource({"ENVIADA", "ACEPTADA", "RECHAZADA", "ANULADA"})
+        @CsvSource({"VALIDADO", "ENVIADA", "ACEPTADA", "RECHAZADA", "ANULADA"})
         void eliminarDesdeEstadosNoPermitidos(String estado) {
             SunatValidationException ex = assertThrows(SunatValidationException.class, () ->
                     SunatValidator.validarEliminacionPermitida(estado, "Factura", "F-1"));
-            assertTrue(ex.getMessage().contains("Solo los comprobantes en estado BORRADOR"));
+            assertTrue(ex.getMessage().contains("Solo los comprobantes en estado BORRADOR o CON_ERROR"));
         }
     }
 
@@ -299,6 +321,71 @@ class SunatValidatorTest {
             SunatValidationException ex = assertThrows(SunatValidationException.class, () ->
                     SunatValidator.validarTotales(null, null, null));
             assertEquals(3, ex.getErrors().size());
+        }
+
+        // ── Tests con cargos y descuentos (overload 5 params) ──
+
+        @Test
+        @DisplayName("con cargo: gravadas + igv + cargo == total → OK")
+        void conCargoOk() {
+            // 100 + 18 + 50 = 168
+            assertDoesNotThrow(() ->
+                    SunatValidator.validarTotales(
+                            new BigDecimal("100.00"),
+                            new BigDecimal("18.00"),
+                            new BigDecimal("168.00"),
+                            new BigDecimal("50.00"),
+                            BigDecimal.ZERO));
+        }
+
+        @Test
+        @DisplayName("con descuento: gravadas + igv − descuento == total → OK")
+        void conDescuentoOk() {
+            // 100 + 18 − 30 = 88
+            assertDoesNotThrow(() ->
+                    SunatValidator.validarTotales(
+                            new BigDecimal("100.00"),
+                            new BigDecimal("18.00"),
+                            new BigDecimal("88.00"),
+                            BigDecimal.ZERO,
+                            new BigDecimal("30.00")));
+        }
+
+        @Test
+        @DisplayName("con cargo y descuento: gravadas + igv + cargo − descuento == total → OK")
+        void conCargoYDescuentoOk() {
+            // 2950 + 531 + 100 − 395 = 3186
+            assertDoesNotThrow(() ->
+                    SunatValidator.validarTotales(
+                            new BigDecimal("2950.00"),
+                            new BigDecimal("531.00"),
+                            new BigDecimal("3186.00"),
+                            new BigDecimal("100.00"),
+                            new BigDecimal("395.00")));
+        }
+
+        @Test
+        @DisplayName("con descuento pero total sin considerar → excepción")
+        void conDescuentoTotalIncorrecto() {
+            // total=118, pero esperado=100+18−30=88
+            assertThrows(SunatValidationException.class, () ->
+                    SunatValidator.validarTotales(
+                            new BigDecimal("100.00"),
+                            new BigDecimal("18.00"),
+                            new BigDecimal("118.00"),
+                            BigDecimal.ZERO,
+                            new BigDecimal("30.00")));
+        }
+
+        @Test
+        @DisplayName("cargos/descuentos null tratados como ZERO")
+        void cargosDescuentosNull() {
+            assertDoesNotThrow(() ->
+                    SunatValidator.validarTotales(
+                            new BigDecimal("100.00"),
+                            new BigDecimal("18.00"),
+                            new BigDecimal("118.00"),
+                            null, null));
         }
     }
 

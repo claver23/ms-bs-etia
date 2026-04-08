@@ -179,6 +179,137 @@ paths:
         "500":
           description: Internal Server Error
 
+  /company/certificado:
+    post:
+      summary: Subir certificado digital (.p12/.pfx)
+      operationId: subirCertificado
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID de la empresa
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - archivo
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                  description: "Archivo de certificado digital (.p12 o .pfx)"
+      responses:
+        "200":
+          description: Certificado subido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponseDto'
+        "400":
+          description: Archivo inválido (no es .p12/.pfx o excede 10MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+  /company/probar-conexion:
+    post:
+      summary: Probar conexión con SUNAT (web service beta)
+      operationId: probarConexionSunat
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID de la empresa
+      responses:
+        "200":
+          description: Resultado de la prueba de conexión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConexionSunatResultDto'
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+  /company/logo:
+    post:
+      summary: Subir logo de empresa (PNG)
+      operationId: subirLogo
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - archivo
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                  description: "Archivo de logo (PNG preferido, max 10MB)"
+      responses:
+        "200":
+          description: Logo subido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponseDto'
+        "400":
+          description: Archivo inválido
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+    get:
+      summary: Obtener logo de empresa
+      operationId: obtenerLogo
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Imagen del logo
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La empresa no tiene logo configurado
+        "404":
+          description: Empresa no encontrada
+
   # ==================== CLIENT ====================
   /client:
     post:
@@ -481,6 +612,97 @@ paths:
         "404":
           description: Factura no encontrada
 
+  /factura/{facturaId}/emitir:
+    put:
+      tags:
+        - factura
+      summary: Emitir una factura en estado BORRADOR
+      description: |
+        Toma una factura existente con estado BORRADOR, genera el XML UBL 2.1,
+        lo persiste en disco y BD, y publica la notificación de emisión.
+        Solo facturas con estado=BORRADOR pueden ser promovidas.
+      operationId: emitirFacturaBorrador
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura borrador a emitir
+      responses:
+        "200":
+          description: Factura emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacturaResponseDto'
+        "400":
+          description: La factura no está en estado BORRADOR
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/actualizar:
+    put:
+      tags:
+        - factura
+      summary: Actualizar datos de una factura en estado BORRADOR
+      description: |
+        Actualiza todos los campos mutables de una factura existente en estado BORRADOR
+        o RECHAZADA sin emitirla. Reemplaza cuotas y cargos/descuentos.
+        No modifica serie, número, estado, fecha de emisión ni fecha de creación.
+      operationId: actualizarFacturaBorrador
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura borrador a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacturaEmitirDto'
+      responses:
+        "200":
+          description: Borrador actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacturaResponseDto'
+        "400":
+          description: La factura no está en estado BORRADOR o RECHAZADA
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/validar:
+    post:
+      tags:
+        - factura
+      summary: Validar una factura internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una factura existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre facturas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarFactura
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Factura no encontrada
+
   # ==================== BOLETA ====================
   /boleta:
     post:
@@ -618,6 +840,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BoletaResponseDto'
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/validar:
+    post:
+      tags:
+        - boleta
+      summary: Validar una boleta internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una boleta existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre boletas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarBoleta
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
         "404":
           description: Boleta no encontrada
 
@@ -1895,6 +2144,13 @@ components:
           enum: [general, mype_tributario, renta_especial]
           default: general
           example: "general"
+        emisionEnEnvio:
+          type: boolean
+          description: |
+            Si true (default), al crear un documento se genera el XML UBL 2.1 automáticamente.
+            Si false, el documento se guarda como BORRADOR y debe emitirse manualmente.
+          default: true
+          example: true
 
     CompanyUpdateDto:
       type: object
@@ -1923,6 +2179,10 @@ components:
           type: string
           format: password
           example: "NuevoCertPass"
+        emisionEnEnvio:
+          type: boolean
+          description: "Activar/desactivar emisión automática al guardar documentos"
+          example: true
 
     # ===== CLIENT =====
     ClientRegisterDto:
@@ -2132,6 +2392,14 @@ components:
           description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
           items:
             $ref: '#/components/schemas/AllowanceChargeItem'
+        emitir:
+          type: boolean
+          description: |
+            Si true (default), genera XML UBL 2.1 y notifica la emisión.
+            Si false, guarda como BORRADOR sin generar XML.
+            Controlado por la preferencia "Emisión en Envío" del panel de configuración.
+          default: true
+          example: true
 
     # ===== BOLETA =====
     BoletaEmitirDto:
@@ -2577,6 +2845,30 @@ components:
           type: string
           enum: [ACTIVO, INACTIVO]
           example: "ACTIVO"
+        emisionEnEnvio:
+          type: boolean
+          description: "Si true, los documentos se emiten automáticamente al crearlos. Si false, se guardan como BORRADOR."
+          example: true
+        logoPath:
+          type: string
+          description: "Ruta relativa del logo de la empresa (readonly, se actualiza via upload)"
+          example: "company_logos/20601234567/logo.png"
+        tieneLogo:
+          type: boolean
+          description: "Indica si la empresa tiene logo configurado"
+          example: false
+        tieneUsuarioSol:
+          type: boolean
+          description: "Indica si el usuario SOL está configurado"
+          example: true
+        tieneClaveSol:
+          type: boolean
+          description: "Indica si la clave SOL está configurada"
+          example: true
+        tieneCertificado:
+          type: boolean
+          description: "Indica si el certificado digital está configurado"
+          example: false
         fechaCreacion:
           type: string
           format: date-time
@@ -2669,8 +2961,15 @@ components:
           example: 1180.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
           example: "ACEPTADA"
+        erroresValidacion:
+          type: array
+          description: "Errores de validación interna (solo si estado=CON_ERROR)"
+          nullable: true
+          items:
+            type: string
+          example: []
         hashCdr:
           type: string
           description: Hash del CDR recibido de SUNAT
@@ -2784,8 +3083,15 @@ components:
           example: 590.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
           example: "ACEPTADA"
+        erroresValidacion:
+          type: array
+          description: "Errores de validación interna (solo si estado=CON_ERROR)"
+          nullable: true
+          items:
+            type: string
+          example: []
         leyenda:
           type: string
           example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
@@ -3407,6 +3713,35 @@ components:
             data:
               $ref: '#/components/schemas/CompanyData'
 
+    ConexionSunatResultDto:
+      type: object
+      properties:
+        exitoso:
+          type: boolean
+          description: "true si la conexión fue exitosa"
+          example: true
+        mensaje:
+          type: string
+          description: "Mensaje descriptivo del resultado"
+          example: "Conexión exitosa con SUNAT (modo beta)"
+        modo:
+          type: string
+          description: "Modo de conexión: beta o produccion"
+          example: "beta"
+        tieneUsuarioSol:
+          type: boolean
+          example: true
+        tieneClaveSol:
+          type: boolean
+          example: true
+        tieneCertificado:
+          type: boolean
+          example: false
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-08T15:30:00Z"
+
     ClientResponseDto:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -3909,4 +4244,25 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/CatalogoSunatData'
+
+    DocumentValidationResultDto:
+      type: object
+      description: "Resultado de validación interna de un documento electrónico"
+      properties:
+        valid:
+          type: boolean
+          description: "true si el documento pasó todas las validaciones"
+          example: true
+        errores:
+          type: array
+          description: "Lista de errores de validación (bloquean la emisión)"
+          items:
+            type: string
+          example: []
+        advertencias:
+          type: array
+          description: "Lista de advertencias (no bloquean, pero recomiendan corrección)"
+          items:
+            type: string
+          example: []
 

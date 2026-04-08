@@ -8,20 +8,31 @@
 <div class="screen">
     <div class="container">
 
+        <!-- Wizard header with editing indicator -->
+        <div id="wiz-editing-banner" style="display:none;margin-bottom:0.8rem;">
+            <div class="warn-banner" style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;">
+                ✏️ <strong>Editando</strong> <span id="wiz-editing-id" class="badge badge-blue" style="font-size:0.72rem;"></span>
+            </div>
+        </div>
+
         <div class="wiz-steps">
-            <div class="wiz-step active" onclick="wizGo(1)" data-icon="🏢">
+            <div class="wiz-step active" onclick="wizGo(1)" data-icon="📄">
+                <span class="wn">📄</span>
+                <span class="wiz-label">Documento</span>
+            </div>
+            <div class="wiz-step" onclick="wizGo(2)" data-icon="🏢">
                 <span class="wn">🏢</span>
                 <span class="wiz-label">Emisor</span>
             </div>
-            <div class="wiz-step" onclick="wizGo(2)" data-icon="👤">
+            <div class="wiz-step" onclick="wizGo(3)" data-icon="👤">
                 <span class="wn">👤</span>
                 <span class="wiz-label">Cliente</span>
             </div>
-            <div class="wiz-step" onclick="wizGo(3)" data-icon="📦">
+            <div class="wiz-step" onclick="wizGo(4)" data-icon="📦">
                 <span class="wn">📦</span>
                 <span class="wiz-label">Detalle</span>
             </div>
-            <div class="wiz-step" onclick="wizGo(4)" data-icon="🚀">
+            <div class="wiz-step" onclick="wizGo(5)" data-icon="🚀">
                 <span class="wn">🚀</span>
                 <span class="wiz-label">Emitir</span>
             </div>
@@ -29,11 +40,110 @@
 
         <div id="wizard-panels">
 
-            <!-- WIZ STEP 1 — EMISOR -->
+            <!-- ═══ WIZ STEP 1 — DOCUMENTO ═══ -->
             <div class="panel active" id="wiz-1">
                 <div class="panel-head">
+                    <span class="ph-icon">📄</span>
+                    <div><h2 id="wiz-detail-title">Datos del Documento</h2><p>Configuración del comprobante a emitir</p></div>
+                </div>
+
+                <!-- Serie + Numero (readonly preview) -->
+                <div class="f-row" style="margin-bottom:0.8rem;">
+                    <div class="f-group" style="flex:0 0 120px;">
+                        <label>Serie</label>
+                        <select id="fac-serie" style="font-size:0.95rem;font-weight:600;letter-spacing:0.5px;">
+                            <option value="F001">F001</option>
+                        </select>
+                    </div>
+                    <div class="f-group" style="flex:1;">
+                        <label>Número <span style="font-size:0.65rem;color:var(--text-muted);">(autoasignado)</span></label>
+                        <input id="fac-numero-preview" readonly value="(se asigna al emitir)"
+                               style="font-family:var(--font-mono);font-size:0.95rem;letter-spacing:1px;color:var(--text-muted);"/>
+                    </div>
+                </div>
+
+                <div class="f-row" style="margin-bottom:0.5rem;">
+                    <div class="f-group"><label>Fecha Emisión</label><input type="date" id="fac-fecha" /></div>
+                    <div class="f-group"><label>Moneda</label>
+                        <select id="fac-moneda" onchange="onMonedaChange()">
+                            <option value="PEN">PEN — Sol</option>
+                            <option value="USD">USD — Dólar</option>
+                        </select>
+                    </div>
+                    <div class="f-group" id="fac-tc-group" style="display:none;">
+                        <label>Tipo de Cambio</label>
+                        <div style="display:flex;gap:0.4rem;align-items:center;">
+                            <input id="fac-tipo-cambio" readonly style="flex:1;" placeholder="—"/>
+                            <button class="btn btn-ghost" onclick="fetchTipoCambio()" style="font-size:0.7rem;padding:0.35rem 0.6rem;" title="Consultar tipo de cambio">🔄</button>
+                        </div>
+                        <span style="font-size:0.65rem;color:var(--text-muted);" id="fac-tc-fuente"></span>
+                    </div>
+                </div>
+                <div class="f-row" style="margin-bottom:0.5rem;">
+                    <div class="f-group"><label>Forma de Pago</label>
+                        <select id="fac-forma-pago" onchange="onFormaPagoChange()">
+                            <option value="CONTADO">Contado</option>
+                            <option value="CREDITO">Crédito</option>
+                        </select>
+                    </div>
+                    <div class="f-group"><label>Fecha Vencimiento</label><input type="date" id="fac-fecha-venc" /></div>
+                    <div class="f-group" id="fac-nro-cuotas-group" style="display:none;flex:0 0 100px;">
+                        <label>Nro. Cuotas</label>
+                        <input type="number" id="fac-nro-cuotas" min="1" max="36" value="1" onchange="onNroCuotasChange()" style="text-align:center;"/>
+                    </div>
+                </div>
+                <div class="f-row" style="margin-bottom:0.8rem;">
+                    <div class="f-group"><label>Tipo Operación</label>
+                        <select id="fac-tipo-operacion">
+                            <option value="0101" selected>0101 — Venta interna</option>
+                            <option value="0200">0200 — Exportación</option>
+                            <option value="0401">0401 — Venta interna - Anticipos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Campos específicos para Notas (crédito/débito) -->
+                <div id="nota-fields" style="display:none; margin-bottom:1rem;">
+                    <div class="warn-banner" style="margin-bottom:1rem;">
+                        📌 Los campos a continuación son específicos para notas de crédito/débito y hacen referencia al comprobante original.
+                    </div>
+                    <div class="f-row">
+                        <div class="f-group"><label>ID Factura/Boleta de Referencia</label><input id="nota-ref-id" placeholder="Ej: fac_123456"/></div>
+                        <div class="f-group">
+                            <label>Motivo</label>
+                            <select id="nota-motivo">
+                                <option value="" disabled selected>Seleccionar...</option>
+                                <option value="anulacion" class="opt-nc">Anulación</option>
+                                <option value="devolucion" class="opt-nc">Devolución</option>
+                                <option value="descuento" class="opt-nc">Descuento</option>
+                                <option value="otro" class="opt-nc opt-nd">Otro</option>
+                                <option value="intereses" class="opt-nd">Intereses</option>
+                                <option value="gastos_administrativos" class="opt-nd">Gastos Administrativos</option>
+                                <option value="penalidades" class="opt-nd">Penalidades</option>
+                                <option value="otros" class="opt-nd">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="f-row">
+                        <div class="f-group" id="nota-tipo-doc-group">
+                            <label>Tipo Doc. Referencia</label>
+                            <select id="nota-tipo-doc">
+                                <option value="factura">Factura</option>
+                                <option value="boleta">Boleta</option>
+                            </select>
+                        </div>
+                        <div class="f-group"><label>Descripción</label><input id="nota-descripcion" placeholder="Motivo detallado de la nota"/></div>
+                    </div>
+                </div>
+
+                <div class="btn-row"><div></div><button class="btn btn-accent" onclick="wizGo(2)">Siguiente →</button></div>
+            </div>
+
+            <!-- ═══ WIZ STEP 2 — EMISOR ═══ -->
+            <div class="panel" id="wiz-2">
+                <div class="panel-head">
                     <span class="ph-icon">🏢</span>
-                    <div><h2>Datos del Emisor</h2><p>Empresa que emite el comprobante (datos de prueba precargados)</p></div>
+                    <div><h2>Datos del Emisor</h2><p>Empresa que emite el comprobante (datos precargados)</p></div>
                 </div>
                 <div class="f-row">
                     <div class="f-group"><label>RUC</label><input id="em-ruc" readonly/></div>
@@ -44,16 +154,18 @@
                     <div class="f-group"><label>Régimen</label><input id="em-regimen" readonly/></div>
                 </div>
                 <div class="f-group f-full"><label>Dirección Fiscal</label><input id="em-dir" readonly/></div>
-                <div class="btn-row"><div></div><button class="btn btn-accent" onclick="wizGo(2)">Siguiente →</button></div>
+                <div class="btn-row">
+                    <button class="btn btn-ghost" onclick="wizGo(1)">← Anterior</button>
+                    <button class="btn btn-accent" onclick="wizGo(3)">Siguiente →</button>
+                </div>
             </div>
 
-            <!-- WIZ STEP 2 — CLIENTE -->
-            <div class="panel" id="wiz-2">
+            <!-- ═══ WIZ STEP 3 — CLIENTE ═══ -->
+            <div class="panel" id="wiz-3">
                 <div class="panel-head">
                     <span class="ph-icon">👤</span>
                     <div><h2>Datos del Adquiriente</h2><p>Cliente al que se emitirá el comprobante</p></div>
                 </div>
-                <!-- Client search bar -->
                 <div class="add-bar" style="margin-bottom:1.2rem;">
                     <button class="ab-search" onclick="openClientModal()">
                         🔍 Buscar cliente registrado...
@@ -79,91 +191,18 @@
                     <div class="f-group"><label>Teléfono</label><input id="cl-tel"/></div>
                 </div>
                 <div class="btn-row">
-                    <button class="btn btn-ghost" onclick="wizGo(1)">← Anterior</button>
-                    <button class="btn btn-accent" onclick="wizGo(3)">Siguiente →</button>
+                    <button class="btn btn-ghost" onclick="wizGo(2)">← Anterior</button>
+                    <button class="btn btn-accent" onclick="wizGo(4)">Siguiente →</button>
                 </div>
             </div>
 
-            <!-- WIZ STEP 3 — DETALLE -->
-            <div class="panel" id="wiz-3">
+            <!-- ═══ WIZ STEP 4 — DETALLE ═══ -->
+            <div class="panel" id="wiz-4">
                 <div class="panel-head">
                     <span class="ph-icon">📦</span>
-                    <div><h2 id="wiz-detail-title">Detalle de la Factura</h2><p>Agrega productos o servicios desde el catálogo</p></div>
+                    <div><h2>Detalle de Ítems</h2><p>Agrega productos o servicios desde el catálogo</p></div>
                 </div>
 
-                <div class="f-row" style="margin-bottom:0.5rem;">
-                    <div class="f-group"><label>Fecha Emisión</label><input type="date" id="fac-fecha" /></div>
-                    <div class="f-group"><label>Serie</label><input id="fac-serie" value="F001"/></div>
-                    <div class="f-group"><label>Moneda</label>
-                        <select id="fac-moneda" onchange="onMonedaChange()">
-                            <option value="PEN">PEN — Sol</option>
-                            <option value="USD">USD — Dólar</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="f-row" style="margin-bottom:1rem;">
-                    <div class="f-group" id="fac-tc-group" style="display:none;">
-                        <label>Tipo de Cambio</label>
-                        <div style="display:flex;gap:0.4rem;align-items:center;">
-                            <input id="fac-tipo-cambio" readonly style="flex:1;" placeholder="—"/>
-                            <button class="btn btn-ghost" onclick="fetchTipoCambio()" style="font-size:0.7rem;padding:0.35rem 0.6rem;" title="Consultar tipo de cambio">🔄</button>
-                        </div>
-                        <span style="font-size:0.65rem;color:var(--text-muted);" id="fac-tc-fuente"></span>
-                    </div>
-                    <div class="f-group"><label>Forma de Pago</label>
-                        <select id="fac-forma-pago" onchange="onFormaPagoChange()">
-                            <option value="CONTADO">Contado</option>
-                            <option value="CREDITO">Crédito</option>
-                        </select>
-                    </div>
-                    <div class="f-group"><label>Fecha Vencimiento</label><input type="date" id="fac-fecha-venc" /></div>
-                    <div class="f-group"><label>Leyenda</label><input id="fac-leyenda" value=""/></div>
-                    <div class="f-group"><label>Tipo Operación</label>
-                        <select id="fac-tipo-operacion">
-                            <option value="0101" selected>0101 — Venta interna</option>
-                            <option value="0200">0200 — Exportación</option>
-                            <option value="0401">0401 — Venta interna - Anticipos</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Campos específicos para Notas (crédito/débito) -->
-                <div id="nota-fields" style="display:none; margin-bottom:1rem;">
-                    <div class="warn-banner" style="margin-bottom:1rem;">
-                        📌 Los campos a continuación son específicos para notas de crédito/débito y hacen referencia al comprobante original.
-                    </div>
-                    <div class="f-row">
-                        <div class="f-group"><label>ID Factura/Boleta de Referencia</label><input id="nota-ref-id" placeholder="Ej: fac_123456"/></div>
-                        <div class="f-group">
-                            <label>Motivo</label>
-                            <select id="nota-motivo">
-                                <option value="" disabled selected>Seleccionar...</option>
-                                <!-- Nota Crédito -->
-                                <option value="anulacion" class="opt-nc">Anulación</option>
-                                <option value="devolucion" class="opt-nc">Devolución</option>
-                                <option value="descuento" class="opt-nc">Descuento</option>
-                                <option value="otro" class="opt-nc opt-nd">Otro</option>
-                                <!-- Nota Débito -->
-                                <option value="intereses" class="opt-nd">Intereses</option>
-                                <option value="gastos_administrativos" class="opt-nd">Gastos Administrativos</option>
-                                <option value="penalidades" class="opt-nd">Penalidades</option>
-                                <option value="otros" class="opt-nd">Otros</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="f-row">
-                        <div class="f-group" id="nota-tipo-doc-group">
-                            <label>Tipo Doc. Referencia</label>
-                            <select id="nota-tipo-doc">
-                                <option value="factura">Factura</option>
-                                <option value="boleta">Boleta</option>
-                            </select>
-                        </div>
-                        <div class="f-group"><label>Descripción</label><input id="nota-descripcion" placeholder="Motivo detallado de la nota"/></div>
-                    </div>
-                </div>
-
-                <!-- Add product bar -->
                 <div class="add-bar">
                     <button class="ab-search" id="search-btn-wrap" onclick="openProductModal()">
                         🔍 Buscar producto en catálogo...
@@ -204,12 +243,27 @@
                     </div>
                 </div>
 
+                <!-- Leyenda (obligación legal SUNAT — display only) -->
+                <div style="margin-top:1rem;background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.15);border-radius:var(--radius-sm);padding:0.8rem 1rem;">
+                    <div style="display:flex;align-items:flex-start;gap:0.5rem;">
+                        <span style="font-size:1rem;flex-shrink:0;">💬</span>
+                        <div style="flex:1;">
+                            <label style="font-size:0.7rem;color:var(--text-muted);display:block;margin-bottom:0.2rem;">Leyenda (obligación legal SUNAT)</label>
+                            <span id="fac-leyenda-display" style="font-size:0.82rem;color:var(--text-secondary);font-style:italic;">MONTO EN LETRAS</span>
+                            <input type="hidden" id="fac-leyenda" value="MONTO EN LETRAS"/>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Cargos / Descuentos Globales (Cat. 53 SUNAT) -->
                 <div style="margin-top:1.5rem;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
                         <h3 style="margin:0;font-size:0.95rem;">📋 Cargos / Descuentos Globales</h3>
                         <button class="btn btn-ghost" onclick="addCargoDescuento()" style="font-size:0.75rem;padding:0.3rem 0.7rem;">+ Agregar</button>
                     </div>
+                    <p style="font-size:0.7rem;color:var(--text-muted);margin:0 0 0.5rem;">
+                        Aplican descuentos/recargos por volumen, recargo al consumo (Cat.53 código 46), etc. Solo disponible en Facturas.
+                    </p>
                     <div class="tbl-wrap">
                         <table class="tbl" id="ac-table" style="font-size:0.8rem;">
                             <thead><tr>
@@ -220,7 +274,7 @@
                     </div>
                 </div>
 
-                <!-- Cuotas de Crédito (solo visible si formaPago=CREDITO) -->
+                <!-- Cuotas de Crédito -->
                 <div id="cuotas-section" style="margin-top:1.5rem;display:none;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
                         <h3 style="margin:0;font-size:0.95rem;">💳 Cuotas de Crédito</h3>
@@ -240,53 +294,115 @@
                     </div>
                 </div>
                 <div class="btn-row">
-                    <button class="btn btn-ghost" onclick="wizGo(2)">← Anterior</button>
-                    <button class="btn btn-accent" onclick="wizGo(4)">Revisar y Emitir →</button>
+                    <button class="btn btn-ghost" onclick="wizGo(3)">← Anterior</button>
+                    <button class="btn btn-accent" onclick="wizGo(5)">Revisar y Emitir →</button>
                 </div>
             </div>
 
-            <!-- WIZ STEP 4 — REVIEW & SUBMIT -->
-            <div class="panel" id="wiz-4">
-                <div class="panel-head">
-                    <span class="ph-icon">✅</span>
-                    <div><h2>Revisión y Emisión</h2><p>Verifica todo antes de emitir</p></div>
+            <!-- ═══ WIZ STEP 5 — REVIEW & SUBMIT ═══ -->
+            <div class="panel" id="wiz-5">
+                <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <span class="ph-icon">✅</span>
+                        <div><h2>Revisión y Emisión</h2><p>Verifica todo antes de emitir</p></div>
+                    </div>
+                    <!-- Toggle Contable / PDF / JSON -->
+                    <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+                        <button class="btn btn-ghost active" id="btn-view-contable" onclick="toggleReviewView('contable')"
+                                style="border:none;border-radius:0;font-size:0.75rem;padding:0.35rem 0.8rem;">📊 Contable</button>
+                        <button class="btn btn-ghost" id="btn-view-pdf" onclick="toggleReviewView('pdf')"
+                                style="border:none;border-radius:0;font-size:0.75rem;padding:0.35rem 0.8rem;border-left:1px solid var(--border);">📄 Vista Previa</button>
+                        <button class="btn btn-ghost" id="btn-view-json" onclick="toggleReviewView('json')"
+                                style="border:none;border-radius:0;font-size:0.75rem;padding:0.35rem 0.8rem;border-left:1px solid var(--border);">{ } JSON</button>
+                    </div>
                 </div>
+
+                <!-- Contable View (default) -->
+                <div id="review-contable">
                 <div class="sum-section">
+                    <div class="sum-block">
+                        <h3>📄 Documento</h3>
+                        <div class="sr"><span class="l">Tipo:</span><span class="v" id="r-tipo"></span></div>
+                        <div class="sr"><span class="l">Serie:</span><span class="v" id="r-serie"></span></div>
+                        <div class="sr"><span class="l">Fecha Emisión:</span><span class="v" id="r-fecha"></span></div>
+                        <div class="sr"><span class="l">Moneda:</span><span class="v" id="r-moneda"></span></div>
+                        <div class="sr" id="r-tc-row" style="display:none;"><span class="l">Tipo de Cambio:</span><span class="v" id="r-tipo-cambio"></span></div>
+                        <div class="sr"><span class="l">Forma de Pago:</span><span class="v" id="r-forma-pago"></span></div>
+                        <div class="sr"><span class="l">Fecha Vencimiento:</span><span class="v" id="r-fecha-venc"></span></div>
+                        <div class="sr"><span class="l">Ubigeo Sede:</span><span class="v" id="r-ubigeo"></span></div>
+                    </div>
                     <div class="sum-block">
                         <h3>🏢 Emisor</h3>
                         <div class="sr"><span class="l">RUC:</span><span class="v" id="r-em-ruc"></span></div>
                         <div class="sr"><span class="l">Razón Social:</span><span class="v" id="r-em-razon"></span></div>
                         <div class="sr"><span class="l">Dirección:</span><span class="v" id="r-em-dir"></span></div>
                     </div>
+                </div>
+                <div class="sum-section" style="margin-top:1rem;">
                     <div class="sum-block">
                         <h3>👤 Adquiriente</h3>
                         <div class="sr"><span class="l">Documento:</span><span class="v" id="r-cl-doc"></span></div>
                         <div class="sr"><span class="l">Denominación:</span><span class="v" id="r-cl-denom"></span></div>
                         <div class="sr"><span class="l">Dirección:</span><span class="v" id="r-cl-dir"></span></div>
                     </div>
+                    <div class="sum-block" id="r-ac-block" style="display:none;">
+                        <h3>📋 Cargos / Descuentos</h3>
+                        <div id="r-ac-list"></div>
+                        <div class="sr total" style="margin-top:0.5rem;">
+                            <span class="l">Neto:</span>
+                            <span class="v" id="r-ac-neto"></span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Items detail table in review -->
                 <div class="sum-block" style="margin-top:1.5rem;">
-                    <h3>🧾 Comprobante</h3>
-                    <div class="sr"><span class="l">Tipo:</span><span class="v" id="r-tipo"></span></div>
-                    <div class="sr"><span class="l">Serie:</span><span class="v" id="r-serie"></span></div>
-                    <div class="sr"><span class="l">Fecha Emisión:</span><span class="v" id="r-fecha"></span></div>
-                    <div class="sr"><span class="l">Moneda:</span><span class="v" id="r-moneda"></span></div>
-                    <div class="sr" id="r-tc-row" style="display:none;"><span class="l">Tipo de Cambio:</span><span class="v" id="r-tipo-cambio"></span></div>
-                    <div class="sr"><span class="l">Forma de Pago:</span><span class="v" id="r-forma-pago"></span></div>
-                    <div class="sr"><span class="l">Fecha Vencimiento:</span><span class="v" id="r-fecha-venc"></span></div>
-                    <div class="sr"><span class="l">Ubigeo Sede:</span><span class="v" id="r-ubigeo"></span></div>
-                    <div class="sr"><span class="l">Ítems:</span><span class="v" id="r-items"></span></div>
-                    <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="r-grav"></span></div>
-                    <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="r-igv"></span></div>
-                    <div class="sr total"><span class="l">TOTAL A PAGAR:</span><span class="v" id="r-total"></span></div>
+                    <h3>📦 Detalle — <span id="r-items-count" style="color:var(--text-muted);font-weight:400;"></span></h3>
+                    <div class="tbl-wrap" id="r-items-table-wrap"></div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:0.8rem;">
+                        <div style="min-width:260px;">
+                            <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="r-grav"></span></div>
+                            <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="r-igv"></span></div>
+                            <div class="sr" id="r-cargos-row" style="display:none;"><span class="l">+ Cargos:</span><span class="v" id="r-cargos" style="color:var(--warning);"></span></div>
+                            <div class="sr" id="r-desc-row" style="display:none;"><span class="l">− Descuentos:</span><span class="v" id="r-desc" style="color:var(--danger);"></span></div>
+                            <div class="sr total"><span class="l">TOTAL A PAGAR:</span><span class="v" id="r-total"></span></div>
+                        </div>
+                    </div>
                 </div>
-                <!-- Nota-specific review info (hidden for factura/boleta) -->
+
+                <!-- Cuotas review -->
+                <div class="sum-block" id="r-cuotas-info" style="display:none; margin-top:1.5rem;"></div>
+
                 <div class="sum-block" id="r-nota-info" style="display:none; margin-top:1.5rem;"></div>
+                </div><!-- /review-contable -->
+
+                <!-- PDF Preview View (hidden by default — rendered live via PdfTemplate) -->
+                <div id="review-pdf" style="display:none;"></div>
+
+                <!-- JSON Viewer (hidden by default) -->
+                <div id="review-json" style="display:none;">
+                    <div class="json-viewer-wrap">
+                        <button class="json-copy-btn" id="json-copy-btn" onclick="copyJsonToClipboard()" title="Copiar JSON al portapapeles">📋 Copiar</button>
+                        <div id="json-tree"></div>
+                    </div>
+                </div>
+
+                <div id="wiz-emision-hint" class="warn-banner" style="display:none;margin-top:1rem;max-width:100%;font-size:0.82rem;">
+                    ⚠️ <strong>Emisión en Envío desactivada.</strong> El documento se guardará como
+                    <span class="badge badge-gray" style="font-size:0.7rem;">BORRADOR</span> y podrás emitirlo manualmente después.
+                    <a href="javascript:void(0)" onclick="openConfigOverlay();switchConfigTab('preferencias');" style="color:var(--accent);text-decoration:underline;margin-left:0.3rem;">Cambiar configuración</a>
+                </div>
+
                 <div class="btn-row">
-                    <button class="btn btn-ghost" onclick="wizGo(3)">← Corregir</button>
-                    <button class="btn btn-accent" id="btn-emit" onclick="emitDoc()">
-                        <span class="spinner" id="spinner"></span> 🚀 Emitir Comprobante
-                    </button>
+                    <button class="btn btn-ghost" onclick="wizGo(4)">← Corregir</button>
+                    <div style="display:flex;gap:0.6rem;">
+                        <button class="btn btn-ghost" id="btn-draft" onclick="saveDraft()" style="border-color:var(--text-muted);">
+                            <span class="spinner" id="spinner-draft" style="display:none;"></span> 💾 Guardar Borrador
+                        </button>
+                        <button class="btn btn-accent" id="btn-emit" onclick="emitDoc()">
+                            <span class="spinner" id="spinner" style="display:none;"></span> 🚀 Emitir Comprobante
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -308,41 +424,31 @@
 <script th:src="@{/js/error-handler.js}"></script>
 <script th:src="@{/js/navigation.js}"></script>
 <script th:src="@{/js/items.js}"></script>
+<script th:src="@{/js/numero-letras.js}"></script>
+<script th:src="@{/js/json-viewer.js}"></script>
 <script th:src="@{/js/product-modal.js}"></script>
 <script th:src="@{/js/client-modal.js}"></script>
+<script th:src="@{/js/pdf-template.js}"></script>
 <script th:src="@{/js/wizard.js}"></script>
 <script th:src="@{/js/config-overlay.js}"></script>
 
-<!-- Init wizard — docType read from URL -->
+<!-- Init wizard — docType + optional id from URL -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var params = new URLSearchParams(window.location.search);
         var docType = params.get('type') || 'FACTURA';
+        var editId  = params.get('id') || null;
 
         ETIA.init().then(function(company) {
             if (company) {
-                /* Populate emisor fields */
                 document.getElementById('em-ruc').value = company.ruc || '';
                 document.getElementById('em-razon').value = company.razonSocial || '';
                 document.getElementById('em-nombre').value = company.nombreComercial || '';
                 document.getElementById('em-regimen').value = company.regimen || '';
                 document.getElementById('em-dir').value = company.direccion || '';
             }
-            /* Populate client fields if a default client is loaded */
-            if (ETIA.client) {
-                var cl = ETIA.client;
-                /* Map API enum names to SUNAT codes for the select */
-                var enumToCode = { 'DNI':'1', 'RUC':'6', 'CE':'4', 'PASAPORTE':'7' };
-                var tipoCode = enumToCode[cl.tipoDocumento] || cl.tipoDocumento || '6';
-                /* Pre-fill all fields from the loaded client */
-                document.getElementById('cl-tipo').value = tipoCode;
-                document.getElementById('cl-numdoc').value = cl.numeroDocumento || '';
-                document.getElementById('cl-denom').value = cl.denominacion || '';
-                document.getElementById('cl-dir').value = cl.direccion || '';
-                document.getElementById('cl-email').value = cl.email || '';
-                document.getElementById('cl-tel').value = cl.telefono || '';
-            }
-            initWizard(docType);
+            /* Client fields start EMPTY — user selects via modal or edit mode loads from API */
+            initWizard(docType, editId);
         });
     });
 </script>

@@ -26,6 +26,7 @@ public interface FacturaMapper {
     @Mapping(target = "codigoRespuestaSunat", ignore = true)
     @Mapping(target = "descripcionRespuestaSunat", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "erroresValidacion", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "formaPago", expression = "java(request.getFormaPago() != null ? request.getFormaPago().getValue() : \"CONTADO\")")
     @Mapping(target = "horaEmision", expression = "java(request.getHoraEmision() != null ? java.time.LocalTime.parse(request.getHoraEmision()) : null)")
@@ -38,6 +39,7 @@ public interface FacturaMapper {
     @Mapping(target = "formaPago", expression = "java(entity.getFormaPago() != null ? FacturaData.FormaPagoEnum.fromValue(entity.getFormaPago()) : null)")
     @Mapping(target = "horaEmision", expression = "java(entity.getHoraEmision() != null ? entity.getHoraEmision().toString() : null)")
     @Mapping(target = "detalle", source = "detalleJson", qualifiedByName = "jsonToDetalle")
+    @Mapping(target = "erroresValidacion", expression = "java(jsonToStringList(entity.getErroresValidacion()))")
     @Mapping(target = "cuotas", ignore = true)
     @Mapping(target = "cargosDescuentos", ignore = true)
     FacturaData toData(FacturaEntity entity);
@@ -57,6 +59,16 @@ public interface FacturaMapper {
             return OBJECT_MAPPER.readValue(json, new TypeReference<List<DetalleItem>>() {});
         } catch (Exception e) {
             return Collections.emptyList();
+        }
+    }
+
+    @Named("jsonToStringList")
+    default List<String> jsonToStringList(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return null;
         }
     }
 }

@@ -3,6 +3,9 @@ package com.etlions.ms_bs_etia.doc_factura.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
+import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
+import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.company.persistence.CompanyEntity;
@@ -12,6 +15,7 @@ import com.etlions.ms_bs_etia.doc_factura.persistence.AllowanceChargeRepository;
 import com.etlions.ms_bs_etia.doc_factura.persistence.CuotaCreditoRepository;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.FacturaRepository;
+import com.etlions.ms_bs_etia.doc_factura.xml.UblInvoiceXmlBuilder;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +50,9 @@ class DocFacturaServiceImplTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private CuotaCreditoRepository cuotaCreditoRepository;
     @Mock private AllowanceChargeRepository allowanceChargeRepository;
+    @Mock private UblInvoiceXmlBuilder ublInvoiceXmlBuilder;
+    @Mock private XmlStorageService xmlStorageService;
+    @Mock private DocumentValidatorService documentValidatorService;
 
     @InjectMocks
     private DocFacturaServiceImpl service;
@@ -111,6 +118,10 @@ class DocFacturaServiceImplTest {
         when(facturaMapper.toEntity(req)).thenReturn(e);
         when(facturaRepository.save(any(FacturaEntity.class))).thenReturn(e);
         when(facturaMapper.toData(e)).thenReturn(buildData());
+        when(ublInvoiceXmlBuilder.buildInvoiceXml(any(), any(), any(), anyList(), anyList()))
+                .thenReturn("<Invoice/>");
+        when(xmlStorageService.guardarXml(anyString(), anyString(), anyString(), anyInt(), anyString()))
+                .thenReturn("20517863948/F001/00000001/20517863948-01-F001-00000001.xml");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -123,7 +134,8 @@ class DocFacturaServiceImplTest {
             stubEmisionExitosa(req);
             FacturaResponseDto r = service.emitirFactura(req);
             assertTrue(r.getIsSuccess());
-            verify(facturaRepository).save(any());
+            // save() se invoca 2 veces: 1ª persiste la entidad, 2ª agrega xmlContent/xmlPath
+            verify(facturaRepository, times(2)).save(any());
             verify(notificationService).publicar(eq("COMP-1"), eq("EMITIDA"),
                     eq("FACTURA"), anyString(), anyString(), anyString());
         }
@@ -292,6 +304,38 @@ class DocFacturaServiceImplTest {
         void montosNull() {
             FacturaEmitirDto req = buildEmitirRequest();
             req.setGravadas(null); req.setIgv(null); req.setTotal(null);
+            assertThrows(SunatValidationException.class, () -> service.emitirFactura(req));
+        }
+
+        @Test @DisplayName("con cargos y descuentos → total correcto OK")
+        void conCargosDescuentosOk() {
+            // gravadas=100 + igv=18 + cargo=50 − descuento=30 = 138
+            FacturaEmitirDto req = buildEmitirRequest();
+            req.setGravadas(new BigDecimal("100.00"));
+            req.setIgv(new BigDecimal("18.00"));
+            req.setTotal(new BigDecimal("138.00"));
+            req.setCargosDescuentos(List.of(
+                    new AllowanceChargeItem().chargeIndicator(true)
+                            .reasonCode("50").amount(new BigDecimal("50.00"))
+                            .baseAmount(new BigDecimal("100.00")).multiplierFactor(new BigDecimal("0.50")),
+                    new AllowanceChargeItem().chargeIndicator(false)
+                            .reasonCode("00").amount(new BigDecimal("30.00"))
+                            .baseAmount(new BigDecimal("100.00")).multiplierFactor(new BigDecimal("0.30"))
+            ));
+            stubEmisionExitosa(req);
+            FacturaResponseDto r = service.emitirFactura(req);
+            assertTrue(r.getIsSuccess());
+        }
+
+        @Test @DisplayName("con descuento pero total no lo resta → excepción")
+        void conDescuentoTotalSinRestar() {
+            // gravadas=100 + igv=18 − descuento=30 → esperado=88, pero total=118
+            FacturaEmitirDto req = buildEmitirRequest();
+            req.setCargosDescuentos(List.of(
+                    new AllowanceChargeItem().chargeIndicator(false)
+                            .reasonCode("00").amount(new BigDecimal("30.00"))
+                            .baseAmount(new BigDecimal("100.00")).multiplierFactor(new BigDecimal("0.30"))
+            ));
             assertThrows(SunatValidationException.class, () -> service.emitirFactura(req));
         }
     }

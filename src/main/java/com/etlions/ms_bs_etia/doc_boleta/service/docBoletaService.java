@@ -4,6 +4,7 @@ import com.etlions.openapicodegen.dto.BoletaResponseDto;
 import com.etlions.openapicodegen.dto.AnularBoletaDto;
 import com.etlions.openapicodegen.dto.BoletaEmitirDto;
 import com.etlions.openapicodegen.dto.BoletaListResponseDto;
+import com.etlions.openapicodegen.dto.DocumentValidationResultDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
 import java.util.Date;
@@ -21,5 +22,8 @@ public interface DocBoletaService {
                                            Integer page, Integer size);
 
     BoletaResponseDto obtenerBoleta(String boletaId);
+
+    /** Ejecuta validación interna de una boleta y actualiza su estado a VALIDADO o CON_ERROR */
+    DocumentValidationResultDto validarBoleta(String boletaId);
 }
 

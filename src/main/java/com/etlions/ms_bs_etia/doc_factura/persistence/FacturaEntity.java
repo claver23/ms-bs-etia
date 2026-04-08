@@ -109,6 +109,15 @@ public class FacturaEntity {
     @Column(name = "xml_content", columnDefinition = "TEXT")
     private String xmlContent;
 
+    /** Ruta relativa donde se persistió el XML en disco */
+    @Column(name = "xml_path")
+    private String xmlPath;
+
+    /** Errores de validación interna (JSON array de strings). Solo si estado=CON_ERROR */
+    @Lob
+    @Column(name = "errores_validacion", columnDefinition = "TEXT")
+    private String erroresValidacion;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }

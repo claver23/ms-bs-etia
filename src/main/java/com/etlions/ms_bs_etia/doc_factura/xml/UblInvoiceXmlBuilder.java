@@ -1,5 +1,6 @@
 package com.etlions.ms_bs_etia.doc_factura.xml;
 
+import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.company.persistence.CompanyEntity;
 import com.etlions.ms_bs_etia.doc_factura.persistence.AllowanceChargeEntity;
@@ -143,7 +144,7 @@ public class UblInvoiceXmlBuilder {
 
     /** ID, IssueDate, IssueTime, DueDate */
     private void buildDocumentId(Document doc, Element invoice, FacturaEntity f) {
-        String id = f.getSerie() + "-" + f.getNumero();
+        String id = SunatFormatter.formatNumeroComprobante(f.getSerie(), f.getNumero());
         appendTextElement(doc, invoice, NS_CBC, "cbc:ID", id);
         appendTextElement(doc, invoice, NS_CBC, "cbc:IssueDate",
                 f.getFechaEmision().format(DateTimeFormatter.ISO_LOCAL_DATE));

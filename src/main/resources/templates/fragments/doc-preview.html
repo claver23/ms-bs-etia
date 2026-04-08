@@ -22,8 +22,8 @@
             </div>
             <!-- Action buttons (right) -->
             <div class="dp-action-group" id="dp-action-buttons">
-                <button class="btn btn-ghost" onclick="closeDocPreview()">Cerrar</button>
                 <a id="dp-edit-btn" class="btn btn-accent" style="display:none;">✏️ Editar</a>
+                <button id="dp-validate-btn" class="btn btn-ghost" style="display:none;border-color:var(--info);color:var(--info);" onclick="dpValidarDoc()">🔍 Validar</button>
                 <button id="dp-emit-btn" class="btn btn-accent" style="display:none;" onclick="dpEmitirFactura()">📤 Emitir</button>
                 <button id="dp-annul-btn" class="btn btn-ghost" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="dpAnularFactura()">🚫 Anular</button>
                 <button id="dp-delete-btn" class="btn btn-ghost" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="dpEliminarFactura()">🗑️ Eliminar</button>

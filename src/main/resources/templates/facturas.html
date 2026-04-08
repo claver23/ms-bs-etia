@@ -18,6 +18,15 @@
             </div>
         </div>
 
+        <!-- Search / Filter bar -->
+        <div class="doc-search-bar">
+            <input class="doc-search-input" id="fac-search"
+                   placeholder="🔍 Buscar y presionar Enter para agregar filtro..."
+                   onkeydown="onSearchKeydown(event)" autocomplete="off"/>
+        </div>
+        <!-- Filter chips -->
+        <div class="filter-chips-bar" id="fac-chips"></div>
+
         <div class="panel active">
             <div id="doc-content">
                 <p class="pm-empty">⏳ Cargando facturas...</p>
@@ -37,13 +46,88 @@
 <script th:src="@{/js/error-handler.js}"></script>
 <script th:src="@{/js/navigation.js}"></script>
 <script th:src="@{/js/config-overlay.js}"></script>
+<script th:src="@{/js/pdf-template.js}"></script>
 <script th:src="@{/js/doc-preview.js}"></script>
 <script>
     var allDocs = [], currentPage = 0, PAGE_SIZE = 10;
+    var filterChips = [];
+    var highlightDocId = null;
 
     document.addEventListener('DOMContentLoaded', function() {
+        /* Restore filter chips from sessionStorage */
+        try { filterChips = JSON.parse(sessionStorage.getItem('etia_fac_chips') || '[]'); } catch(e) { filterChips = []; }
+        renderChips();
+        /* Restore highlight target */
+        highlightDocId = sessionStorage.getItem('etia_fac_highlight_id') || null;
+        sessionStorage.removeItem('etia_fac_highlight_id');
         ETIA.init().then(function() { loadDocs(); });
     });
+
+    /* ─── Chip management ─── */
+    function onSearchKeydown(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var input = document.getElementById('fac-search');
+        var val = (input.value || '').trim();
+        if (!val) return;
+        /* Avoid duplicates */
+        if (filterChips.indexOf(val) === -1) {
+            filterChips.push(val);
+            _persistChips();
+            renderChips();
+        }
+        input.value = '';
+        currentPage = 0;
+        renderPage();
+    }
+
+    function removeChip(idx) {
+        filterChips.splice(idx, 1);
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function clearAllChips() {
+        filterChips = [];
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function _persistChips() {
+        sessionStorage.setItem('etia_fac_chips', JSON.stringify(filterChips));
+    }
+
+    function renderChips() {
+        var container = document.getElementById('fac-chips');
+        if (!container) return;
+        if (filterChips.length === 0) { container.innerHTML = ''; return; }
+        var html = '';
+        filterChips.forEach(function(chip, idx) {
+            html += '<span class="filter-chip">' +
+                chip +
+                '<button class="filter-chip-x" onclick="removeChip(' + idx + ')" title="Quitar filtro">✕</button>' +
+            '</span>';
+        });
+        html += '<button class="filter-clear-all" onclick="clearAllChips()">Limpiar todo</button>';
+        container.innerHTML = html;
+    }
+
+    function getFilteredDocs() {
+        if (filterChips.length === 0) return allDocs;
+        var terms = filterChips.map(function(c) { return c.toLowerCase(); });
+        return allDocs.filter(function(d) {
+            var sn = ETIA.formatNumero(d.serie, d.numero).toLowerCase();
+            var estado = (d.estado || '').toLowerCase();
+            var cliente = (d.clientDenom || '').toLowerCase();
+            var haystack = sn + ' ' + estado + ' ' + cliente;
+            /* OR: al menos un chip debe coincidir */
+            return terms.some(function(term) { return haystack.indexOf(term) !== -1; });
+        });
+    }
 
     function renderItemDetail(detalle) {
         if (!detalle || detalle.length === 0) return '';
@@ -69,55 +153,72 @@
     }
 
     function renderPage() {
-        var total = allDocs.length;
+        var filteredDocs = getFilteredDocs();
+        var total = filteredDocs.length;
         var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
         if (currentPage >= totalPages) currentPage = totalPages - 1;
         var start = currentPage * PAGE_SIZE;
-        var pageItems = allDocs.slice(start, start + PAGE_SIZE);
+        var pageItems = filteredDocs.slice(start, start + PAGE_SIZE);
         if (total === 0) {
-            document.getElementById('doc-content').innerHTML = '<p class="pm-empty">📭 No hay facturas emitidas aún</p>';
+            document.getElementById('doc-content').innerHTML = filterChips.length > 0
+                ? '<p class="pm-empty">🔍 Sin resultados para los filtros activos</p>'
+                : '<p class="pm-empty">📭 No hay facturas emitidas aún</p>';
             document.getElementById('doc-pag').style.display = 'none';
             return;
         }
         var html = '<div class="doc-list-cards">';
         pageItems.forEach(function(d) {
             var estado = d.estado || '—';
-            var badgeMap = { 'BORRADOR': 'badge-gray', 'ENVIADA': 'badge-blue', 'ACEPTADA': 'badge-green', 'RECHAZADA': 'badge-red', 'ANULADA': 'badge-yellow' };
+            var badgeMap = { 'BORRADOR': 'badge-gray', 'VALIDADO': 'badge-blue', 'CON_ERROR': 'badge-red', 'ENVIADA': 'badge-blue', 'ACEPTADA': 'badge-green', 'RECHAZADA': 'badge-red', 'ANULADA': 'badge-yellow' };
             var badgeCls = badgeMap[estado] || 'badge-gray';
+            var estadoLabel = estado === 'CON_ERROR' ? '⚠ CON ERROR' : estado === 'VALIDADO' ? '✅ VALIDADO' : estado;
             var monSym = (d.moneda === 'USD' || d.moneda === 'usd') ? 'US$ ' : 'S/ ';
             var strikeStyle = estado === 'ANULADA' ? 'text-decoration:line-through;opacity:0.6;' : '';
+            var serieNumero = ETIA.formatNumero(d.serie, d.numero);
 
             /* ─── State-driven inline actions ─── */
             var actions = '';
-            /* Export actions — always JSON; XML+PDF for transmitted (post-BORRADOR) */
+            /* Export actions — always JSON (clipboard); XML+PDF only for docs with XML */
             var exports = '<button class="dli-action dli-action-json" onclick="event.stopPropagation();quickJson(\'' + d.id + '\');">📋 JSON</button>';
-            if (estado !== 'BORRADOR' && estado !== '—') {
+            var hasXml = (estado === 'ENVIADA' || estado === 'ACEPTADA' || estado === 'RECHAZADA');
+            if (hasXml) {
                 exports += '<button class="dli-action dli-action-xml" onclick="event.stopPropagation();quickXml(\'' + d.id + '\',this);">📥 XML</button>' +
                            '<button class="dli-action dli-action-pdf" onclick="event.stopPropagation();quickPdf(\'' + d.id + '\');">📄 PDF</button>';
             }
             switch (estado) {
                 case 'BORRADOR':
-                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Validar</button>' +
                               '<button class="dli-action dli-action-emit" onclick="event.stopPropagation();quickEmit(\'' + d.id + '\',this);">📤 Emitir</button>' +
-                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🗑️</button>';
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'VALIDADO':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-emit" onclick="event.stopPropagation();quickEmit(\'' + d.id + '\',this);">📤 Emitir</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'CON_ERROR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Corregir</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Re-validar</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
                     break;
                 case 'ENVIADA':
-                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🚫 Anular</button>';
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + serieNumero + '\',this);">🚫 Anular</button>';
                     break;
                 case 'ACEPTADA':
-                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + (d.serie||'') + '-' + (d.numero||'') + '\',this);">🚫 Anular</button>';
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + serieNumero + '\',this);">🚫 Anular</button>';
                     break;
                 case 'RECHAZADA':
-                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA" onclick="event.stopPropagation();">🔧 Corregir</a>';
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">🔧 Corregir</a>';
                     break;
                 /* ANULADA: no workflow actions, but exports still available */
             }
 
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
+            html += '<div class="doc-list-item' + (highlightDocId === d.id ? ' dli-highlight' : '') + '" id="dli-' + d.id + '" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
                 '<div class="dli-header">' +
                     '<div class="dli-left">' +
-                        '<strong class="dli-serie">' + (d.serie||'') + '-' + (d.numero||'') + '</strong>' +
-                        '<span class="badge ' + badgeCls + '">' + estado + '</span>' +
+                        '<strong class="dli-serie">' + serieNumero + '</strong>' +
+                        '<span class="badge ' + badgeCls + '">' + estadoLabel + '</span>' +
                     '</div>' +
                     '<div class="dli-right">' +
                         '<span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span>' +
@@ -134,6 +235,12 @@
         html += '</div>';
         document.getElementById('doc-content').innerHTML = html;
         renderPagination(total, totalPages);
+        /* Scroll to highlighted doc if present */
+        if (highlightDocId) {
+            var hlEl = document.getElementById('dli-' + highlightDocId);
+            if (hlEl) { setTimeout(function() { hlEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
+            highlightDocId = null; /* clear after first render */
+        }
     }
 
     function goToPage(p) { currentPage = p; renderPage(); }
@@ -141,22 +248,10 @@
     /* ─── Quick actions from the list ─── */
     function quickEmit(facturaId, btn) {
         if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-        ApiClient.getFactura(facturaId).then(function(doc) {
-            if (!doc) throw new Error('not found');
-            var payload = {
-                companyId: doc.companyId || ETIA.companyId,
-                clientId: doc.clientId || null,
-                serie: doc.serie || null,
-                moneda: doc.moneda || 'PEN',
-                formaPago: doc.formaPago || 'CONTADO',
-                gravadas: doc.gravadas || 0,
-                igv: doc.igv || 0,
-                total: doc.total || 0,
-                detalle: doc.detalle || []
-            };
-            return ApiClient.emitirFactura(payload);
-        }).then(function() {
+        ApiClient.emitirFacturaBorrador(facturaId).then(function() {
             if (ETIA.showSuccess) ETIA.showSuccess('Factura emitida exitosamente');
+            highlightDocId = facturaId;
+            sessionStorage.setItem('etia_fac_highlight_id', facturaId);
             loadDocs();
         }).catch(function() {
             if (btn) { btn.disabled = false; btn.textContent = '📤 Emitir'; }
@@ -169,6 +264,8 @@
         ApiClient.anularFactura(facturaId, { motivoAnulacion: 'Anulación solicitada por el usuario' })
             .then(function() {
                 if (ETIA.showSuccess) ETIA.showSuccess('Factura ' + serie + ' anulada');
+                highlightDocId = facturaId;
+                sessionStorage.setItem('etia_fac_highlight_id', facturaId);
                 loadDocs();
             }).catch(function() {
                 if (btn) { btn.disabled = false; btn.textContent = '🚫 Anular'; }
@@ -183,6 +280,24 @@
             loadDocs();
         }).catch(function() {
             if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        });
+    }
+
+    function quickValidar(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.validarFactura(facturaId).then(function(result) {
+            if (result && result.data) result = result.data;
+            if (result && result.valid) {
+                if (ETIA.showSuccess) ETIA.showSuccess('✅ Factura validada correctamente — Lista para emitir');
+            } else {
+                var errCount = (result && result.errores) ? result.errores.length : 0;
+                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+            }
+            highlightDocId = facturaId;
+            sessionStorage.setItem('etia_fac_highlight_id', facturaId);
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🔍 Validar'; }
         });
     }
 
@@ -210,17 +325,19 @@
     function quickJson(facturaId) {
         ApiClient.getFactura(facturaId).then(function(doc) {
             if (!doc) return;
-            var serie = (doc.serie || 'F001') + '-' + (doc.numero || facturaId);
             var json = JSON.stringify(doc, null, 2);
-            var blob = new Blob([json], { type: 'application/json' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = serie + '.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            if (ETIA.showSuccess) ETIA.showSuccess('JSON descargado: ' + serie + '.json');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(json).then(function() {
+                    if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles');
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = json; ta.style.cssText = 'position:fixed;left:-9999px;';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles'); }
+                catch(e) { window.open(URL.createObjectURL(new Blob([json], { type: 'application/json' }))); }
+                document.body.removeChild(ta);
+            }
         });
     }
 

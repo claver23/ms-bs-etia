@@ -27,3 +27,8 @@ spring:
           no-cache: true
           no-store: true
 
+# ── ETIA Storage ──
+etia:
+  storage:
+    base-path: ${ETIA_STORAGE_PATH:./etia_storage}
+

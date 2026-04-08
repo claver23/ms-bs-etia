@@ -1,7 +1,11 @@
 package com.etlions.ms_bs_etia.doc_boleta.service.impl;
 
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
+import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
+import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
+import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
 import com.etlions.ms_bs_etia.app_util.validation.SunatValidator;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
 import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
@@ -35,6 +39,7 @@ public class DocBoletaServiceImpl implements DocBoletaService {
     private final ClientRepository clientRepository;
     private final CuotaCreditoRepository cuotaCreditoRepository;
     private final AllowanceChargeRepository allowanceChargeRepository;
+    private final DocumentValidatorService documentValidatorService;
 
     private static final String DEFAULT_SERIE_BOLETA = "B001";
 
@@ -45,7 +50,21 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         String serie = request.getSerie() != null ? request.getSerie().toUpperCase() : DEFAULT_SERIE_BOLETA;
         SunatValidator.validarFormatoSerie(serie);
         SunatValidator.validarSerieBoleta(serie);
-        SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal());
+
+        // — Calcular totalCargos / totalDescuentos desde AllowanceCharge items —
+        BigDecimal sumCargos = BigDecimal.ZERO;
+        BigDecimal sumDescuentos = BigDecimal.ZERO;
+        if (request.getCargosDescuentos() != null) {
+            for (AllowanceChargeItem ac : request.getCargosDescuentos()) {
+                if (Boolean.TRUE.equals(ac.getChargeIndicator())) {
+                    sumCargos = sumCargos.add(ac.getAmount());
+                } else {
+                    sumDescuentos = sumDescuentos.add(ac.getAmount());
+                }
+            }
+        }
+        SunatValidator.validarTotales(request.getGravadas(), request.getIgv(), request.getTotal(),
+                sumCargos, sumDescuentos);
 
         // — Validar tipo de documento del cliente: Boleta → solo DNI, C.E. o Pasaporte —
         if (request.getClientId() != null && !request.getClientId().isBlank()) {
@@ -87,20 +106,9 @@ public class DocBoletaServiceImpl implements DocBoletaService {
             entity.setFechaVencimiento(entity.getFechaEmision());
         }
 
-        // ── Recalculate totalCargos/totalDescuentos from AllowanceCharge items ──
-        if (request.getCargosDescuentos() != null && !request.getCargosDescuentos().isEmpty()) {
-            BigDecimal sumCargos = BigDecimal.ZERO;
-            BigDecimal sumDescuentos = BigDecimal.ZERO;
-            for (AllowanceChargeItem ac : request.getCargosDescuentos()) {
-                if (Boolean.TRUE.equals(ac.getChargeIndicator())) {
-                    sumCargos = sumCargos.add(ac.getAmount());
-                } else {
-                    sumDescuentos = sumDescuentos.add(ac.getAmount());
-                }
-            }
-            entity.setTotalCargos(sumCargos);
-            entity.setTotalDescuentos(sumDescuentos);
-        }
+        // ── Set totalCargos/totalDescuentos (ya calculados arriba) ──
+        entity.setTotalCargos(sumCargos);
+        entity.setTotalDescuentos(sumDescuentos);
 
         entity.setFechaCreacion(LocalDateTime.now());
         BoletaEntity saved = boletaRepository.save(entity);
@@ -113,16 +121,45 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         List<AllowanceChargeEntity> acEntities = persistAllowanceCharges(
                 request.getCargosDescuentos(), null, saved.getId(), saved.getMoneda());
 
+        // ── Evaluar flag "emitir" (default: true) ──
+        // Boleta: se guarda + valida internamente. No se emite directamente.
+        // La emisión real es vía Resumen Diario (REQ-A — fase futura).
+        DocumentValidationResult valResult = documentValidatorService.validarBoleta(
+                saved.getSerie(), saved.getNumero(), saved.getClientId(),
+                saved.getMoneda(), saved.getTipoCambio(),
+                saved.getFormaPago(), saved.getFechaEmision(), saved.getFechaVencimiento(),
+                saved.getTipoOperacion(), saved.getLeyenda(),
+                saved.getGravadas(), saved.getIgv(), saved.getTotal(),
+                saved.getTotalCargos(), saved.getTotalDescuentos(),
+                saved.getDetalleJson());
+
+        if (valResult.valid()) {
+            saved.setEstado("VALIDADO");
+            saved.setErroresValidacion(null);
+        } else {
+            saved.setEstado("CON_ERROR");
+            saved.setErroresValidacion(documentValidatorService.erroresAJson(valResult.errores()));
+        }
+        saved = boletaRepository.save(saved);
+
+        String serieNumero = SunatFormatter.formatNumeroComprobante(serie, numero);
+        String notifMsg = valResult.valid()
+                ? "Boleta " + serieNumero + " guardada — VALIDADO"
+                : "Boleta " + serieNumero + " con errores de validación";
+        notificationService.publicar(saved.getCompanyId(),
+                valResult.valid() ? "VALIDADO" : "CON_ERROR", "BOLETA",
+                saved.getId(), serieNumero, notifMsg);
+
         BoletaData data = boletaMapper.toData(saved);
         enrichBoletaData(data, cuotaEntities, acEntities);
 
-        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "BOLETA",
-                saved.getId(), serie + "-" + numero,
-                "Boleta " + serie + "-" + numero + " emitida");
+        String msg = valResult.valid()
+                ? "Boleta guardada y validada exitosamente — " + serieNumero
+                : "Boleta guardada con errores de validación — " + serieNumero;
         return new BoletaResponseDto()
                 .isSuccess(true)
                 .status("OK")
-                .message("Boleta emitida exitosamente — " + serie + "-" + numero)
+                .message(msg)
                 .timestamp(new Date())
                 .data(data);
     }
@@ -197,6 +234,44 @@ public class DocBoletaServiceImpl implements DocBoletaService {
                 .message("Operación exitosa")
                 .timestamp(new Date())
                 .data(data);
+    }
+
+    // ═══════ VALIDACIÓN INTERNA ═══════
+
+    @Override
+    @Transactional
+    public DocumentValidationResultDto validarBoleta(String boletaId) {
+        BoletaEntity entity = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
+
+        if (!"BORRADOR".equals(entity.getEstado()) && !"VALIDADO".equals(entity.getEstado())
+                && !"CON_ERROR".equals(entity.getEstado())) {
+            throw new SunatValidationException(
+                    "Solo se pueden validar boletas en estado BORRADOR, VALIDADO o CON_ERROR. Estado actual: " + entity.getEstado());
+        }
+
+        DocumentValidationResult result = documentValidatorService.validarBoleta(
+                entity.getSerie(), entity.getNumero(), entity.getClientId(),
+                entity.getMoneda(), entity.getTipoCambio(),
+                entity.getFormaPago(), entity.getFechaEmision(), entity.getFechaVencimiento(),
+                entity.getTipoOperacion(), entity.getLeyenda(),
+                entity.getGravadas(), entity.getIgv(), entity.getTotal(),
+                entity.getTotalCargos(), entity.getTotalDescuentos(),
+                entity.getDetalleJson());
+
+        if (result.valid()) {
+            entity.setEstado("VALIDADO");
+            entity.setErroresValidacion(null);
+        } else {
+            entity.setEstado("CON_ERROR");
+            entity.setErroresValidacion(documentValidatorService.erroresAJson(result.errores()));
+        }
+        boletaRepository.save(entity);
+
+        return new DocumentValidationResultDto()
+                .valid(result.valid())
+                .errores(result.errores())
+                .advertencias(result.advertencias());
     }
 
     // ═══════ HELPERS ═══════

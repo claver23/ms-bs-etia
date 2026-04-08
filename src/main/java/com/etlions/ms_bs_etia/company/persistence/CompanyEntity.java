@@ -70,6 +70,13 @@ public class CompanyEntity {
 
     private String estado;
 
+    @Column(name = "logo_path")
+    private String logoPath;
+
+    @Column(name = "emision_en_envio")
+    @Builder.Default
+    private Boolean emisionEnEnvio = true;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 

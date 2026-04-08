@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Formato de Documentos')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú')}"></header>
+
+<div class="screen">
+    <div class="container" style="max-width:960px;">
+
+        <!-- Page Title -->
+        <div class="menu-title">
+            <h2>📐 Formato de Documentos</h2>
+            <p>Elige cómo se verán tus comprobantes impresos y en PDF</p>
+        </div>
+
+        <!-- Dev Banner -->
+        <div class="fd-dev-banner">
+            <div class="fd-dev-icon">🚧</div>
+            <div class="fd-dev-text">
+                <strong>Funcionalidad en desarrollo</strong>
+                <p>
+                    Por ahora puedes seleccionar el formato <strong>Estándar</strong> como base para tus documentos.
+                    Los formatos Compacto y Detallado estarán disponibles próximamente.
+                </p>
+            </div>
+        </div>
+
+        <!-- Active Format Indicator -->
+        <div class="fd-active-wrap" id="fd-active-wrap">
+            <span class="fd-active-label">Formato activo:</span>
+            <span class="fd-active-value" id="fd-active-value">Estándar</span>
+        </div>
+
+        <!-- ═══ Format Cards Grid ═══ -->
+        <div class="fd-grid">
+
+            <!-- ── STANDARD ── -->
+            <div class="fd-card fd-card-available" id="fd-card-standard" onclick="selectFormat('standard')">
+                <div class="fd-card-header">
+                    <div class="fd-card-radio">
+                        <input type="radio" name="documentFormat" value="standard" id="fd-radio-standard" checked />
+                        <label for="fd-radio-standard"></label>
+                    </div>
+                    <div class="fd-card-title-wrap">
+                        <h3>📄 Estándar</h3>
+                        <span class="fd-card-tag fd-tag-available">✅ Disponible</span>
+                    </div>
+                </div>
+                <p class="fd-card-desc">
+                    Formato clásico peruano de facturación electrónica. Logo + datos de empresa arriba-izquierda,
+                    recuadro tipo de documento arriba-derecha, tabla de ítems, totales, leyenda.
+                </p>
+
+                <!-- Mini Preview -->
+                <div class="fd-preview">
+                    <div class="fd-prev-header">
+                        <div class="fd-prev-logo">🏢</div>
+                        <div class="fd-prev-company">
+                            <div class="fd-prev-bar fd-prev-bar-lg"></div>
+                            <div class="fd-prev-bar fd-prev-bar-sm"></div>
+                            <div class="fd-prev-bar fd-prev-bar-md"></div>
+                        </div>
+                        <div class="fd-prev-docbox">
+                            <div class="fd-prev-bar-accent"></div>
+                            <div class="fd-prev-bar fd-prev-bar-xs"></div>
+                        </div>
+                    </div>
+                    <div class="fd-prev-sep"></div>
+                    <div class="fd-prev-row">
+                        <div class="fd-prev-bar fd-prev-bar-md"></div>
+                        <div class="fd-prev-bar fd-prev-bar-sm"></div>
+                    </div>
+                    <div class="fd-prev-table">
+                        <div class="fd-prev-trow fd-prev-thead">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="fd-prev-totals">
+                        <div class="fd-prev-bar fd-prev-bar-sm" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar fd-prev-bar-sm" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar-accent" style="margin-left:auto;width:40%;"></div>
+                    </div>
+                    <div class="fd-prev-footer">
+                        <div class="fd-prev-bar fd-prev-bar-lg"></div>
+                    </div>
+                </div>
+
+                <div class="fd-card-features">
+                    <span>✓ Logo de empresa</span>
+                    <span>✓ Datos completos del emisor</span>
+                    <span>✓ Tabla de ítems detallada</span>
+                    <span>✓ Desglose de impuestos</span>
+                    <span>✓ Leyenda y QR (futuro)</span>
+                </div>
+            </div>
+
+            <!-- ── COMPACT ── -->
+            <div class="fd-card fd-card-disabled" id="fd-card-compact">
+                <div class="fd-card-header">
+                    <div class="fd-card-radio">
+                        <input type="radio" name="documentFormat" value="compact" id="fd-radio-compact" disabled />
+                        <label for="fd-radio-compact"></label>
+                    </div>
+                    <div class="fd-card-title-wrap">
+                        <h3>📋 Compacto</h3>
+                        <span class="fd-card-tag fd-tag-soon">🚧 Próximamente</span>
+                    </div>
+                </div>
+                <p class="fd-card-desc">
+                    Diseño condensado: logo pequeño, datos en 2 columnas, tabla densa.
+                    Ideal para documentos con muchos ítems que necesitan caber en una sola página.
+                </p>
+
+                <!-- Mini Preview -->
+                <div class="fd-preview fd-preview-muted">
+                    <div class="fd-prev-header" style="gap:0.3rem;">
+                        <div class="fd-prev-logo" style="width:20px;height:20px;font-size:0.6rem;">🏢</div>
+                        <div class="fd-prev-company" style="flex:1;">
+                            <div class="fd-prev-bar fd-prev-bar-md"></div>
+                            <div class="fd-prev-bar fd-prev-bar-xs"></div>
+                        </div>
+                        <div class="fd-prev-docbox" style="padding:0.15rem;">
+                            <div class="fd-prev-bar-accent" style="height:3px;"></div>
+                        </div>
+                    </div>
+                    <div class="fd-prev-table" style="gap:2px;">
+                        <div class="fd-prev-trow fd-prev-thead"><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="fd-prev-totals" style="gap:2px;">
+                        <div class="fd-prev-bar fd-prev-bar-xs" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar-accent" style="margin-left:auto;width:30%;height:3px;"></div>
+                    </div>
+                </div>
+
+                <div class="fd-card-features">
+                    <span>✓ Logo compacto</span>
+                    <span>✓ 2 columnas de datos</span>
+                    <span>✓ Más ítems por página</span>
+                    <span>✓ Ideal para volumen</span>
+                </div>
+            </div>
+
+            <!-- ── DETAILED ── -->
+            <div class="fd-card fd-card-disabled" id="fd-card-detailed">
+                <div class="fd-card-header">
+                    <div class="fd-card-radio">
+                        <input type="radio" name="documentFormat" value="detailed" id="fd-radio-detailed" disabled />
+                        <label for="fd-radio-detailed"></label>
+                    </div>
+                    <div class="fd-card-title-wrap">
+                        <h3>📑 Detallado</h3>
+                        <span class="fd-card-tag fd-tag-soon">🚧 Próximamente</span>
+                    </div>
+                </div>
+                <p class="fd-card-desc">
+                    Diseño premium con más separación, datos del cliente destacados,
+                    secciones con bordes visibles. Ideal para facturas de servicios profesionales y consultorías.
+                </p>
+
+                <!-- Mini Preview -->
+                <div class="fd-preview fd-preview-muted">
+                    <div class="fd-prev-header">
+                        <div class="fd-prev-logo" style="width:36px;height:36px;">🏢</div>
+                        <div class="fd-prev-company">
+                            <div class="fd-prev-bar fd-prev-bar-lg"></div>
+                            <div class="fd-prev-bar fd-prev-bar-md"></div>
+                            <div class="fd-prev-bar fd-prev-bar-sm"></div>
+                            <div class="fd-prev-bar fd-prev-bar-xs"></div>
+                        </div>
+                        <div class="fd-prev-docbox" style="padding:0.4rem;">
+                            <div class="fd-prev-bar-accent"></div>
+                            <div class="fd-prev-bar fd-prev-bar-sm"></div>
+                            <div class="fd-prev-bar fd-prev-bar-xs"></div>
+                        </div>
+                    </div>
+                    <div class="fd-prev-sep" style="margin:0.4rem 0;"></div>
+                    <div class="fd-prev-client-box">
+                        <div class="fd-prev-bar fd-prev-bar-md"></div>
+                        <div class="fd-prev-bar fd-prev-bar-lg"></div>
+                        <div class="fd-prev-bar fd-prev-bar-sm"></div>
+                    </div>
+                    <div class="fd-prev-sep" style="margin:0.4rem 0;"></div>
+                    <div class="fd-prev-table">
+                        <div class="fd-prev-trow fd-prev-thead"><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span></div>
+                        <div class="fd-prev-trow"><span></span><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="fd-prev-sep" style="margin:0.4rem 0;"></div>
+                    <div class="fd-prev-totals" style="gap:0.3rem;">
+                        <div class="fd-prev-bar fd-prev-bar-sm" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar fd-prev-bar-sm" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar fd-prev-bar-sm" style="margin-left:auto;"></div>
+                        <div class="fd-prev-bar-accent" style="margin-left:auto;width:50%;"></div>
+                    </div>
+                    <div class="fd-prev-footer" style="margin-top:0.5rem;">
+                        <div class="fd-prev-bar fd-prev-bar-lg"></div>
+                        <div class="fd-prev-bar fd-prev-bar-md"></div>
+                    </div>
+                </div>
+
+                <div class="fd-card-features">
+                    <span>✓ Logo grande + destacado</span>
+                    <span>✓ Secciones con bordes</span>
+                    <span>✓ Cliente prominente</span>
+                    <span>✓ Más espacio y legibilidad</span>
+                    <span>✓ Look premium</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Info Section -->
+        <div class="fd-info">
+            <div class="fd-info-icon">💡</div>
+            <div class="fd-info-text">
+                <strong>¿Cómo funciona?</strong>
+                <p>
+                    El formato seleccionado se aplicará a todos los PDFs generados desde el sistema:
+                    tanto en la descarga desde "Mis Facturas" como en la vista previa del wizard.
+                    Puedes cambiar el formato en cualquier momento desde esta página o desde
+                    <strong>⚙️ Configuración → Preferencias</strong>.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<!-- ═══ Styles ═══ -->
+<style>
+/* ─── Dev Banner ─── */
+.fd-dev-banner {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    background: rgba(210,153,34,0.06); border: 1px solid rgba(210,153,34,0.2);
+    border-radius: var(--radius); padding: 1rem 1.4rem;
+    margin-bottom: 1.5rem;
+}
+.fd-dev-icon { font-size: 1.4rem; flex-shrink: 0; }
+.fd-dev-text strong { font-size: 0.85rem; color: var(--warning); display: block; margin-bottom: 0.2rem; }
+.fd-dev-text p { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+.fd-dev-text strong + p strong { color: var(--accent); }
+
+/* ─── Active Format ─── */
+.fd-active-wrap {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.82rem;
+}
+.fd-active-label { color: var(--text-secondary); }
+.fd-active-value {
+    font-weight: 700; color: var(--accent);
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+    background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 12px; padding: 0.2rem 0.75rem; font-size: 0.75rem;
+}
+
+/* ─── Grid ─── */
+.fd-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
+    margin-bottom: 2rem;
+}
+@media (max-width: 900px) { .fd-grid { grid-template-columns: 1fr; } }
+
+/* ─── Card ─── */
+.fd-card {
+    background: var(--bg-card); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 1.4rem;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: pointer; position: relative;
+}
+.fd-card-available:hover {
+    border-color: var(--accent-dim); transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 20px var(--accent-glow);
+}
+.fd-card-available.fd-card-selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 4px 20px var(--accent-glow);
+}
+.fd-card-disabled {
+    opacity: 0.5; cursor: not-allowed; border-style: dashed;
+}
+.fd-card-disabled:hover { opacity: 0.65; }
+
+/* Card Header */
+.fd-card-header { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 0.6rem; }
+.fd-card-radio { flex-shrink: 0; margin-top: 0.15rem; }
+.fd-card-radio input[type="radio"] {
+    width: 18px; height: 18px; accent-color: var(--accent);
+    cursor: pointer;
+}
+.fd-card-radio input[type="radio"]:disabled { cursor: not-allowed; }
+.fd-card-title-wrap { flex: 1; }
+.fd-card-title-wrap h3 { font-size: 1rem; font-weight: 700; margin: 0 0 0.2rem; }
+.fd-card-tag {
+    display: inline-block; font-size: 0.6rem; font-weight: 700;
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+    border-radius: 12px; padding: 0.15rem 0.55rem;
+}
+.fd-tag-available { background: rgba(0,255,136,0.08); color: var(--accent); border: 1px solid rgba(0,255,136,0.2); }
+.fd-tag-soon { background: rgba(210,153,34,0.08); color: var(--warning); border: 1px solid rgba(210,153,34,0.2); }
+
+/* Card Description */
+.fd-card-desc { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6; margin: 0 0 0.8rem; }
+
+/* ─── Mini Preview ─── */
+.fd-preview {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+.fd-preview-muted { opacity: 0.6; }
+.fd-prev-header { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem; }
+.fd-prev-logo {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; flex-shrink: 0;
+}
+.fd-prev-company { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.fd-prev-docbox {
+    border: 1px solid var(--accent-dim); border-radius: 3px;
+    padding: 0.25rem; display: flex; flex-direction: column; gap: 3px;
+    align-items: center; min-width: 50px;
+}
+.fd-prev-bar {
+    height: 4px; border-radius: 2px; background: var(--border);
+}
+.fd-prev-bar-lg { width: 80%; }
+.fd-prev-bar-md { width: 60%; }
+.fd-prev-bar-sm { width: 40%; }
+.fd-prev-bar-xs { width: 25%; }
+.fd-prev-bar-accent {
+    height: 5px; border-radius: 2px; width: 70%;
+    background: var(--accent-dim);
+}
+.fd-prev-sep {
+    height: 1px; background: var(--border); margin: 0.3rem 0;
+}
+.fd-prev-row { display: flex; gap: 0.4rem; margin-bottom: 0.3rem; }
+.fd-prev-table { display: flex; flex-direction: column; gap: 3px; margin-bottom: 0.4rem; }
+.fd-prev-trow {
+    display: flex; gap: 3px;
+}
+.fd-prev-trow span {
+    flex: 1; height: 4px; border-radius: 1px;
+    background: var(--border);
+}
+.fd-prev-thead span { background: rgba(0,255,136,0.15); }
+.fd-prev-totals { display: flex; flex-direction: column; gap: 3px; }
+.fd-prev-footer { margin-top: 0.3rem; display: flex; flex-direction: column; gap: 3px; }
+.fd-prev-client-box {
+    border: 1px solid var(--border); border-radius: 3px;
+    padding: 0.3rem; display: flex; flex-direction: column; gap: 3px;
+}
+
+/* Card Features */
+.fd-card-features {
+    display: flex; flex-direction: column; gap: 0.25rem;
+    font-size: 0.72rem; color: var(--text-secondary);
+}
+.fd-card-features span { font-family: var(--font-mono); }
+
+/* ─── Info Section ─── */
+.fd-info {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+}
+.fd-info-icon { font-size: 1.4rem; flex-shrink: 0; }
+.fd-info-text strong { font-size: 0.85rem; display: block; margin-bottom: 0.3rem; }
+.fd-info-text p { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+.fd-info-text strong + p strong { color: var(--accent); font-weight: 600; }
+</style>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var FORMAT_LABELS = {
+        'standard': 'Estándar',
+        'compact': 'Compacto',
+        'detailed': 'Detallado'
+    };
+
+    function selectFormat(format) {
+        /* Only standard is available for now */
+        if (format !== 'standard') return;
+
+        /* Update radio */
+        var radio = document.getElementById('fd-radio-' + format);
+        if (radio) radio.checked = true;
+
+        /* Update card selection visual */
+        document.querySelectorAll('.fd-card').forEach(function(c) {
+            c.classList.remove('fd-card-selected');
+        });
+        var card = document.getElementById('fd-card-' + format);
+        if (card) card.classList.add('fd-card-selected');
+
+        /* Update active indicator */
+        var val = document.getElementById('fd-active-value');
+        if (val) val.textContent = FORMAT_LABELS[format] || format;
+
+        /* Save to config */
+        ETIA.saveConfig('documentFormat', format);
+
+        /* Toast */
+        if (typeof showConfigToast === 'function') {
+            showConfigToast('✅ Formato "' + (FORMAT_LABELS[format] || format) + '" seleccionado');
+        }
+    }
+
+    /* On load: restore saved format */
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            var saved = ETIA.config.documentFormat || 'standard';
+
+            /* Select the saved card */
+            var radio = document.getElementById('fd-radio-' + saved);
+            if (radio && !radio.disabled) {
+                radio.checked = true;
+                var card = document.getElementById('fd-card-' + saved);
+                if (card) card.classList.add('fd-card-selected');
+                var val = document.getElementById('fd-active-value');
+                if (val) val.textContent = FORMAT_LABELS[saved] || saved;
+            } else {
+                /* Fallback to standard if saved format is not yet available */
+                selectFormat('standard');
+            }
+        });
+    });
+</script>
+</body>
+</html>
+

@@ -18,6 +18,15 @@
             </div>
         </div>
 
+        <!-- Search / Filter bar -->
+        <div class="doc-search-bar">
+            <input class="doc-search-input" id="bol-search"
+                   placeholder="🔍 Buscar y presionar Enter para agregar filtro..."
+                   onkeydown="onSearchKeydown(event)" autocomplete="off"/>
+        </div>
+        <!-- Filter chips -->
+        <div class="filter-chips-bar" id="bol-chips"></div>
+
         <div class="panel active">
             <div id="doc-content">
                 <p class="pm-empty">⏳ Cargando boletas...</p>
@@ -37,43 +46,231 @@
 <script th:src="@{/js/error-handler.js}"></script>
 <script th:src="@{/js/navigation.js}"></script>
 <script th:src="@{/js/config-overlay.js}"></script>
+<script th:src="@{/js/pdf-template.js}"></script>
 <script th:src="@{/js/doc-preview.js}"></script>
 <script>
     var allDocs = [], currentPage = 0, PAGE_SIZE = 10;
+    var filterChips = [];
+    var highlightDocId = null;
+
     document.addEventListener('DOMContentLoaded', function() {
+        try { filterChips = JSON.parse(sessionStorage.getItem('etia_bol_chips') || '[]'); } catch(e) { filterChips = []; }
+        renderChips();
+        highlightDocId = sessionStorage.getItem('etia_bol_highlight_id') || null;
+        sessionStorage.removeItem('etia_bol_highlight_id');
         ETIA.init().then(function() { loadDocs(); });
     });
+
+    /* ─── Chip management ─── */
+    function onSearchKeydown(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var input = document.getElementById('bol-search');
+        var val = (input.value || '').trim();
+        if (!val) return;
+        if (filterChips.indexOf(val) === -1) {
+            filterChips.push(val);
+            _persistChips();
+            renderChips();
+        }
+        input.value = '';
+        currentPage = 0;
+        renderPage();
+    }
+
+    function removeChip(idx) {
+        filterChips.splice(idx, 1);
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function clearAllChips() {
+        filterChips = [];
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function _persistChips() {
+        sessionStorage.setItem('etia_bol_chips', JSON.stringify(filterChips));
+    }
+
+    function renderChips() {
+        var container = document.getElementById('bol-chips');
+        if (!container) return;
+        if (filterChips.length === 0) { container.innerHTML = ''; return; }
+        var html = '';
+        filterChips.forEach(function(chip, idx) {
+            html += '<span class="filter-chip">' + chip +
+                '<button class="filter-chip-x" onclick="removeChip(' + idx + ')" title="Quitar filtro">✕</button></span>';
+        });
+        html += '<button class="filter-clear-all" onclick="clearAllChips()">Limpiar todo</button>';
+        container.innerHTML = html;
+    }
+
+    function getFilteredDocs() {
+        if (filterChips.length === 0) return allDocs;
+        var terms = filterChips.map(function(c) { return c.toLowerCase(); });
+        return allDocs.filter(function(d) {
+            var sn = ETIA.formatNumero(d.serie, d.numero).toLowerCase();
+            var estado = (d.estado || '').toLowerCase();
+            var cliente = (d.clientDenom || '').toLowerCase();
+            var haystack = sn + ' ' + estado + ' ' + cliente;
+            return terms.some(function(term) { return haystack.indexOf(term) !== -1; });
+        });
+    }
+
     function renderItemDetail(detalle) {
         if (!detalle || detalle.length === 0) return '';
         var html = '<div class="doc-item-detail">';
-        detalle.forEach(function(it) { html += '<div class="doc-item-chip"><span class="dic-desc">' + (it.descripcion||'—') + '</span><span class="dic-meta">×' + (it.cantidad||1) + '</span><span class="dic-amount">S/ ' + parseFloat(it.subtotal||0).toFixed(2) + '</span></div>'; });
+        detalle.forEach(function(it) {
+            html += '<div class="doc-item-chip"><span class="dic-desc">' + (it.descripcion||'—') + '</span><span class="dic-meta">×' + (it.cantidad||1) + '</span><span class="dic-amount">S/ ' + parseFloat(it.subtotal||0).toFixed(2) + '</span></div>';
+        });
         return html + '</div>';
     }
+
     function loadDocs() {
-        ApiClient.listarBoletas(ETIA.companyId).then(function(docs) { allDocs = docs||[]; currentPage = 0; renderPage(); })
-        .catch(function() { document.getElementById('doc-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando boletas</p>'; });
+        ApiClient.listarBoletas(ETIA.companyId).then(function(docs) {
+            allDocs = docs || [];
+            currentPage = 0;
+            renderPage();
+        }).catch(function() {
+            document.getElementById('doc-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando boletas</p>';
+        });
     }
+
     function renderPage() {
-        var total = allDocs.length, totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        var filteredDocs = getFilteredDocs();
+        var total = filteredDocs.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
         if (currentPage >= totalPages) currentPage = totalPages - 1;
-        var start = currentPage * PAGE_SIZE, pageItems = allDocs.slice(start, start + PAGE_SIZE);
-        if (total === 0) { document.getElementById('doc-content').innerHTML = '<p class="pm-empty">📭 No hay boletas emitidas aún</p>'; document.getElementById('doc-pag').style.display = 'none'; return; }
+        var start = currentPage * PAGE_SIZE;
+        var pageItems = filteredDocs.slice(start, start + PAGE_SIZE);
+        if (total === 0) {
+            document.getElementById('doc-content').innerHTML = filterChips.length > 0
+                ? '<p class="pm-empty">🔍 Sin resultados para los filtros activos</p>'
+                : '<p class="pm-empty">📭 No hay boletas emitidas aún</p>';
+            document.getElementById('doc-pag').style.display = 'none';
+            return;
+        }
         var html = '<div class="doc-list-cards">';
         pageItems.forEach(function(d) {
-            var estado = d.estado||'—', badgeCls = estado === 'BORRADOR' ? 'badge-gray' : estado === 'ANULADA' ? 'badge-red' : 'badge-green';
+            var estado = d.estado || '—';
+            var badgeMap = { 'BORRADOR': 'badge-gray', 'VALIDADO': 'badge-blue', 'CON_ERROR': 'badge-red', 'ENVIADA': 'badge-blue', 'ACEPTADA': 'badge-green', 'RECHAZADA': 'badge-red', 'ANULADA': 'badge-yellow' };
+            var badgeCls = badgeMap[estado] || 'badge-gray';
+            var estadoLabel = estado === 'CON_ERROR' ? '⚠ CON ERROR' : estado === 'VALIDADO' ? '✅ VALIDADO' : estado;
             var monSym = (d.moneda === 'USD') ? 'US$ ' : 'S/ ';
-            html += '<div class="doc-list-item" onclick="openDocPreview(\'boleta\',\'' + d.id + '\')" style="cursor:pointer;"><div class="dli-header"><div class="dli-left"><strong class="dli-serie">' + (d.serie||'') + '-' + (d.numero||'') + '</strong><span class="badge ' + badgeCls + '">' + estado + '</span></div><div class="dli-right"><span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span><span class="dli-date">' + ETIA.formatDate(d.fechaEmision||d.fechaCreacion) + '</span></div></div>' + renderItemDetail(d.detalle) + '</div>';
+            var serieNumero = ETIA.formatNumero(d.serie, d.numero);
+
+            /* ─── State-driven inline actions ─── */
+            var actions = '';
+            var exports = '<button class="dli-action dli-action-json" onclick="event.stopPropagation();quickJson(\'' + d.id + '\');">📋 JSON</button>';
+
+            switch (estado) {
+                case 'BORRADOR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Validar</button>';
+                    break;
+                case 'VALIDADO':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>';
+                    break;
+                case 'CON_ERROR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=BOLETA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Corregir</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Re-validar</button>';
+                    break;
+                case 'ACEPTADA':
+                case 'RECHAZADA':
+                case 'ANULADA':
+                    /* read-only */
+                    break;
+            }
+
+            html += '<div class="doc-list-item' + (highlightDocId === d.id ? ' dli-highlight' : '') + '" id="dli-' + d.id + '" onclick="openDocPreview(\'boleta\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
+                '<div class="dli-header">' +
+                    '<div class="dli-left">' +
+                        '<strong class="dli-serie">' + serieNumero + '</strong>' +
+                        '<span class="badge ' + badgeCls + '">' + estadoLabel + '</span>' +
+                    '</div>' +
+                    '<div class="dli-right">' +
+                        '<span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span>' +
+                        '<span class="dli-date">' + ETIA.formatDate(d.fechaEmision||d.fechaCreacion) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                renderItemDetail(d.detalle) +
+                '<div class="dli-actions">' +
+                    '<div class="dli-actions-export">' + exports + '</div>' +
+                    (actions ? '<div class="dli-actions-workflow">' + actions + '</div>' : '') +
+                '</div>' +
+            '</div>';
         });
-        document.getElementById('doc-content').innerHTML = html + '</div>';
-        var bar = document.getElementById('doc-pag'); bar.style.display = 'flex';
-        var s = start + 1, e = Math.min(start + PAGE_SIZE, total);
-        var ph = '<div class="pag-info"><span class="badge badge-green">' + total + ' boleta' + (total !== 1 ? 's' : '') + '</span> Mostrando ' + s + '–' + e + '</div><div class="pag-controls">';
-        ph += '<button class="pag-btn" onclick="goToPage(' + (currentPage-1) + ')" ' + (currentPage===0?'disabled':'') + '>‹</button>';
-        for (var i=0;i<totalPages;i++) { if (totalPages>7&&Math.abs(i-currentPage)>2&&i!==0&&i!==totalPages-1){if(i===1||i===totalPages-2)ph+='<span class="pag-btn" style="border:none;cursor:default;">…</span>';continue;} ph+='<button class="pag-btn'+(i===currentPage?' pag-active':'')+'" onclick="goToPage('+i+')">'+(i+1)+'</button>'; }
-        ph += '<button class="pag-btn" onclick="goToPage(' + (currentPage+1) + ')" ' + (currentPage>=totalPages-1?'disabled':'') + '>›</button></div>';
-        bar.innerHTML = ph;
+        html += '</div>';
+        document.getElementById('doc-content').innerHTML = html;
+        renderPagination(total, totalPages);
+        if (highlightDocId) {
+            var hlEl = document.getElementById('dli-' + highlightDocId);
+            if (hlEl) { setTimeout(function() { hlEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
+            highlightDocId = null;
+        }
     }
+
     function goToPage(p) { currentPage = p; renderPage(); }
+
+    /* ─── Quick actions ─── */
+    function quickValidar(boletaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.validarBoleta(boletaId).then(function(result) {
+            if (result && result.data) result = result.data;
+            if (result && result.valid) {
+                if (ETIA.showSuccess) ETIA.showSuccess('✅ Boleta validada correctamente');
+            } else {
+                var errCount = (result && result.errores) ? result.errores.length : 0;
+                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+            }
+            highlightDocId = boletaId;
+            sessionStorage.setItem('etia_bol_highlight_id', boletaId);
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🔍 Validar'; }
+        });
+    }
+
+    function quickJson(boletaId) {
+        ApiClient.getBoleta(boletaId).then(function(doc) {
+            if (!doc) return;
+            var json = JSON.stringify(doc, null, 2);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(json).then(function() {
+                    if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles');
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = json; ta.style.cssText = 'position:fixed;left:-9999px;';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles'); }
+                catch(e) { window.open(URL.createObjectURL(new Blob([json], { type: 'application/json' }))); }
+                document.body.removeChild(ta);
+            }
+        });
+    }
+
+    function renderPagination(total, totalPages) {
+        var bar = document.getElementById('doc-pag');
+        bar.style.display = 'flex';
+        var s = currentPage * PAGE_SIZE + 1, e = Math.min((currentPage + 1) * PAGE_SIZE, total);
+        var html = '<div class="pag-info"><span class="badge badge-green">' + total + ' boleta' + (total !== 1 ? 's' : '') + '</span> Mostrando ' + s + '–' + e + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) { if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>'; continue; }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
 </script>
 </body>
 </html>

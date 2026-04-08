@@ -32,6 +32,11 @@
                     <span class="cfg-label">Tipo de Cambio</span>
                     <span class="cfg-arrow">›</span>
                 </div>
+                <div class="cfg-sidebar-item" data-tab="credenciales" onclick="switchConfigTab('credenciales')">
+                    <span class="cfg-icon">🔐</span>
+                    <span class="cfg-label">Credenciales SUNAT</span>
+                    <span class="cfg-arrow">›</span>
+                </div>
             </nav>
 
             <!-- ─── Content ─── -->
@@ -44,13 +49,23 @@
                 <!-- ══ PANEL: Empresa ══ -->
                 <div class="cfg-panel active" id="cfg-panel-empresa">
                     <div class="cfg-company-card">
-                        <div class="cfg-co-icon">🏢</div>
+                        <!-- Logo preview (click to upload) -->
+                        <div id="cfg-co-logo-wrap" style="position:relative;width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;border:2px dashed var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);transition:all 0.2s;"
+                             onclick="document.getElementById('cfg-logo-file-input').click()"
+                             title="Subir logo de empresa">
+                            <img id="cfg-co-logo-img" style="width:100%;height:100%;object-fit:contain;display:none;" alt="Logo"/>
+                            <span id="cfg-co-logo-placeholder" style="font-size:1.8rem;">🏢</span>
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:0.55rem;text-align:center;padding:1px 0;">📷 Logo</div>
+                            <input type="file" id="cfg-logo-file-input" accept=".png,.jpg,.jpeg" style="display:none;" onchange="handleLogoFileSelect(this)"/>
+                        </div>
                         <div class="cfg-co-info">
                             <h4 id="cfg-co-razon">Cargando...</h4>
                             <span id="cfg-co-ruc">RUC: ---</span>
                         </div>
                         <span class="cfg-co-badge">🟢 Activa</span>
                     </div>
+                    <!-- Logo upload result -->
+                    <div id="cfg-logo-upload-result" style="display:none;font-size:0.78rem;padding:0.4rem 0.8rem;border-radius:var(--radius-sm);margin-bottom:0.5rem;"></div>
                     <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-top:0.5rem;">
                         <div class="cfg-row">
                             <div class="cfg-field">
@@ -71,12 +86,25 @@
                             <span class="cfg-field-label">Dirección Fiscal</span>
                             <input id="cfg-co-direccion" readonly style="opacity:0.7;cursor:not-allowed;"/>
                         </div>
+                        <div class="cfg-row" style="margin-top:0.8rem;">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">📧 Email de Contacto</span>
+                                <input type="email" id="cfg-co-email" placeholder="facturacion@empresa.com"/>
+                                <p class="cfg-field-hint">Correo para notificaciones de facturación</p>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">📱 Teléfono</span>
+                                <input type="tel" id="cfg-co-telefono" placeholder="+51 999 888 777"/>
+                                <p class="cfg-field-hint">Teléfono de contacto de la empresa</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="warn-banner" style="margin-top:1rem;max-width:100%;">
                         ⚠️ Cambiar de empresa implica cerrar sesión y reiniciar el flujo completo.
                     </div>
                     <div class="cfg-save-bar">
                         <a th:href="@{/}" class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);">🔓 Cambiar Empresa</a>
+                        <button class="btn btn-accent" onclick="saveCompanyContact()">💾 Guardar Contacto</button>
                     </div>
                 </div>
 
@@ -112,6 +140,60 @@
                                 <span class="cfg-th-icon">☀️</span>
                                 <span class="cfg-th-label">Claro</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Emisión en Envío toggle -->
+                    <div class="cfg-field" style="margin-top:1.2rem;">
+                        <span class="cfg-field-label">📤 Emisión en Envío</span>
+                        <div style="display:flex;align-items:center;gap:0.8rem;margin-top:0.4rem;">
+                            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;user-select:none;">
+                                <input type="checkbox" id="cfg-emision-envio" style="width:1.1rem;height:1.1rem;accent-color:var(--accent);cursor:pointer;"/>
+                                <span style="font-size:0.88rem;font-weight:600;" id="cfg-emision-envio-label">Activado</span>
+                            </label>
+                        </div>
+                        <p class="cfg-field-hint" id="cfg-emision-envio-hint">
+                            Al crear un documento, se generará el XML UBL 2.1 automáticamente y se notificará la emisión.
+                        </p>
+                        <div id="cfg-emision-envio-warn" class="warn-banner" style="display:none;margin-top:0.5rem;max-width:100%;font-size:0.78rem;">
+                            ⚠️ <strong>Desactivado:</strong> Los documentos se guardarán como <span class="badge badge-gray" style="font-size:0.7rem;">BORRADOR</span> y deberás emitirlos manualmente desde la lista.
+                        </div>
+                    </div>
+
+                    <!-- Cuotas de Crédito settings -->
+                    <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.2rem;">
+                        <span class="cfg-field-label" style="font-size:0.92rem;display:block;margin-bottom:0.8rem;">💳 Cuotas de Crédito</span>
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Nro. cuotas por defecto</span>
+                                <input type="number" id="cfg-default-cuotas" min="1" max="36" value="1" style="width:80px;"/>
+                                <p class="cfg-field-hint">Al seleccionar CRÉDITO, se generan automáticamente este número de cuotas</p>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Distribución de fechas</span>
+                                <select id="cfg-cuota-distribucion">
+                                    <option value="FIJA_30D">Intervalos fijos de 30 días</option>
+                                    <option value="PROPORCIONAL">Proporcional al plazo (emisión → vencimiento)</option>
+                                </select>
+                                <p class="cfg-field-hint">Cómo se calculan las fechas de vencimiento de cada cuota</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formato de Documentos -->
+                    <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.2rem;">
+                        <span class="cfg-field-label" style="font-size:0.92rem;display:block;margin-bottom:0.8rem;">📐 Formato de Documentos</span>
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Formato de comprobante</span>
+                            <select id="cfg-document-format">
+                                <option value="standard">📄 Estándar — Formato clásico peruano</option>
+                                <option value="compact" disabled>📋 Compacto — Próximamente</option>
+                                <option value="detailed" disabled>📑 Detallado — Próximamente</option>
+                            </select>
+                            <p class="cfg-field-hint">
+                                Formato de tus comprobantes impresos y PDFs.
+                                <a th:href="@{/formato-documentos}" style="color:var(--accent);text-decoration:none;font-weight:600;">Ver formatos disponibles →</a>
+                            </p>
                         </div>
                     </div>
 
@@ -253,6 +335,101 @@
                     <div class="cfg-save-bar">
                         <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
                         <button class="btn btn-accent" onclick="saveConfig()">💾 Guardar</button>
+                    </div>
+                </div>
+
+                <!-- ══ PANEL: Credenciales SUNAT ══ -->
+                <div class="cfg-panel" id="cfg-panel-credenciales">
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem;">
+                        Configura tus credenciales SOL y certificado digital para conectar con SUNAT.
+                        Estos datos se almacenan de forma segura en el servidor.
+                    </p>
+
+                    <!-- Status indicators -->
+                    <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                        <div id="cfg-cred-status-sol" style="flex:1;min-width:180px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.8rem 1rem;">
+                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.3rem;">👤 Usuario SOL</div>
+                            <div style="font-weight:600;font-size:0.88rem;" id="cfg-cred-sol-indicator">❌ No configurado</div>
+                        </div>
+                        <div id="cfg-cred-status-cert" style="flex:1;min-width:180px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.8rem 1rem;">
+                            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.3rem;">📜 Certificado Digital</div>
+                            <div style="font-weight:600;font-size:0.88rem;" id="cfg-cred-cert-indicator">❌ No configurado</div>
+                        </div>
+                    </div>
+
+                    <!-- SOL credentials -->
+                    <div style="border-top:1px solid var(--border);padding-top:1.2rem;">
+                        <span class="cfg-field-label" style="font-size:0.92rem;display:block;margin-bottom:0.8rem;">👤 Credenciales SOL (SUNAT Operaciones en Línea)</span>
+                        <div class="cfg-row">
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Usuario SOL</span>
+                                <input id="cfg-cred-usuario-sol" placeholder="Ej: MIEMPRESA" autocomplete="off"/>
+                                <p class="cfg-field-hint">Usuario asignado por SUNAT para operaciones en línea</p>
+                            </div>
+                            <div class="cfg-field">
+                                <span class="cfg-field-label">Clave SOL</span>
+                                <input type="password" id="cfg-cred-clave-sol" placeholder="••••••••" autocomplete="new-password"/>
+                                <p class="cfg-field-hint">Clave SOL — se almacena de forma segura</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certificate -->
+                    <div style="border-top:1px solid var(--border);padding-top:1.2rem;margin-top:1rem;">
+                        <span class="cfg-field-label" style="font-size:0.92rem;display:block;margin-bottom:0.8rem;">📜 Certificado Digital (.p12 / .pfx)</span>
+
+                        <!-- Upload zone -->
+                        <div id="cfg-cert-dropzone"
+                             style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:0.8rem;"
+                             onclick="document.getElementById('cfg-cert-file-input').click()"
+                             ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(0,255,136,0.04)';"
+                             ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent';"
+                             ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='transparent';handleCertFileDrop(event);">
+                            <div id="cfg-cert-upload-icon" style="font-size:2rem;margin-bottom:0.4rem;">📜</div>
+                            <div id="cfg-cert-upload-text" style="font-size:0.82rem;color:var(--text-secondary);">
+                                Arrastra tu archivo .p12/.pfx aquí<br/>
+                                <span style="color:var(--accent);font-weight:600;">o haz clic para seleccionar</span>
+                            </div>
+                            <div id="cfg-cert-upload-filename" style="display:none;font-size:0.82rem;color:var(--accent);font-weight:600;margin-top:0.3rem;"></div>
+                            <input type="file" id="cfg-cert-file-input" accept=".p12,.pfx" style="display:none;" onchange="handleCertFileSelect(this)"/>
+                        </div>
+
+                        <!-- Upload button (shown after file selected) -->
+                        <div id="cfg-cert-upload-bar" style="display:none;margin-bottom:0.8rem;">
+                            <button class="btn btn-accent" id="cfg-cert-upload-btn" onclick="uploadCertificado()" style="width:100%;">
+                                📤 Subir Certificado
+                            </button>
+                            <div id="cfg-cert-upload-progress" style="display:none;margin-top:0.4rem;">
+                                <div style="background:var(--border);border-radius:4px;height:4px;overflow:hidden;">
+                                    <div id="cfg-cert-upload-progress-bar" style="width:0%;height:100%;background:var(--accent);transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cfg-field">
+                            <span class="cfg-field-label">Contraseña del Certificado</span>
+                            <input type="password" id="cfg-cred-cert-password" placeholder="Contraseña del archivo .p12" autocomplete="new-password"/>
+                            <p class="cfg-field-hint">Contraseña del certificado digital X.509 para firma electrónica</p>
+                        </div>
+
+                        <div id="cfg-cert-upload-result" style="display:none;margin-top:0.8rem;font-size:0.82rem;padding:0.6rem 1rem;border-radius:var(--radius-sm);"></div>
+                    </div>
+
+                    <!-- Test connection -->
+                    <div style="border-top:1px solid var(--border);padding-top:1.2rem;margin-top:1rem;">
+                        <span class="cfg-field-label" style="font-size:0.92rem;display:block;margin-bottom:0.8rem;">🔗 Prueba de Conexión</span>
+                        <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.8rem;">
+                            Verifica que tus credenciales SOL son válidas conectándote al web service beta de SUNAT.
+                        </p>
+                        <button class="btn btn-ghost" id="cfg-cred-test-btn" onclick="testSunatConnection()" style="border-color:var(--info);color:var(--info);">
+                            🔗 Probar Conexión SUNAT
+                        </button>
+                        <div id="cfg-cred-test-result" style="display:none;margin-top:0.8rem;font-size:0.82rem;padding:0.6rem 1rem;border-radius:var(--radius-sm);"></div>
+                    </div>
+
+                    <div class="cfg-save-bar">
+                        <button class="btn btn-ghost" onclick="closeConfigOverlay()">Cancelar</button>
+                        <button class="btn btn-accent" onclick="saveCredentials()">💾 Guardar Credenciales</button>
                     </div>
                 </div>
 

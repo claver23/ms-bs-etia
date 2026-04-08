@@ -6,21 +6,18 @@ var _allClients = null; /* Cache */
 function cmShowTab(tab) {
     var searchPanel = document.getElementById('cm-panel-search');
     var registerPanel = document.getElementById('cm-panel-register');
-    var footerSearch = document.getElementById('cm-footer-search');
     var tabSearch = document.getElementById('cm-tab-search');
     var tabRegister = document.getElementById('cm-tab-register');
     if (tab === 'register') {
-        searchPanel.style.display = 'none';
-        registerPanel.style.display = 'block';
-        footerSearch.style.display = 'none';
-        tabSearch.className = 'btn btn-ghost';
-        tabRegister.className = 'btn btn-accent';
+        if (searchPanel) searchPanel.style.display = 'none';
+        if (registerPanel) registerPanel.style.display = 'block';
+        if (tabSearch) tabSearch.className = 'btn btn-ghost';
+        if (tabRegister) tabRegister.className = 'btn btn-accent';
     } else {
-        searchPanel.style.display = 'block';
-        registerPanel.style.display = 'none';
-        footerSearch.style.display = '';
-        tabSearch.className = 'btn btn-accent';
-        tabRegister.className = 'btn btn-ghost';
+        if (searchPanel) searchPanel.style.display = 'block';
+        if (registerPanel) registerPanel.style.display = 'none';
+        if (tabSearch) tabSearch.className = 'btn btn-accent';
+        if (tabRegister) tabRegister.className = 'btn btn-ghost';
     }
 }
 

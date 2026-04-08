@@ -7,17 +7,19 @@
   <img src="https://img.shields.io/badge/Thymeleaf-Multi%20Page%20App-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white" />
   <img src="https://img.shields.io/badge/Leaflet-Map%20Integration-199900?style=for-the-badge&logo=leaflet&logoColor=white" />
   <img src="https://img.shields.io/badge/H2%20|%20PostgreSQL-Ready-336791?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/UBL%202.1-XML%20SUNAT-E74C3C?style=for-the-badge" />
 </p>
 
 <h1 align="center">🧾 ETIA — Facturación Electrónica Perú</h1>
 
 <p align="center">
   <b>Microservicio backend + frontend integrado para emisión de comprobantes electrónicos conforme a SUNAT</b><br/>
-  <sub>Facturas · Boletas · Notas de Crédito · Notas de Débito · Productos · Clientes · Empleados · Sedes · Series · Tipo de Cambio · Libros Electrónicos · Notificaciones en Tiempo Real · Consulta RENIEC/SUNAT</sub>
+  <sub>Facturas · Boletas · Notas de Crédito · Notas de Débito · XML UBL 2.1 · Productos · Clientes · Empleados · Sedes · Series · Tipo de Cambio · Libros Electrónicos · Notificaciones en Tiempo Real · Consulta RENIEC/SUNAT</sub>
 </p>
 
 <p align="center">
-  <a href="#-novedades-abril-2026">Novedades</a> •
+  <a href="#-novedades-abril-2026--fase-2-en-progreso-">FASE 2</a> •
+  <a href="#-novedades-abril-2026--fase-1-completada-">FASE 1</a> •
   <a href="#-arquitectura">Arquitectura</a> •
   <a href="#-dominios">Dominios</a> •
   <a href="#-api-endpoints">API</a> •
@@ -30,9 +32,72 @@
 
 ---
 
-## ✨ Novedades (Abril 2026) — FASE 1 COMPLETADA ✅
+## 🔥 Novedades (Abril 2026) — FASE 2 EN PROGRESO 🚧
 
-> **FASE 1 finalizada oficialmente.** El proyecto pasó de un scaffold básico a una **aplicación de facturación electrónica completa conforme a SUNAT** con arquitectura hexagonal homologada en los 18 dominios.
+> **FASE 2: XML UBL 2.1 SUNAT al ~90%.** Generador XML completo con 36 tests, endpoint de descarga OpenAPI-first, modelo de datos enriquecido con 12 catálogos SUNAT, wizard 5 pasos con edit mode, flujo Borrador/Emisión, 184 tests pasando.
+
+### 🧾 Generador XML UBL 2.1 — `UblInvoiceXmlBuilder`
+
+| Feature | Detalle |
+|---------|---------|
+| **XML UBL 2.1 completo** | Genera `Invoice` conforme al estándar OASIS UBL 2.1 adaptado por SUNAT con todos los namespaces (`cac:`, `cbc:`, `ext:`, `sac:`) |
+| **12 Catálogos SUNAT** | Cat. 01 (Tipo Doc), 02 (Moneda), 03 (UM), 04 (País), 05 (Tributo), 06 (Doc Identidad), 07 (Afectación IGV), 13 (Ubigeo), 16 (Tipo Precio), 51 (Tipo Operación), 52 (Leyendas), 53 (Cargos/Desc.) |
+| **Secciones XML** | `AccountingSupplierParty`, `AccountingCustomerParty`, `PaymentTerms`, `AllowanceCharge`, `TaxTotal`, `LegalMonetaryTotal`, `InvoiceLine` |
+| **Endpoint descarga** | `GET /factura/{facturaId}/xml` — OpenAPI-first (spec → codegen → service → controller) |
+| **Inmutabilidad** | XML descargado = XML generado al emitir. Sin regeneración on-the-fly. Si no existe → HTTP 204. |
+| **36 tests unitarios** | Cobertura de todas las secciones del XML, namespaces, atributos `schemeID`, y edge cases |
+
+### 📝 Modelo de Datos UBL 2.1 — Enriquecimiento
+
+| Entidad | Campos nuevos |
+|---------|---------------|
+| **FacturaEntity** | +9: `tipoOperacion`, `horaEmision`, `exoneradas`, `inafectas`, `gratuitas`, `totalCargos`, `totalDescuentos`, `subtotal`, `totalConImpuestos` |
+| **BoletaEntity** | +9: (simétrico a FacturaEntity) |
+| **ClientEntity** | +4: `departamento`, `provincia`, `distrito`, `codigoPais` |
+| **DetalleItem** | +6: `tipoAfectacionIgv`, `codigoTributo`, `tipoPrecio`, `porcentajeIgv`, `baseImponible`, `montoImpuesto` |
+| **CuotaCreditoEntity** | 🆕 Cuotas de crédito con monto, fecha vencimiento, moneda |
+| **AllowanceChargeEntity** | 🆕 Cargos/Descuentos globales Cat. 53 (código, factor, base, monto) |
+
+### 🧙 Wizard 5 Steps + Edit Mode
+
+| Feature | Detalle |
+|---------|---------|
+| **5 pasos** | 📄 Documento → 🏢 Emisor → 👤 Cliente → 📦 Detalle → 🚀 Emitir |
+| **Serie como dropdown** | Se carga desde `ETIA.activeSede.series[]` filtrado por tipo de doc |
+| **Número con padding** | Formato SUNAT: `F001-00000001` (8 dígitos) |
+| **Dropdown afectación** | Gravado(10) / Exonerado(20) / Inafecto(30) por línea |
+| **Tipo operación** | Dropdown Cat. 51: 0101, 0200, 0401 |
+| **Edit mode** | URL `/wizard?type=FACTURA&id=<facturaId>` — carga borrador completo para edición |
+| **Banner edición** | "✏️ Editando F001-00000001" con serie/fecha readonly |
+| **Review con tabla** | Step 5 muestra tabla completa de ítems + totales desglosados |
+
+### 📤 Emisión en Envío + Borrador
+
+| Feature | Detalle |
+|---------|---------|
+| **Toggle por empresa** | `emisionEnEnvio` en `CompanyEntity` — controla comportamiento por defecto |
+| **Activado (default)** | Crear factura → genera XML automáticamente → estado EMITIDA |
+| **Desactivado** | Factura se guarda como BORRADOR → emitir manualmente |
+| **Ambos botones** | 🚀 "Emitir" y 💾 "Guardar Borrador" siempre disponibles |
+| **Warning banner** | Si desactivado: "Emisión en Envío desactivada" con link a config |
+| **Quick Emit** | Botón 📤 en lista de facturas → `PUT /factura/{id}/emitir` |
+| **Re-emisión** | RECHAZADA → ENVIADA directamente (sin pasar por BORRADOR) |
+
+### 📊 Preview y PDF mejorados
+
+| Feature | Detalle |
+|---------|---------|
+| **Cargos/Descuentos en PDF** | Tabla con tipo, código Cat.53, descripción, factor, base, monto |
+| **Cuotas en PDF** | Tabla con # cuota, monto, fecha vencimiento, moneda |
+| **Totales desglosados** | Filas "+ Cargos" y "− Descuentos" en resumen antes del TOTAL |
+| **Editar desde preview** | Links de edición para BORRADOR y RECHAZADA desde lista |
+| **Números formateados** | `ETIA.formatNumero()` con padding 8 dígitos en toda la app |
+
+---
+
+## ✅ Novedades (Abril 2026) — FASE 1 COMPLETADA ✅
+
+> **FASE 1 finalizada oficialmente.** El proyecto pasó de un scaffold básico a una **aplicación de facturación electrónica completa conforme a SUNAT** con arquitectura hexagonal homologada en los 20 dominios.
 
 ### ⚡ Performance — Cache inteligente con sessionStorage
 
@@ -114,24 +179,26 @@
 
 ## 📐 Arquitectura
 
-El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada uno de los **18 dominios** es autónomo con sus propias capas. El contrato OpenAPI genera las interfaces y DTOs, y la aplicación los implementa en capas limpias. El frontend es una **Multi-Page App (MPA)** con Thymeleaf + Vanilla JS modular.
+El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada uno de los **20 dominios** es autónomo con sus propias capas. El contrato OpenAPI genera las interfaces y DTOs, y la aplicación los implementa en capas limpias. El frontend es una **Multi-Page App (MPA)** con Thymeleaf + Vanilla JS modular.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │               🖥️ Thymeleaf Multi-Page App  (14 vistas)              │
 │   Welcome · Menu · Documents · Facturas · Boletas · Notas Crédito  │
 │   Notas Débito · Clientes · Productos · Empleados · Sedes          │
-│   Tipo Cambio · Resúmenes Diarios · Wizard (Emisión)               │
+│   Tipo Cambio · Resúmenes Diarios · Wizard (Emisión 5 pasos)       │
 │                                                                     │
 │   🌙 Dark/Light theme · Leaflet Maps · Config Overlay               │
 │   📸 Error screenshot+email · 🔔 Notificaciones en tiempo real      │
+│   ✏️ Edit mode (borradores/rechazadas) · 📤 Quick Emit              │
 └────────────────────────────┬────────────────────────────────────────┘
                              │  fetch('/api/v1/*')
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        🌐  API Gateway                              │
-│              /api/v1/*  (REST JSON · 59 endpoints)                  │
+│              /api/v1/*  (REST JSON · 60+ endpoints)                 │
 │        + /api/v1/notification (OpenAPI — in-memory store)           │
+│        + /api/v1/factura/{id}/xml (descarga XML UBL 2.1)           │
 └────────────────────────────┬────────────────────────────────────────┘
                              │
                              ▼
@@ -167,6 +234,7 @@ El proyecto sigue una **arquitectura hexagonal por dominio**, donde cada uno de 
 │      🔢 CorrelativoService — auto-increment series                  │
 │      ✅ SunatValidator — business rule validation                   │
 │      🔔 NotificationService — publish to in-memory store            │
+│      🧾 UblInvoiceXmlBuilder — genera XML UBL 2.1 SUNAT            │
 └──────────────┬─────────────────────────────────────┬────────────────┘
                │  uses                               │  uses
                ▼                                     ▼
@@ -200,7 +268,15 @@ POST /api/v1/factura
         │
         ├──► CorrelativoService.next(serie)      ← Auto-correlativo F001-4
         │
-        ├──► facturaRepository.save(entity)      ← JPA persist
+        ├──► facturaRepository.save(entity)      ← 1er save: persist entity
+        │
+        ├──► CuotaCreditoRepo.saveAll(cuotas)    ← Cuotas de crédito (si aplica)
+        │
+        ├──► AllowanceChargeRepo.saveAll(cargos)  ← Cargos/Desc. Cat.53 (si aplica)
+        │
+        ├──► UblInvoiceXmlBuilder.build(entity)  ← Genera XML UBL 2.1 ✨
+        │
+        ├──► facturaRepository.save(entity)      ← 2do save: xmlContent + xmlPath
         │
         ├──► NotificationService.publicar(...)   ← Push notificación in-memory
         │
@@ -213,6 +289,8 @@ POST /api/v1/factura
         ▼
   ResponseEntity.ok(response)   ← HTTP 200 + JSON body
 ```
+
+> 💡 Si `emitir=false`, la factura se guarda como **BORRADOR** (sin XML). El usuario puede emitirla después con `PUT /factura/{id}/emitir`.
 
 ### 🖥️ Flujo del Frontend (Multi-Page App)
 
@@ -267,11 +345,14 @@ com.etlions.ms_bs_etia
 │   ├── mapper/                    ClientMapper.java
 │   └── persistence/               ClientEntity + ClientRepository
 │
-├── 🧾 doc_factura/                Facturas electrónicas (CRUD + Emisión + Anulación)
+├── 🧾 doc_factura/                Facturas electrónicas (CRUD + Emisión + Anulación + XML UBL 2.1)
 │   ├── openapi/                   DocFacturaOpenApi.java
 │   ├── service/impl/              docFacturaServiceImpl.java
 │   ├── mapper/                    FacturaMapper.java
-│   └── persistence/               FacturaEntity + FacturaRepository
+│   ├── persistence/               FacturaEntity + FacturaRepository
+│   │                              CuotaCreditoEntity + CuotaCreditoRepository
+│   │                              AllowanceChargeEntity + AllowanceChargeRepository
+│   └── xml/                       UblInvoiceXmlBuilder.java (genera XML UBL 2.1)
 │
 ├── 🎫 doc_boleta/                 Boletas de venta (CRUD + Emisión + Anulación)
 │   ├── openapi/                   DocBoletaOpenApi.java
@@ -356,6 +437,17 @@ com.etlions.ms_bs_etia
 │   ├── service/impl/              NotificationServiceImpl.java
 │   └── persistence/               NotificationStore.java + NotificationItem.java
 │
+├── 📋 catalogo_sunat/             Catálogos estándar SUNAT (12 catálogos)
+│   ├── openapi/                   CatalogoSunatOpenApi.java
+│   ├── service/impl/              CatalogoSunatServiceImpl.java
+│   ├── persistence/               CatalogoSunatEntity + JSON repository
+│   └── standard/                  Constantes Cat. 01-53
+│
+├── 📊 tabla_sunat/                Tablas de referencia SUNAT (JSON)
+│   ├── openapi/                   TablaSunatOpenApi.java
+│   ├── service/impl/              TablaSunatServiceImpl.java
+│   └── persistence/               TablaSunatJsonRepository.java
+│
 ├── 🖥️ view/                       14 View Controllers (Spring MVC + Thymeleaf)
 │   ├── WelcomeViewController.java
 │   ├── MenuViewController.java
@@ -373,7 +465,7 @@ com.etlions.ms_bs_etia
 │   └── WizardViewController.java
 │
 ├── ⚙️ app_config/                 Configuración global
-│   ├── config/                    ThymeleafConfig.java
+│   ├── config/                    ThymeleafConfig.java + SunatProperties.java
 │   └── exception/                 Excepciones custom
 │       ├── GlobalExceptionHandler.java    @RestControllerAdvice (5+ handlers)
 │       ├── ResourceNotFoundException.java    404
@@ -402,71 +494,92 @@ com.etlions.ms_bs_etia
 │ nombre_comercial │   │   │ numero_documento │  │    │ cargo            │
 │ codigo_ubigeo    │   │   │ denominacion     │  │    │ dni              │
 │ direccion        │   │   │ direccion        │  │    │ codigo           │
-│ departamento     │   │   │ email            │  │    │ estado           │
-│ provincia        │   │   │ telefono         │  │    └──────────────────┘
-│ distrito         │   │   └──────────────────┘  │
-│ usuario_sol      │   │                          │    ┌──────────────────┐
-│ clave_sol        │   │                          │    │    products      │
-│ certificado_*    │   │                          │    ├──────────────────┤
-│ email_contacto   │   │                          │    │ id          (PK) │
+│ departamento     │   │   │ departamento  🆕 │  │    │ estado           │
+│ provincia        │   │   │ provincia     🆕 │  │    └──────────────────┘
+│ distrito         │   │   │ distrito      🆕 │  │
+│ usuario_sol      │   │   │ codigo_pais   🆕 │  │    ┌──────────────────┐
+│ clave_sol        │   │   │ email            │  │    │    products      │
+│ certificado_*    │   │   │ telefono         │  │    ├──────────────────┤
+│ email_contacto   │   │   └──────────────────┘  │    │ id          (PK) │
 │ telefono         │   │                          │    │ company_id  (FK) │
 │ regimen          │   │                          │    │ codigo_producto  │
-│ estado           │   │                          │    │ descripcion      │
-└──────────────────┘   │                          │    │ unidad_medida    │
-                       │                          │    │ valor_unitario   │
-┌──────────────────┐   │   ┌──────────────────┐   │    │ precio_unitario  │
-│    facturas      │   │   │     boletas      │   │    │ igv              │
-├──────────────────┤   │   ├──────────────────┤   │    │ estado           │
-│ id          (PK) │   │   │ id          (PK) │   │    └──────────────────┘
+│ emision_en_envio │   │                          │    │ descripcion      │
+│ estado           │   │                          │    │ unidad_medida    │
+└──────────────────┘   │                          │    │ valor_unitario   │
+                       │                          │    │ precio_unitario  │
+┌──────────────────┐   │   ┌──────────────────┐   │    │ igv              │
+│    facturas      │   │   │     boletas      │   │    │ estado           │
+├──────────────────┤   │   ├──────────────────┤   │    └──────────────────┘
+│ id          (PK) │   │   │ id          (PK) │   │
 │ company_id  (FK) │───┘   │ company_id  (FK) │───┤
 │ client_id   (FK) │───────│ client_id   (FK) │───┘
 │ serie            │       │ serie            │        ┌──────────────────┐
 │ numero           │       │ numero           │        │      sedes       │
 │ fecha_emision    │       │ fecha_emision    │        ├──────────────────┤
-│ moneda           │       │ moneda           │        │ id          (PK) │
-│ gravadas         │       │ gravadas         │        │ company_id  (FK) │
-│ igv              │       │ igv              │        │ codigo           │
-│ total            │       │ total            │        │ nombre           │
-│ estado           │       │ estado           │        │ direccion        │
-│ leyenda          │       │ leyenda          │        │ codigo_ubigeo    │
-│ detalle_json     │       │ detalle_json     │        │ departamento     │
-└──────────────────┘       └──────────────────┘        │ provincia        │
-         │                                             │ distrito         │
+│ hora_emision  🆕 │       │ hora_emision  🆕 │        │ id          (PK) │
+│ tipo_operacion🆕 │       │ tipo_operacion🆕 │        │ company_id  (FK) │
+│ moneda           │       │ moneda           │        │ codigo           │
+│ gravadas         │       │ gravadas         │        │ nombre           │
+│ exoneradas    🆕 │       │ exoneradas    🆕 │        │ direccion        │
+│ inafectas     🆕 │       │ inafectas     🆕 │        │ codigo_ubigeo    │
+│ gratuitas     🆕 │       │ gratuitas     🆕 │        │ departamento     │
+│ igv              │       │ igv              │        │ provincia        │
+│ total_cargos  🆕 │       │ total_cargos  🆕 │        │ distrito         │
+│ total_desc    🆕 │       │ total_desc    🆕 │        │ es_default       │
+│ subtotal      🆕 │       │ subtotal      🆕 │        └────────┬─────────┘
+│ total_con_imp 🆕 │       │ total_con_imp 🆕 │                 │
+│ total            │       │ total            │        ┌────────▼─────────┐
+│ estado           │       │ estado           │        │  series_config   │
+│ leyenda          │       │ leyenda          │        ├──────────────────┤
+│ xml_content   🆕 │       │ xml_content   🆕 │        │ id          (PK) │
+│ xml_path      🆕 │       │ xml_path      🆕 │        │ company_id  (FK) │
+│ detalle_json     │       │ detalle_json     │        │ sede_id     (FK) │
+└────────┬─────────┘       └──────────────────┘        │ tipo_documento   │
+         │                                             │ serie            │
          │ referenciada por                            │ es_default       │
-         ▼                                             └────────┬─────────┘
-┌──────────────────┐       ┌──────────────────┐                 │
-│  notas_credito   │       │  notas_debito    │        ┌────────▼─────────┐
-├──────────────────┤       ├──────────────────┤        │  series_config   │
-│ id          (PK) │       │ id          (PK) │        ├──────────────────┤
-│ company_id  (FK) │       │ company_id  (FK) │        │ id          (PK) │
-│ factura_ref (FK) │       │ factura_ref (FK) │        │ company_id  (FK) │
-│ motivo           │       │ motivo           │        │ sede_id     (FK) │
-│ monto_descuento  │       │ monto_incremento │        │ tipo_documento   │
-│ tipo_documento   │       │ descripcion      │        │ serie            │
-│ descripcion      │       │ estado           │        │ es_default       │
-│ estado           │       │ detalle_json     │        │ activa           │
+         ▼                                             │ activa           │
+┌──────────────────┐       ┌──────────────────┐        └──────────────────┘
+│  notas_credito   │       │  notas_debito    │
+├──────────────────┤       ├──────────────────┤        ┌──────────────────┐
+│ id          (PK) │       │ id          (PK) │        │ cuotas_credito🆕 │
+│ company_id  (FK) │       │ company_id  (FK) │        ├──────────────────┤
+│ factura_ref (FK) │       │ factura_ref (FK) │        │ id          (PK) │
+│ motivo           │       │ motivo           │        │ factura_id  (FK) │
+│ monto_descuento  │       │ monto_incremento │        │ numero_cuota     │
+│ tipo_documento   │       │ descripcion      │        │ monto            │
+│ descripcion      │       │ estado           │        │ fecha_venc       │
+│ estado           │       │ detalle_json     │        │ moneda           │
 │ detalle_json     │       └──────────────────┘        └──────────────────┘
 └──────────────────┘
-                                                       ┌──────────────────┐
-┌──────────────────┐       ┌──────────────────┐        │  correlativos    │
-│   tipo_cambio    │       │  user_preference │        ├──────────────────┤
-├──────────────────┤       ├──────────────────┤        │ id          (PK) │
-│ id          (PK) │       │ id          (PK) │        │ company_id       │
-│ fecha            │       │ company_id       │        │ serie            │
-│ moneda_origen    │       │ clave            │        │ ultimo_numero    │
-│ moneda_destino   │       │ valor            │        └──────────────────┘
-│ tasa_compra      │       └──────────────────┘
-│ tasa_venta       │                                   ┌──────────────────────┐
-│ fuente           │       ┌──────────────────┐        │ libros_electronicos  │
-└──────────────────┘       │     ubigeos      │        ├──────────────────────┤
-                           ├──────────────────┤        │ id            (PK)   │
-┌──────────────────┐       │ id          (PK) │        │ company_id           │
-│ unidades_medida  │       │ codigo           │        │ tipo                 │
-├──────────────────┤       │ departamento     │        │ periodo              │
-│ id          (PK) │       │ provincia        │        │ formato              │
-│ codigo           │       │ distrito         │        │ estado               │
-│ descripcion      │       └──────────────────┘        │ total_registros      │
-└──────────────────┘                                   └──────────────────────┘
+                                                       ┌──────────────────────┐
+                                                       │ allowance_charges 🆕 │
+┌──────────────────┐       ┌──────────────────┐        ├──────────────────────┤
+│   tipo_cambio    │       │  user_preference │        │ id            (PK)   │
+├──────────────────┤       ├──────────────────┤        │ factura_id    (FK)   │
+│ id          (PK) │       │ id          (PK) │        │ tipo (CARGO/DESC)    │
+│ fecha            │       │ company_id       │        │ codigo_cat53         │
+│ moneda_origen    │       │ clave            │        │ descripcion          │
+│ moneda_destino   │       │ valor            │        │ factor               │
+│ tasa_compra      │       └──────────────────┘        │ base_imponible       │
+│ tasa_venta       │                                   │ monto                │
+│ fuente           │       ┌──────────────────┐        └──────────────────────┘
+└──────────────────┘       │  correlativos    │
+                           ├──────────────────┤        ┌──────────────────────┐
+┌──────────────────┐       │ id          (PK) │        │ libros_electronicos  │
+│ unidades_medida  │       │ company_id       │        ├──────────────────────┤
+├──────────────────┤       │ serie            │        │ id            (PK)   │
+│ id          (PK) │       │ ultimo_numero    │        │ company_id           │
+│ codigo           │       └──────────────────┘        │ tipo                 │
+│ descripcion      │                                   │ periodo              │
+└──────────────────┘       ┌──────────────────┐        │ formato              │
+                           │     ubigeos      │        │ estado               │
+                           ├──────────────────┤        │ total_registros      │
+                           │ id          (PK) │        └──────────────────────┘
+                           │ codigo           │
+                           │ departamento     │
+                           │ provincia        │
+                           │ distrito         │
+                           └──────────────────┘
 ```
 
 ---
@@ -497,10 +610,12 @@ Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el cont
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| `POST` | `/api/v1/factura` | Emitir factura (auto-correlativo) |
+| `POST` | `/api/v1/factura` | Emitir factura (auto-correlativo + XML UBL 2.1) |
 | `GET` | `/api/v1/factura` | Listar facturas (filtros) |
 | `GET` | `/api/v1/factura/{facturaId}` | Obtener factura por ID |
+| `GET` | `/api/v1/factura/{facturaId}/xml` | 🆕 Descargar XML UBL 2.1 (`application/xml`) |
 | `PUT` | `/api/v1/factura` | Anular factura |
+| `PUT` | `/api/v1/factura/{facturaId}/emitir` | 🆕 Emitir borrador (genera XML + notifica) |
 | `DELETE` | `/api/v1/factura` | Eliminar borrador |
 
 ### 🎫 Boleta — Boletas de venta
@@ -623,7 +738,7 @@ Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el cont
 | `GET` | `/resumenes-diarios` | `resumenes-diarios.html` |
 | `GET` | `/wizard?type=...` | `wizard/factura.html` |
 
-> **Total: 59 endpoints REST (OpenAPI — incluye notificaciones) + 14 vistas MVC + consola H2 = 74 rutas**
+> **Total: 60+ endpoints REST (OpenAPI — incluye notificaciones + XML UBL) + 14 vistas MVC + consola H2 = 75+ rutas**
 
 ### 📋 Formato de respuesta estándar
 
@@ -684,41 +799,58 @@ La aplicación incluye un **frontend completo** construido con **Thymeleaf + Van
 | **Multi-Page App** | 14 vistas con navegación real (server-side routing) |
 | **Tema** | 🌙 Dark / ☀️ Light mode con toggle persistente |
 | **CSS Design System** | 1,606 líneas — variables CSS, grid, componentes, badges, toasts |
-| **Wizard 4 pasos** | Emisor → Cliente → Detalle → Revisión & Emisión |
+| **Wizard 5 pasos** | Documento → Emisor → Cliente → Detalle → Revisión & Emisión |
+| **Edit mode** | 🆕 Carga borrador/rechazada completo para edición en wizard |
+| **Borrador / Emisión** | 🆕 Toggle "Emisión en Envío" — ambos botones siempre disponibles |
 | **Soporte multi-doc** | Facturas, Boletas, Notas de Crédito, Notas de Débito |
-| **Cálculo automático** | IGV 18% en tiempo real al editar ítems |
+| **Cálculo automático** | IGV 18% en tiempo real + dropdown Afectación (Gravado/Exonerado/Inafecto) |
 | **Tipo de cambio** | Consulta automática SBS/SUNAT para moneda extranjera |
 | **Forma de pago** | CONTADO / CRÉDITO con fecha de vencimiento automática |
+| **Cargos/Descuentos** | 🆕 Tabla de cargos/descuentos globales Cat. 53 SUNAT |
+| **Cuotas de crédito** | 🆕 Gestión de cuotas con monto, fecha vencimiento, moneda |
 | **Búsqueda de clientes** | Modal con búsqueda en tiempo real + consulta RENIEC/SUNAT |
 | **Registro de clientes** | Formulario inline sin salir del wizard |
 | **Búsqueda de productos** | Modal con búsqueda live contra API |
-| **Preview de documentos** | Modal rich preview con detalle, ítems, totales, estado |
-| **Config overlay** | Panel completo: empresa, series, sede, mapa, tema, preferencias |
+| **Preview de documentos** | Modal rich preview con detalle, ítems, cargos/desc., cuotas, totales, estado |
+| **PDF export** | 🆕 Incluye cargos/descuentos, cuotas y totales desglosados |
+| **Quick Emit** | 🆕 Botón 📤 en lista para emitir borrador directamente |
+| **Config overlay** | Panel completo: empresa, series, sede, mapa, tema, emisión en envío |
 | **Mapa Leaflet** | Ubicación de sede con geocoding (Nominatim), drag marker |
 | **Series por sede** | Cambio automático de series al cambiar de sede |
+| **Serie como dropdown** | 🆕 Serie se carga dinámicamente desde sede activa por tipo doc |
+| **Formato SUNAT** | 🆕 Números con padding 8 dígitos: `F001-00000001` |
 | **Notificaciones** | Badge en tiempo real: docs rechazados + transmisiones |
 | **Anulación** | Botón de anular documentos rechazados desde notificaciones |
+| **Re-emisión** | 🆕 RECHAZADA → ENVIADA directamente (sin pasar por BORRADOR) |
 | **Error handling** | Toast global con detalle + botón screenshot + envío por email |
 | **Responsive** | Adaptable a desktop, tablet y mobile |
 | **Sample docs** | XMLs y PDFs de ejemplo (factura y boleta reales) |
 
-### Flujo visual del Wizard
+### Flujo visual del Wizard (5 pasos)
 
 ```
-┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────────┐
-│  PASO 1 │───►│  PASO 2 │───►│  PASO 3 │───►│   PASO 4    │
-│ 🏢 Emisor│    │ 👤 Client│    │ 📦 Items │    │ ✅ Emitir   │
-│ (readonly)│    │(búsqueda)│    │(productos)│   │  (review)   │
-└─────────┘    └─────────┘    └─────────┘    └──────┬──────┘
-                  │                │                  │
-                  ▼                ▼            fetch POST
-            🔍 Client Modal  🔍 Product Modal  /api/v1/{tipo}
-            📋 RENIEC/SUNAT  📦 Búsqueda live        │
-            ✏️ Registro                               ▼
-                                              ┌─────────────┐
-                                              │ 📋 Response  │
-                                              │   + 🔔 Notif │
-                                              └─────────────┘
+┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌─────────────┐
+│  PASO 1  │──►│  PASO 2  │──►│  PASO 3  │──►│  PASO 4  │──►│   PASO 5    │
+│ 📄 Doc   │   │ 🏢 Emisor│   │ 👤 Client│   │ 📦 Items │   │ 🚀 Emitir   │
+│(serie,   │   │(readonly)│   │(búsqueda)│   │(productos│   │  (review +  │
+│ moneda,  │   │          │   │          │   │ cargos)  │   │  tabla)     │
+│ tipoOp)  │   │          │   │          │   │          │   │             │
+└──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────┬──────┘
+                                 │                │                  │
+                                 ▼                ▼            fetch POST
+                           🔍 Client Modal  🔍 Product Modal  /api/v1/{tipo}
+                           📋 RENIEC/SUNAT  📦 Búsqueda live        │
+                           ✏️ Registro                               ▼
+                                                              ┌─────────────┐
+                                                              │ 📋 Response  │
+                                                              │   + 🧾 XML   │
+                                                              │   + 🔔 Notif │
+                                                              └─────────────┘
+
+Edit Mode:  /wizard?type=FACTURA&id=<facturaId>
+            ├── Carga borrador completo (serie, cliente, ítems, cuotas, cargos)
+            ├── Serie y fecha readonly
+            └── Botón "Emitir Borrador" → PUT /factura/{id}/emitir
 ```
 
 ---
@@ -758,21 +890,24 @@ La aplicación carga **datos de prueba automáticamente** al iniciar vía `data.
 | Entidad | Registros | Ejemplo |
 |---------|-----------|---------|
 | **Empresa** | 1 | ETLIONS S.A.C. · RUC 20601234567 · San Isidro |
-| **Clientes** | 5 | RUC, DNI, Carnet Extranjería, Pasaporte |
+| **Clientes** | 5 | RUC, DNI, Carnet Extranjería, Pasaporte (con depto/prov/dist/país) |
 | **Productos** | 3 | Consultoría TI, Licencia ERP, Soporte Técnico |
 | **Empleados** | 3 | Contador, Asistente, Cajero |
 | **Ubigeos** | 7 | Lima, San Isidro, Miraflores, Surco, Arequipa, Trujillo |
 | **Unidades Medida** | 14 | NIU, ZZ, HUR, KGM, LTR, MTR, etc. |
 | **Sedes** | 2 | Principal San Isidro + Sucursal Miraflores |
 | **Series** | 8 | F001/B001/FC01/FD01 × 2 sedes |
-| **Facturas** | 3 | ACEPTADA, BORRADOR, USD |
+| **Facturas** | 23 | ACEPTADA, BORRADOR, ENVIADA, RECHAZADA, ANULADA, USD, multi-ítem |
 | **Boletas** | 2 | ACEPTADA, BORRADOR |
 | **Notas Crédito** | 2 | Descuento, Anulación |
 | **Notas Débito** | 2 | Intereses, Gastos administrativos |
 | **Correlativos** | 4 | F001→3, B001→2, F002→0, B002→0 |
-| **User Preferences** | 4 | moneda, tema, itemType, tcFuente |
+| **User Preferences** | 5 | moneda, tema, itemType, tcFuente, emisionEnEnvio |
 | **Tipo de Cambio** | 7 | SBS + SUNAT (últimos días) |
 | **Libros Electrónicos** | 3 | Ventas y compras (2026-02, 2026-03) |
+| **Cuotas Crédito** | 🆕 | Cuotas para facturas a crédito |
+| **Cargos/Descuentos** | 🆕 | Descuento vol. 5%, Recargo consumo 10% |
+| **XML UBL 2.1** | 🆕 10 | Facturas ACEPTADA/ENVIADA con XML completo |
 
 ---
 
@@ -917,6 +1052,14 @@ spring:
         cachecontrol:
           no-cache: true
           no-store: true
+
+# 🆕 Configuración SUNAT (type-safe)
+sunat:
+  certificado:
+    base-path: ${SUNAT_CERT_PATH:./certs}    # Ruta base para certificados .pfx/.p12
+  sol:
+    default-user: ${SUNAT_SOL_USER:MODDATOS}
+    default-password: ${SUNAT_SOL_PASSWORD:MODDATOS}
 ```
 
 ### Producción (futuro `application-prod.yaml`)
@@ -945,21 +1088,21 @@ spring:
 ## 🗺️ Roadmap
 
 ```
-                                            Estado actual
-                                                 │
-                                                 ▼
-────●──────────────────────────────────────────●──────────●──────────●──────────●────►
-    │                                          │          │          │          │
-    ▼                                          ▼          ▼          ▼          ▼
+                                                        Estado actual
+                                                             │
+                                                             ▼
+────●──────────────────────────────●──────────────────────●──────────●──────────●────►
+    │                              │                      │          │          │
+    ▼                              ▼                      ▼          ▼          ▼
 
- ✅ FASE 1 (Completada)                     🔲 Fase 2   🔲 Fase 3   🔲 Fase 4   🔲 Fase 5
-   CRUD + OpenAPI + MapStruct + JPA           XML UBL     Firma +     Resumen     Production
-   Error Handling + Thymeleaf MPA             2.1 SUNAT   Envío       Diario +    Ready
-   18 dominios homologados                    Catálogos   SUNAT       Com. Baja
-   59 endpoints REST + 14 vistas              JAXB        CDR         Boletas
-   Notificaciones · Validaciones SUNAT
-   Auto-correlativo · Sedes · Series
-   Arquitectura hexagonal completa
+ ✅ FASE 1 (Completada)         🟡 FASE 2 (~90%)       🔲 Fase 3   🔲 Fase 4   🔲 Fase 5
+   CRUD + OpenAPI + MapStruct     XML UBL 2.1 ✅         Firma +     Resumen     Production
+   Error Handling + MPA           12 Catálogos ✅        Envío       Diario +    Ready
+   20 dominios homologados        Modelo datos ✅        SUNAT       Com. Baja
+   60+ endpoints + 14 vistas      Wizard 5-step ✅       CDR         Boletas
+   Notificaciones · Validaciones  Edit mode ✅
+   Auto-correlativo · Series      Borrador/Emit ✅
+   Arquitectura hexagonal         184 tests ✅
 ```
 
 ### ✅ FASE 1 — Plataforma Base Completa (Finalizada Abril 2026)
@@ -973,7 +1116,7 @@ spring:
 | **Base (ex-Fase 0)** | CRUD completo, OpenAPI codegen, MapStruct, JPA, dominios fundacionales |
 | **Error Handling (ex-Fase 1)** | `@RestControllerAdvice`, excepciones custom, Thymeleaf wizard, test data |
 | **MPA + Dominios (ex-Fase 1.5)** | 14 vistas Thymeleaf, 10 nuevos dominios, frontend modular completo |
-| **Homologación arquitectura** | 18 dominios con patrón `openapi/ → service/ → service/impl/ → persistence/` |
+| **Homologación arquitectura** | 20 dominios con patrón `openapi/ → service/ → service/impl/ → persistence/` |
 
 **Entregables finales de FASE 1:**
 
@@ -981,7 +1124,7 @@ spring:
 |---------|---------|
 | **🏪 14 vistas Thymeleaf** | Welcome, Menu, Documents, Facturas, Boletas, Notas C/D, Clients, Products, Employees, Sedes, Tipo Cambio, Resúmenes, Wizard |
 | **🖥️ 14 View Controllers** | Cada vista con su propio `@Controller` Spring MVC |
-| **📦 18 dominios homologados** | Todos con patrón `openapi/service/impl/persistence/mapper` |
+| **📦 18+2 dominios homologados** | Todos con patrón `openapi/service/impl/persistence/mapper` (20 total con catalogo_sunat y tabla_sunat) |
 | **🔢 Auto-correlativo** | `CorrelativoService` — F001-1, F001-2, etc. por serie |
 | **✅ SunatValidator** | Validaciones de negocio SUNAT pre-emisión |
 | **🔔 Notificaciones OpenAPI** | 5 endpoints REST: listar, publicar, marcar leída, marcar todas, limpiar |
@@ -1002,28 +1145,34 @@ spring:
 | **💳 Forma de pago** | CONTADO / CRÉDITO con lógica de fecha de vencimiento |
 | **🏪 Sedes + Series** | Cambio de sede → auto-actualización de series |
 
-### 🔲 Fase 2 — XML UBL 2.1 SUNAT (Próxima)
+### 🟡 Fase 2 — XML UBL 2.1 SUNAT (~90% completada)
 
 Generación del XML electrónico conforme al estándar UBL 2.1 que exige SUNAT:
 
-| Feature | Descripción | Prioridad |
-|---------|-------------|-----------|
-| **Estructura XML UBL 2.1** | Generar `Invoice`, `CreditNote`, `DebitNote` conformes al estándar OASIS UBL 2.1 adaptado por SUNAT | 🔴 Crítica |
-| **Catálogos SUNAT** | Tablas de referencia: Catálogo 01 (Tipo Doc), 05 (Tipo Tributo), 06 (Tipo Doc Identidad), 07 (Tipo IGV), 09 (Tipo NC), 10 (Tipo ND), 15 (Moneda), 51 (Tipo Operación) | 🔴 Crítica |
-| **JAXB Bindings** | Clases Java generadas desde XSD de OASIS UBL 2.1 + extensiones SUNAT | 🔴 Crítica |
-| **Builder pattern XML** | Service `UblXmlBuilder` que ensambla el XML desde las entidades | 🔴 Crítica |
-| **Namespace management** | Manejo correcto de namespaces: `urn:oasis:names:specification:ubl:schema:xsd:Invoice-2`, `cac:`, `cbc:`, `ext:`, etc. | 🔴 Crítica |
-| **Datos del emisor en XML** | `AccountingSupplierParty` con RUC, razón social, dirección, ubigeo, código de establecimiento | 🟡 Alta |
-| **Datos del receptor en XML** | `AccountingCustomerParty` con tipo/número documento, denominación, dirección | 🟡 Alta |
-| **Líneas de detalle** | `InvoiceLine` / `CreditNoteLine` / `DebitNoteLine` con cantidad, UM, precios, IGV, subtotal | 🟡 Alta |
-| **Totales y tributos** | `TaxTotal`, `LegalMonetaryTotal` con gravadas, IGV, total | 🟡 Alta |
-| **Leyenda (monto en letras)** | `Note` element con el monto textual | 🟡 Alta |
-| **Tipo de cambio en XML** | `PaymentExchangeRate` para docs en USD | 🟡 Alta |
-| **Notas: doc referencia** | `BillingReference` → `InvoiceDocumentReference` para NC/ND | 🟡 Alta |
-| **Forma de pago** | `PaymentTerms` — Contado / Crédito con cuotas | 🟡 Alta |
-| **Validación XML** | Validar contra XSD antes de firmar | 🟢 Media |
-| **Almacenamiento XML** | Persistir XML generado (campo `xml_content` o storage) | 🟢 Media |
-| **Preview XML** | Botón en UI para ver/descargar el XML generado | 🟢 Media |
+| Feature | Descripción | Estado |
+|---------|-------------|--------|
+| **Estructura XML UBL 2.1** | Generar `Invoice` conforme al estándar OASIS UBL 2.1 adaptado por SUNAT | ✅ Completado |
+| **Catálogos SUNAT** | 12 catálogos: 01, 02, 03, 04, 05, 06, 07, 13, 16, 51, 52, 53 | ✅ Completado |
+| **Builder pattern XML** | `UblInvoiceXmlBuilder` ensambla XML desde entidades (36 tests) | ✅ Completado |
+| **Namespace management** | `cac:`, `cbc:`, `ext:`, `sac:` correctamente manejados | ✅ Completado |
+| **Datos del emisor en XML** | `AccountingSupplierParty` con RUC, razón social, dirección, ubigeo | ✅ Completado |
+| **Datos del receptor en XML** | `AccountingCustomerParty` con tipo/número doc, denominación, dirección | ✅ Completado |
+| **Líneas de detalle** | `InvoiceLine` con cantidad, UM, precios, IGV, subtotal, afectación | ✅ Completado |
+| **Totales y tributos** | `TaxTotal`, `LegalMonetaryTotal` con gravadas, exoneradas, IGV, total | ✅ Completado |
+| **Leyenda (monto en letras)** | `Note` element con monto textual (Cat. 52) | ✅ Completado |
+| **Tipo de cambio en XML** | `PaymentExchangeRate` para docs en USD | ✅ Completado |
+| **Forma de pago** | `PaymentTerms` — Contado / Crédito con cuotas | ✅ Completado |
+| **Cargos/Descuentos** | `AllowanceCharge` con Cat. 53 (recargo consumo, descuento vol., etc.) | ✅ Completado |
+| **Almacenamiento XML** | Campos `xml_content` (BD) + `xml_path` (disco) — inmutable | ✅ Completado |
+| **Descarga XML** | `GET /factura/{id}/xml` — endpoint OpenAPI-first | ✅ Completado |
+| **Modelo enriquecido** | +9 campos Factura/Boleta, +4 Client, +6 DetalleItem, +2 entidades | ✅ Completado |
+| **Wizard 5 pasos** | Documento → Emisor → Cliente → Detalle → Emitir (+ edit mode) | ✅ Completado |
+| **Emisión/Borrador** | Toggle `emisionEnEnvio` + Quick Emit + re-emisión RECHAZADA→ENVIADA | ✅ Completado |
+| **SunatProperties** | Config type-safe: `sunat.certificado.base-path`, `sunat.sol.*` | ✅ Completado |
+| **184 tests** | JUnit 5 + Mockito — todos verdes | ✅ Completado |
+| **Vinculación Sede → XML** | `AddressTypeCode` del establecimiento emisor (0001=principal) | ❌ Pendiente |
+| **Notas: doc referencia** | `BillingReference` → `InvoiceDocumentReference` para NC/ND | ❌ Pendiente |
+| **Validación XML vs XSD** | Validar contra XSD antes de firmar | ❌ Pendiente |
 
 ### 🔲 Fase 3 — Firma Digital + Envío SUNAT
 
@@ -1105,23 +1254,26 @@ java -jar target/ms-bs-etia-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 📊 Estadísticas del proyecto (FASE 1 — Final)
+## 📊 Estadísticas del proyecto (FASE 2 — En Progreso)
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos Java (src) | **~130** |
-| Dominios de negocio | **18** (todos homologados) |
-| Endpoints REST (OpenAPI) | **59** (incluye notificaciones) |
+| Archivos Java (src) | **~140+** |
+| Dominios de negocio | **20** (todos homologados) |
+| Endpoints REST (OpenAPI) | **60+** (incluye notificaciones + XML UBL) |
 | View Controllers (MVC) | **14** |
-| Entidades JPA | **15** |
-| Repositorios | **15** |
+| Entidades JPA | **17** (+CuotaCreditoEntity, +AllowanceChargeEntity) |
+| Repositorios | **17** |
 | MapStruct Mappers | **14** |
 | Servicios (interface + impl) | **30+** |
+| XML Builder | **1** (UblInvoiceXmlBuilder — 36 tests) |
 | Templates Thymeleaf | **19** (14 vistas + 5 fragments) |
 | Archivos JS | **10** |
 | CSS Design System | **1,606 líneas** |
-| Contrato OpenAPI YAML | **~3,300 líneas** |
-| data.sql (seed) | **168 líneas** (50+ registros) |
+| Contrato OpenAPI YAML | **~3,500+ líneas** |
+| Tests unitarios (JUnit 5) | **184** (0 fallos) |
+| Catálogos SUNAT | **12** de 36 (Cat. 01-53) |
+| data.sql (seed) | **300+ líneas** (80+ registros, 23 facturas) |
 | Sample docs | **4** (XMLs + PDFs reales) |
 
 ---

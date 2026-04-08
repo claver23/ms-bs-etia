@@ -22,19 +22,27 @@ public final class SunatValidator {
     /**
      * Transiciones de estado válidas para comprobantes electrónicos.
      * <pre>
-     *   BORRADOR  → ENVIADA          (emitir / enviar a SUNAT)
+     *   BORRADOR  → VALIDADO         (validación interna OK)
+     *   BORRADOR  → CON_ERROR        (validación interna FAIL)
+     *   BORRADOR  → ENVIADA          (emitir directamente — legacy/factura)
+     *   VALIDADO  → ENVIADA          (emitir a SUNAT)
+     *   VALIDADO  → BORRADOR         (volver a editar)
+     *   CON_ERROR → BORRADOR         (corregir para re-validar)
      *   ENVIADA   → ACEPTADA         (SUNAT acepta)
      *   ENVIADA   → RECHAZADA        (SUNAT rechaza)
      *   ENVIADA   → ANULADA          (anular antes de respuesta)
      *   ACEPTADA  → ANULADA          (anulación post-aceptación)
      *   RECHAZADA → BORRADOR         (corregir para re-emitir)
+     *   RECHAZADA → ENVIADA          (re-emitir directamente)
      * </pre>
      */
     private static final Map<String, Set<String>> TRANSICIONES_VALIDAS = Map.of(
-            "BORRADOR",   Set.of("ENVIADA"),
+            "BORRADOR",   Set.of("VALIDADO", "CON_ERROR", "ENVIADA"),
+            "VALIDADO",   Set.of("ENVIADA", "BORRADOR"),
+            "CON_ERROR",  Set.of("BORRADOR"),
             "ENVIADA",    Set.of("ACEPTADA", "RECHAZADA", "ANULADA"),
             "ACEPTADA",   Set.of("ANULADA"),
-            "RECHAZADA",  Set.of("BORRADOR"),
+            "RECHAZADA",  Set.of("BORRADOR", "ENVIADA"),
             "ANULADA",    Set.of()            // estado terminal
     );
 
@@ -119,8 +127,19 @@ public final class SunatValidator {
 
     /**
      * Valida que total == gravadas + igv (con tolerancia de 0.01 por redondeo).
+     * Delega al overload completo con cargos=0 y descuentos=0.
      */
     public static void validarTotales(BigDecimal gravadas, BigDecimal igv, BigDecimal total) {
+        validarTotales(gravadas, igv, total, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
+    /**
+     * Valida que total == gravadas + igv + totalCargos − totalDescuentos
+     * (con tolerancia de 0.01 por redondeo).
+     * Fórmula SUNAT: PayableAmount = TaxableAmount + TaxAmount + Charges − Allowances
+     */
+    public static void validarTotales(BigDecimal gravadas, BigDecimal igv, BigDecimal total,
+                                       BigDecimal totalCargos, BigDecimal totalDescuentos) {
         List<String> errors = new ArrayList<>();
 
         if (gravadas == null) {
@@ -136,25 +155,33 @@ public final class SunatValidator {
             throw new SunatValidationException("SUNAT: Campos monetarios incompletos", errors);
         }
 
-        BigDecimal esperado = gravadas.add(igv).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal cargos = totalCargos != null ? totalCargos : BigDecimal.ZERO;
+        BigDecimal descuentos = totalDescuentos != null ? totalDescuentos : BigDecimal.ZERO;
+
+        BigDecimal esperado = gravadas.add(igv).add(cargos).subtract(descuentos)
+                .setScale(2, RoundingMode.HALF_UP);
         BigDecimal diff = total.subtract(esperado).abs();
 
         if (diff.compareTo(new BigDecimal("0.01")) > 0) {
             throw new SunatValidationException(
                     "SUNAT: El total (" + total + ") debe ser igual a gravadas (" + gravadas
-                            + ") + IGV (" + igv + "). Esperado: " + esperado);
+                            + ") + IGV (" + igv + ")"
+                            + (cargos.signum() > 0 ? " + cargos (" + cargos + ")" : "")
+                            + (descuentos.signum() > 0 ? " − descuentos (" + descuentos + ")" : "")
+                            + ". Esperado: " + esperado);
         }
     }
 
     /**
-     * Valida que un comprobante solo pueda eliminarse si está en estado BORRADOR.
+     * Valida que un comprobante solo pueda eliminarse si está en estado BORRADOR o CON_ERROR.
+     * Documentos que ya fueron enviados o validados no pueden eliminarse.
      */
     public static void validarEliminacionPermitida(String estado, String tipoDoc, String docId) {
-        if (!"BORRADOR".equalsIgnoreCase(estado)) {
+        if (!"BORRADOR".equalsIgnoreCase(estado) && !"CON_ERROR".equalsIgnoreCase(estado)) {
             throw new SunatValidationException(
                     "SUNAT: No se puede eliminar " + tipoDoc + " [" + docId
                             + "] porque su estado es '" + estado
-                            + "'. Solo los comprobantes en estado BORRADOR pueden eliminarse.");
+                            + "'. Solo los comprobantes en estado BORRADOR o CON_ERROR pueden eliminarse.");
         }
     }
 

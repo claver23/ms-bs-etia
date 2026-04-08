@@ -187,7 +187,7 @@ class UblInvoiceXmlBuilderTest {
             String ns = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
             NodeList ids = doc.getElementsByTagNameNS(ns, "ID");
             // El primer cbc:ID es el del documento
-            assertEquals("F003-1716", ids.item(0).getTextContent());
+            assertEquals("F003-00001716", ids.item(0).getTextContent());
         }
 
         @Test @DisplayName("UBLVersionID = 2.1")

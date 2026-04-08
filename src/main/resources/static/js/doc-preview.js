@@ -25,6 +25,8 @@ var DocPreview = (function() {
     /* Badge class per estado */
     var _badgeMap = {
         'BORRADOR':   'badge-gray',
+        'VALIDADO':   'badge-blue',
+        'CON_ERROR':  'badge-red',
         'ENVIADA':    'badge-blue',
         'ACEPTADA':   'badge-green',
         'RECHAZADA':  'badge-red',
@@ -49,8 +51,8 @@ var DocPreview = (function() {
         _currentDoc     = null;
 
         var meta = _labels[docType] || { icon: '📄', name: 'Documento' };
-        title.innerHTML = meta.icon + ' ' + meta.name;
-        sub.textContent = 'Cargando...';
+        title.innerHTML = meta.icon + ' Cargando...';
+        sub.textContent = '';
         body.innerHTML = '<p class="pm-spinner" style="text-align:center;padding:3rem;color:var(--accent);">⏳ Cargando datos del documento...</p>';
         footer.style.display = 'none';
         if (banner) banner.style.display = 'none';
@@ -87,7 +89,7 @@ var DocPreview = (function() {
 
     function _hideAllActions() {
         var ids = ['dp-edit-btn', 'dp-emit-btn', 'dp-annul-btn', 'dp-xml-btn', 'dp-delete-btn',
-                   'dp-json-btn', 'dp-pdf-btn'];
+                   'dp-json-btn', 'dp-pdf-btn', 'dp-validate-btn'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) { el.style.display = 'none'; el.disabled = false; }
@@ -97,20 +99,54 @@ var DocPreview = (function() {
     function _renderDoc(docType, doc) {
         var body    = document.getElementById('dp-body');
         var footer  = document.getElementById('dp-footer');
+        var title   = document.getElementById('dp-title');
         var sub     = document.getElementById('dp-subtitle');
         var banner  = document.getElementById('dp-status-banner');
         var editBtn  = document.getElementById('dp-edit-btn');
         var emitBtn  = document.getElementById('dp-emit-btn');
         var annulBtn = document.getElementById('dp-annul-btn');
 
-        /* ─── Estado badge ─── */
+        /* ─── Header: serie+numero + estado badge ─── */
         var estado = doc.estado || '—';
         var badgeCls = _badgeMap[estado] || 'badge-gray';
-        sub.innerHTML = '<span class="badge ' + badgeCls + '" style="font-size:0.7rem;">' + estado + '</span>';
+        var estadoLabel = estado === 'CON_ERROR' ? '⚠ CON ERROR' : estado === 'VALIDADO' ? '✅ VALIDADO' : estado;
+        var meta = _labels[docType] || { icon: '📄', name: 'Documento' };
+        if (doc.serie && doc.numero != null) {
+            title.innerHTML = meta.icon + ' ' + ETIA.formatNumero(doc.serie, doc.numero);
+        } else {
+            title.innerHTML = meta.icon + ' ' + meta.name;
+        }
+        sub.innerHTML = '<span class="badge ' + badgeCls + '" style="font-size:0.7rem;">' + estadoLabel + '</span>';
 
         /* ─── Status banner ─── */
         if (banner) {
-            if (estado === 'RECHAZADA' && doc.descripcionRespuestaSunat) {
+            if (estado === 'CON_ERROR') {
+                banner.style.display = 'block';
+                var errores = [];
+                if (doc.erroresValidacion) {
+                    try { errores = JSON.parse(doc.erroresValidacion); } catch(e) { errores = [doc.erroresValidacion]; }
+                }
+                var errHtml = '<div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.3);border-radius:var(--radius-sm);padding:1rem 1.5rem;margin:0;">' +
+                    '<div style="display:flex;align-items:flex-start;gap:0.6rem;">' +
+                        '<span style="font-size:1.3rem;flex-shrink:0;">⚠️</span>' +
+                        '<div style="flex:1;">' +
+                            '<strong style="color:var(--danger);font-size:0.85rem;display:block;margin-bottom:0.3rem;">Errores de Validación (' + errores.length + ')</strong>' +
+                            '<p style="color:var(--text-secondary);font-size:0.78rem;margin:0.3rem 0 0.5rem;line-height:1.5;">Este documento tiene errores que deben corregirse antes de emitir.</p>';
+                if (errores.length > 0) {
+                    errHtml += '<ul style="margin:0;padding-left:1.2rem;color:var(--danger);font-size:0.78rem;line-height:1.7;">';
+                    errores.forEach(function(err) { errHtml += '<li>' + err + '</li>'; });
+                    errHtml += '</ul>';
+                }
+                errHtml += '<p style="color:var(--accent);font-size:0.78rem;margin:0.6rem 0 0;">💡 Corrige los datos y vuelve a validar o emitir el documento.</p>' +
+                        '</div></div></div>';
+                banner.innerHTML = errHtml;
+            } else if (estado === 'VALIDADO') {
+                banner.style.display = 'block';
+                banner.innerHTML =
+                    '<div style="background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius-sm);padding:0.8rem 1.5rem;margin:0;">' +
+                        '<span style="font-size:0.82rem;color:var(--info);">✅ Documento validado — Listo para emitir. Todos los campos cumplen con las reglas SUNAT.</span>' +
+                    '</div>';
+            } else if (estado === 'RECHAZADA' && doc.descripcionRespuestaSunat) {
                 banner.style.display = 'block';
                 banner.innerHTML =
                     '<div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.3);border-radius:var(--radius-sm);padding:1rem 1.5rem;margin:0;">' +
@@ -155,7 +191,7 @@ var DocPreview = (function() {
         html += '<div class="dp-grid">';
 
         if (docType === 'factura' || docType === 'boleta') {
-            html += _field('Serie / Número', (doc.serie || '') + '-' + (doc.numero || ''));
+            html += _field('Serie / Número', ETIA.formatNumero(doc.serie, doc.numero));
             html += _field('Fecha Emisión', ETIA.formatDate(doc.fechaEmision || doc.fechaCreacion));
             html += _field('Moneda', doc.moneda || 'PEN');
             html += _field('Forma de Pago', doc.formaPago || 'CONTADO');
@@ -209,13 +245,59 @@ var DocPreview = (function() {
             html += '</tbody></table></div></div>';
         }
 
+        /* ─── Cargos / Descuentos Globales ─── */
+        var acItems = doc.cargosDescuentos || [];
+        if (acItems && acItems.length > 0) {
+            html += '<div class="dp-section">';
+            html += '<div class="dp-section-title">📋 Cargos / Descuentos Globales</div>';
+            html += '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+                '<th>Tipo</th><th>Código</th><th>Descripción</th><th>Factor</th><th>Base</th><th>Monto</th>' +
+                '</tr></thead><tbody>';
+            acItems.forEach(function(ac) {
+                var tipo = ac.chargeIndicator ? '⬆ Cargo' : '⬇ Descuento';
+                var color = ac.chargeIndicator ? 'var(--warning)' : 'var(--danger)';
+                html += '<tr>' +
+                    '<td style="color:' + color + ';font-weight:600;">' + tipo + '</td>' +
+                    '<td>' + (ac.reasonCode || '—') + '</td>' +
+                    '<td>' + (ac.reasonDescription || '—') + '</td>' +
+                    '<td style="font-family:var(--font-mono);">' + _money(ac.multiplierFactor) + '</td>' +
+                    '<td style="font-family:var(--font-mono);">' + _money(ac.baseAmount) + '</td>' +
+                    '<td style="font-family:var(--font-mono);color:' + color + ';font-weight:600;">' + _money(ac.amount) + '</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table></div></div>';
+        }
+
+        /* ─── Cuotas de Crédito ─── */
+        var cuotaItems = doc.cuotas || [];
+        if (cuotaItems && cuotaItems.length > 0) {
+            html += '<div class="dp-section">';
+            html += '<div class="dp-section-title">💳 Cuotas de Crédito</div>';
+            html += '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+                '<th># Cuota</th><th>Monto</th><th>Fecha Vencimiento</th><th>Moneda</th>' +
+                '</tr></thead><tbody>';
+            cuotaItems.forEach(function(c) {
+                html += '<tr>' +
+                    '<td><strong>' + (c.numeroCuota || '—') + '</strong></td>' +
+                    '<td style="font-family:var(--font-mono);">' + _money(c.monto) + '</td>' +
+                    '<td>' + (c.fechaVencimiento ? ETIA.formatDate(c.fechaVencimiento) : '—') + '</td>' +
+                    '<td>' + (c.moneda || doc.moneda || 'PEN') + '</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table></div></div>';
+        }
+
         /* ─── Totals ─── */
         if (doc.gravadas !== undefined || doc.total !== undefined) {
             var monSym = (doc.moneda === 'USD') ? 'US$ ' : 'S/ ';
             html += '<div class="dp-section">';
             html += '<div class="dp-section-title">💰 Resumen</div>';
             if (doc.gravadas !== undefined) html += _totalRow('Op. Gravadas', monSym + _num(doc.gravadas));
+            if (doc.exoneradas && parseFloat(doc.exoneradas) > 0) html += _totalRow('Op. Exoneradas', monSym + _num(doc.exoneradas));
+            if (doc.inafectas && parseFloat(doc.inafectas) > 0) html += _totalRow('Op. Inafectas', monSym + _num(doc.inafectas));
             if (doc.igv !== undefined) html += _totalRow('IGV (18%)', monSym + _num(doc.igv));
+            if (doc.totalCargos && parseFloat(doc.totalCargos) > 0) html += _totalRow('+ Cargos', '<span style="color:var(--warning);">' + monSym + _num(doc.totalCargos) + '</span>');
+            if (doc.totalDescuentos && parseFloat(doc.totalDescuentos) > 0) html += _totalRow('− Descuentos', '<span style="color:var(--danger);">−' + monSym + _num(doc.totalDescuentos) + '</span>');
             html += '<div class="dp-total-row grand"><span>TOTAL</span><span>' + monSym + _num(doc.total) + '</span></div>';
             html += '</div>';
         }
@@ -236,19 +318,20 @@ var DocPreview = (function() {
         /* ═══════ State-driven action buttons ═══════ */
         _hideAllActions();
 
-        var xmlBtn    = document.getElementById('dp-xml-btn');
-        var deleteBtn = document.getElementById('dp-delete-btn');
-        var jsonBtn   = document.getElementById('dp-json-btn');
-        var pdfBtn    = document.getElementById('dp-pdf-btn');
+        var xmlBtn      = document.getElementById('dp-xml-btn');
+        var deleteBtn   = document.getElementById('dp-delete-btn');
+        var jsonBtn     = document.getElementById('dp-json-btn');
+        var pdfBtn      = document.getElementById('dp-pdf-btn');
+        var validateBtn = document.getElementById('dp-validate-btn');
 
         /* JSON export: available for ALL states */
         if (jsonBtn) jsonBtn.style.display = 'inline-flex';
 
-        /* Transmitted docs (post-BORRADOR): XML + PDF exports */
-        var isTransmitted = (estado !== 'BORRADOR');
+        /* XML + PDF: only for transmitted docs with XML (ENVIADA, ACEPTADA, RECHAZADA) */
+        var hasXml = (estado === 'ENVIADA' || estado === 'ACEPTADA' || estado === 'RECHAZADA');
 
         if (docType === 'factura') {
-            if (isTransmitted) {
+            if (hasXml) {
                 if (xmlBtn) xmlBtn.style.display = 'inline-flex';
                 if (pdfBtn) pdfBtn.style.display = 'inline-flex';
             }
@@ -256,8 +339,23 @@ var DocPreview = (function() {
                 case 'BORRADOR':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '✏️ Editar';
-                    editBtn.href = '/wizard?type=FACTURA';
+                    editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) validateBtn.style.display = 'inline-flex';
                     emitBtn.style.display = 'inline-flex';
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                    break;
+                case 'VALIDADO':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
+                    emitBtn.style.display = 'inline-flex';
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                    break;
+                case 'CON_ERROR':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Corregir';
+                    editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
                     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     break;
                 case 'ENVIADA':
@@ -269,23 +367,37 @@ var DocPreview = (function() {
                 case 'RECHAZADA':
                     editBtn.style.display = 'inline-flex';
                     editBtn.textContent = '🔧 Corregir y Re-emitir';
-                    editBtn.href = '/wizard?type=FACTURA';
+                    editBtn.href = '/wizard?type=FACTURA&id=' + encodeURIComponent(_currentDocId);
                     break;
                 case 'ANULADA':
                     /* Read-only — estado terminal */
                     break;
             }
         } else if (docType === 'boleta') {
-            if (estado === 'BORRADOR' || estado === 'CREADO') {
-                editBtn.style.display = 'inline-flex';
-                editBtn.textContent = '✏️ Editar';
-                editBtn.href = '/wizard?type=BOLETA';
+            switch (estado) {
+                case 'BORRADOR':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) validateBtn.style.display = 'inline-flex';
+                    break;
+                case 'VALIDADO':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
+                    break;
+                case 'CON_ERROR':
+                    editBtn.style.display = 'inline-flex';
+                    editBtn.textContent = '✏️ Corregir';
+                    editBtn.href = '/wizard?type=BOLETA&id=' + encodeURIComponent(_currentDocId);
+                    if (validateBtn) { validateBtn.style.display = 'inline-flex'; validateBtn.textContent = '🔍 Re-validar'; }
+                    break;
             }
         } else {
             if (estado === 'BORRADOR' || estado === 'CREADO') {
                 editBtn.style.display = 'inline-flex';
                 editBtn.textContent = '✏️ Editar';
-                editBtn.href = '/wizard-nota?type=' + (docType === 'nota_credito' ? 'NOTA_CREDITO' : 'NOTA_DEBITO');
+                editBtn.href = '/wizard-nota?type=' + (docType === 'nota_credito' ? 'NOTA_CREDITO' : 'NOTA_DEBITO') + '&id=' + encodeURIComponent(_currentDocId);
             }
         }
     }
@@ -296,20 +408,8 @@ var DocPreview = (function() {
         var emitBtn = document.getElementById('dp-emit-btn');
         if (emitBtn) { emitBtn.disabled = true; emitBtn.textContent = '⏳ Emitiendo...'; }
 
-        /* Re-emit using the existing emitirFactura endpoint */
-        var payload = {
-            companyId: _currentDoc.companyId || ETIA.companyId,
-            clientId: _currentDoc.clientId || null,
-            serie: _currentDoc.serie || null,
-            moneda: _currentDoc.moneda || 'PEN',
-            formaPago: _currentDoc.formaPago || 'CONTADO',
-            gravadas: _currentDoc.gravadas || 0,
-            igv: _currentDoc.igv || 0,
-            total: _currentDoc.total || 0,
-            detalle: _currentDoc.detalle || []
-        };
-
-        ApiClient.emitirFactura(payload).then(function() {
+        /* Use emitirFacturaBorrador to transition BORRADOR → EMITIDA with XML generation */
+        ApiClient.emitirFacturaBorrador(_currentDocId).then(function() {
             close();
             if (typeof loadDocs === 'function') loadDocs();
             if (ETIA.showSuccess) ETIA.showSuccess('Factura emitida exitosamente');
@@ -320,7 +420,7 @@ var DocPreview = (function() {
 
     function anular() {
         if (!_currentDocId || !_currentDoc) return;
-        var serie = (_currentDoc.serie || '') + '-' + (_currentDoc.numero || '');
+        var serie = ETIA.formatNumero(_currentDoc.serie, _currentDoc.numero);
         if (!confirm('¿Anular la factura ' + serie + '? Esta acción no se puede deshacer.')) return;
 
         var annulBtn = document.getElementById('dp-annul-btn');
@@ -363,7 +463,7 @@ var DocPreview = (function() {
 
     function eliminar() {
         if (!_currentDocId || !_currentDoc) return;
-        var serie = (_currentDoc.serie || '') + '-' + (_currentDoc.numero || '');
+        var serie = ETIA.formatNumero(_currentDoc.serie, _currentDoc.numero);
         if (!confirm('¿Eliminar el borrador ' + serie + '? Esta acción no se puede deshacer.')) return;
 
         var deleteBtn = document.getElementById('dp-delete-btn');
@@ -378,29 +478,71 @@ var DocPreview = (function() {
         });
     }
 
+    function validar() {
+        if (!_currentDocId || !_currentDocType) return;
+        var validateBtn = document.getElementById('dp-validate-btn');
+        if (validateBtn) { validateBtn.disabled = true; validateBtn.textContent = '⏳ Validando...'; }
+
+        var apiCall = _currentDocType === 'boleta'
+            ? ApiClient.validarBoleta(_currentDocId)
+            : ApiClient.validarFactura(_currentDocId);
+
+        apiCall.then(function(result) {
+            if (result && result.data) result = result.data;
+            if (result && result.valid) {
+                if (ETIA.showSuccess) ETIA.showSuccess('✅ Documento validado correctamente — Listo para emitir');
+            } else {
+                var errCount = (result && result.errores) ? result.errores.length : 0;
+                if (ETIA.showError) ETIA.showError({ message: '⚠ Validación encontró ' + errCount + ' error(es). Revisa el documento.' });
+            }
+            /* Refresh preview with updated state */
+            open(_currentDocType, _currentDocId);
+            if (typeof loadDocs === 'function') loadDocs();
+        }).catch(function() {
+            if (validateBtn) { validateBtn.disabled = false; validateBtn.textContent = '🔍 Validar'; }
+        });
+    }
+
     /* ─── Export functions ─── */
     function exportJson() {
         if (!_currentDoc) return;
-        var serie = (_currentDoc.serie || _currentDocType || 'doc') + '-' + (_currentDoc.numero || _currentDocId);
+        var jsonBtn = document.getElementById('dp-json-btn');
         var json = JSON.stringify(_currentDoc, null, 2);
-        var blob = new Blob([json], { type: 'application/json' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = serie + '.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-        if (ETIA.showSuccess) ETIA.showSuccess('JSON descargado: ' + serie + '.json');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(json).then(function() {
+                if (jsonBtn) { jsonBtn.textContent = '✅ Copiado'; setTimeout(function() { jsonBtn.textContent = '📋 JSON'; }, 1500); }
+                if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles');
+            }).catch(function() {
+                _fallbackCopyJson(json, jsonBtn);
+            });
+        } else {
+            _fallbackCopyJson(json, jsonBtn);
+        }
+    }
+
+    function _fallbackCopyJson(json, btn) {
+        var ta = document.createElement('textarea');
+        ta.value = json;
+        ta.style.cssText = 'position:fixed;left:-9999px;';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            if (btn) { btn.textContent = '✅ Copiado'; setTimeout(function() { btn.textContent = '📋 JSON'; }, 1500); }
+            if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles');
+        } catch(e) {
+            /* Last resort: open in new tab */
+            var blob = new Blob([json], { type: 'application/json' });
+            window.open(URL.createObjectURL(blob));
+        }
+        document.body.removeChild(ta);
     }
 
     function exportPdf() {
         if (!_currentDoc) return;
         var doc = _currentDoc;
         var meta = _labels[_currentDocType] || { icon: '📄', name: 'Documento' };
-        var serie = (doc.serie || '') + '-' + (doc.numero || '');
-        var monSym = (doc.moneda === 'USD') ? 'US$ ' : 'S/ ';
-        var estado = doc.estado || '';
 
         /* Parse items */
         var items = doc.detalle || doc.detalleJson || [];
@@ -408,71 +550,41 @@ var DocPreview = (function() {
             try { items = JSON.parse(items); } catch(e) { items = []; }
         }
 
-        var itemsHtml = '';
-        if (items && items.length) {
-            itemsHtml = '<table class="tbl"><thead><tr><th>Descripción</th><th>U.M.</th><th>Cant.</th><th>V.Unit.</th><th>IGV</th><th>Subtotal</th></tr></thead><tbody>';
-            items.forEach(function(it) {
-                itemsHtml += '<tr>' +
-                    '<td>' + (it.descripcion || '—') + '</td>' +
-                    '<td>' + (it.unidadMedida || 'ZZ') + '</td>' +
-                    '<td style="text-align:center;">' + (it.cantidad || 1) + '</td>' +
-                    '<td style="text-align:right;">' + _money(it.valorUnitario) + '</td>' +
-                    '<td style="text-align:right;">' + _money(it.igv) + '</td>' +
-                    '<td style="text-align:right;font-weight:600;">' + _money(it.subtotal) + '</td>' +
-                    '</tr>';
-            });
-            itemsHtml += '</tbody></table>';
+        /* Resolve client from cache */
+        var client = {};
+        if (doc.clientId) {
+            client = ETIA.findClientById(doc.clientId) || {};
         }
 
-        var printHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + meta.name + ' ' + serie + '</title>' +
-            '<style>' +
-            'body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;padding:2rem;max-width:800px;margin:0 auto;font-size:12px;}' +
-            'h1{font-size:1.4rem;margin:0 0 0.3rem;}' +
-            '.subtitle{color:#666;font-size:0.85rem;margin-bottom:1.5rem;}' +
-            '.badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.7rem;font-weight:600;}' +
-            '.badge-green{background:#e6f9ed;color:#1a7f37;}' +
-            '.badge-blue{background:#ddf4ff;color:#0969da;}' +
-            '.badge-red{background:#ffebe9;color:#cf222e;}' +
-            '.badge-yellow{background:#fff8c5;color:#9a6700;}' +
-            '.badge-gray{background:#f0f0f0;color:#656d76;}' +
-            '.section{margin-bottom:1.5rem;}' +
-            '.section-title{font-weight:700;font-size:0.9rem;margin-bottom:0.5rem;border-bottom:2px solid #e0e0e0;padding-bottom:0.3rem;}' +
-            '.grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;}' +
-            '.field label{font-size:0.7rem;color:#888;display:block;}.field span{font-size:0.85rem;}' +
-            '.tbl{width:100%;border-collapse:collapse;font-size:0.8rem;}' +
-            '.tbl th{background:#f6f6f6;text-align:left;padding:0.4rem 0.6rem;border-bottom:2px solid #ddd;font-size:0.72rem;}' +
-            '.tbl td{padding:0.35rem 0.6rem;border-bottom:1px solid #eee;}' +
-            '.total-row{display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.85rem;}' +
-            '.total-row.grand{font-weight:700;font-size:1rem;border-top:2px solid #333;padding-top:0.5rem;margin-top:0.3rem;}' +
-            '@media print{body{padding:1rem;}}' +
-            '</style></head><body>' +
-            '<h1>' + meta.icon + ' ' + meta.name + '</h1>' +
-            '<div class="subtitle">' + serie + ' &nbsp; <span class="badge badge-' +
-                (estado === 'ACEPTADA' ? 'green' : estado === 'ENVIADA' ? 'blue' : estado === 'RECHAZADA' ? 'red' : estado === 'ANULADA' ? 'yellow' : 'gray') +
-                '">' + estado + '</span></div>' +
-            '<div class="section"><div class="section-title">Información General</div><div class="grid">' +
-                '<div class="field"><label>Fecha Emisión</label><span>' + (doc.fechaEmision || doc.fechaCreacion || '—') + '</span></div>' +
-                '<div class="field"><label>Moneda</label><span>' + (doc.moneda || 'PEN') + '</span></div>' +
-                '<div class="field"><label>Forma de Pago</label><span>' + (doc.formaPago || 'CONTADO') + '</span></div>' +
-                (doc.fechaVencimiento ? '<div class="field"><label>Fecha Vencimiento</label><span>' + doc.fechaVencimiento + '</span></div>' : '') +
-            '</div></div>' +
-            (doc.leyenda ? '<div class="section"><div class="section-title">Leyenda</div><p style="font-style:italic;color:#666;">' + doc.leyenda + '</p></div>' : '') +
-            (itemsHtml ? '<div class="section"><div class="section-title">Detalle de Ítems</div>' + itemsHtml + '</div>' : '') +
-            '<div class="section"><div class="section-title">Resumen</div>' +
-                (doc.gravadas !== undefined ? '<div class="total-row"><span>Op. Gravadas</span><span>' + monSym + _num(doc.gravadas) + '</span></div>' : '') +
-                (doc.exoneradas && parseFloat(doc.exoneradas) > 0 ? '<div class="total-row"><span>Op. Exoneradas</span><span>' + monSym + _num(doc.exoneradas) + '</span></div>' : '') +
-                (doc.inafectas && parseFloat(doc.inafectas) > 0 ? '<div class="total-row"><span>Op. Inafectas</span><span>' + monSym + _num(doc.inafectas) + '</span></div>' : '') +
-                (doc.igv !== undefined ? '<div class="total-row"><span>IGV (18%)</span><span>' + monSym + _num(doc.igv) + '</span></div>' : '') +
-                '<div class="total-row grand"><span>TOTAL</span><span>' + monSym + _num(doc.total) + '</span></div>' +
-            '</div>' +
-            '<div style="margin-top:2rem;font-size:0.65rem;color:#aaa;text-align:center;">Generado por ETIA — ' + new Date().toLocaleString() + '</div>' +
-            '</body></html>';
+        /* Totals */
+        var totals = {
+            gravadas: doc.gravadas,
+            exoneradas: doc.exoneradas,
+            inafectas: doc.inafectas,
+            igv: doc.igv,
+            totalCargos: doc.totalCargos,
+            totalDescuentos: doc.totalDescuentos,
+            total: doc.total
+        };
 
-        var printWindow = window.open('', '_blank', 'width=800,height=600');
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(function() { printWindow.print(); }, 400);
+        /* Fetch logo (cached) then print via PdfTemplate */
+        ETIA.getLogoBase64().then(function(logoBase64) {
+            if (typeof PdfTemplate !== 'undefined') {
+                PdfTemplate.print({
+                    doc: doc,
+                    company: ETIA.company || {},
+                    client: client,
+                    items: items,
+                    totals: totals,
+                    logoBase64: logoBase64,
+                    docTypeName: meta.name,
+                    docTypeIcon: meta.icon
+                });
+            } else {
+                /* Fallback: PdfTemplate not loaded */
+                console.warn('PdfTemplate not available, cannot export PDF');
+            }
+        });
     }
 
     /* ─── Helpers ─── */
@@ -492,7 +604,7 @@ var DocPreview = (function() {
         return '<div class="dp-total-row"><span style="color:var(--text-secondary);">' + label + '</span><span style="font-family:var(--font-mono);">' + value + '</span></div>';
     }
 
-    return { open: open, close: close, emitir: emitir, anular: anular, descargarXml: descargarXml, eliminar: eliminar, exportJson: exportJson, exportPdf: exportPdf };
+    return { open: open, close: close, emitir: emitir, anular: anular, validar: validar, descargarXml: descargarXml, eliminar: eliminar, exportJson: exportJson, exportPdf: exportPdf };
 })();
 
 /* Global shortcuts */
@@ -500,6 +612,7 @@ function openDocPreview(type, id) { DocPreview.open(type, id); }
 function closeDocPreview() { DocPreview.close(); }
 function dpEmitirFactura() { DocPreview.emitir(); }
 function dpAnularFactura() { DocPreview.anular(); }
+function dpValidarDoc() { DocPreview.validar(); }
 function dpDescargarXml() { DocPreview.descargarXml(); }
 function dpEliminarFactura() { DocPreview.eliminar(); }
 function dpExportJson() { DocPreview.exportJson(); }

@@ -8,6 +8,7 @@ ETIA.companyId = '';
 ETIA.clientId  = '';
 ETIA.company   = null;
 ETIA.client    = null;
+ETIA.clients   = [];   /* All clients for lookup */
 ETIA.activeSede = null;
 ETIA.sedes      = [];
 ETIA.rejectedDocs = [];
@@ -26,7 +27,11 @@ ETIA.config = {
     sedeDireccion:  localStorage.getItem('etia_sedeDireccion')  || '',
     sedeLat:        localStorage.getItem('etia_sedeLat')        || '',
     sedeLng:        localStorage.getItem('etia_sedeLng')        || '',
-    tipoCambioFuente: localStorage.getItem('etia_tipoCambioFuente') || 'SBS'
+    tipoCambioFuente: localStorage.getItem('etia_tipoCambioFuente') || 'SBS',
+    emisionEnEnvio: localStorage.getItem('etia_emisionEnEnvio') !== 'false',
+    defaultCuotas:    localStorage.getItem('etia_defaultCuotas')    || '1',
+    cuotaDistribucion:localStorage.getItem('etia_cuotaDistribucion')|| 'FIJA_30D',
+    documentFormat:   localStorage.getItem('etia_documentFormat')   || 'standard'
 };
 
 /* ─── Save a config key ─── */
@@ -157,11 +162,18 @@ function _applyCompanyData(c) {
 }
 
 function _applyClientsData(clients) {
-    if (clients && clients.length > 0) {
-        ETIA.client   = clients[0];
-        ETIA.clientId = clients[0].id;
-    }
+    ETIA.clients = clients || [];
+    /* Do NOT auto-select first client — user must choose explicitly via search modal or edit mode */
 }
+
+/**
+ * Look up a client by ID from the cached clients list.
+ * Returns the client object or null.
+ */
+ETIA.findClientById = function(clientId) {
+    if (!clientId || !ETIA.clients) return null;
+    return ETIA.clients.find(function(c) { return c.id === clientId; }) || null;
+};
 
 /* ─── Tipo de Cambio — Header Live Badge ─── */
 ETIA.tipoCambio = null;
@@ -329,9 +341,10 @@ function _renderNotifBadge(docs) {
     } else if (list) {
         list.innerHTML = docs.map(function(d) {
             var label = { FACTURA:'Factura', BOLETA:'Boleta', NOTA_CREDITO:'Nota Crédito', NOTA_DEBITO:'Nota Débito' }[d.tipo] || d.tipo;
+            var sn = ETIA.formatNumero(d.serie, d.numero);
             return '<div class="g-notif-item">' +
                 '<div class="g-notif-item-info">' +
-                    '<strong>' + label + ' ' + (d.serie || '') + '-' + (d.numero || '') + '</strong>' +
+                    '<strong>' + label + ' ' + sn + '</strong>' +
                     '<span>' + ETIA.formatDate(d.fecha) + ' · S/ ' + (d.total != null ? d.total.toFixed(2) : '—') + ' · ' + d.estado + '</span>' +
                 '</div>' +
                 '<div class="g-notif-item-actions">' +
@@ -421,6 +434,20 @@ ETIA.refreshNotifications = function() {
     }
 };
 
+/* ─── Numero Formatting Utility ─── */
+/**
+ * Formats a factura serie + numero to SUNAT standard: F001-00000011
+ * @param {string} serie - e.g. 'F001'
+ * @param {number|string} numero - e.g. 11
+ * @returns {string} e.g. 'F001-00000011'
+ */
+ETIA.formatNumero = function(serie, numero) {
+    var s = serie || '';
+    var n = String(numero || 0);
+    while (n.length < 8) n = '0' + n;
+    return s + '-' + n;
+};
+
 /* ─── Date Formatting Utility ─── */
 /**
  * Formats an ISO date string (yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss) to dd/MM/yyyy.
@@ -443,6 +470,55 @@ ETIA.formatDateTime = function(dateStr) {
     if (d === '—') return '—';
     var timePart = String(dateStr).substring(11, 16);
     return timePart ? (d + ' ' + timePart) : d;
+};
+
+/* ─── Logo as Base64 Data URL (shared helper for PDF templates) ─── */
+ETIA._logoBase64Cache = null;
+ETIA._logoBase64Promise = null;
+
+/**
+ * Fetch the company logo and return as a base64 data URL.
+ * Caches the result so subsequent calls are instant.
+ * Returns '' if no logo is configured or fetch fails.
+ * @returns {Promise<string>} data:image/...;base64,... or ''
+ */
+ETIA.getLogoBase64 = function() {
+    if (ETIA._logoBase64Cache !== null) return Promise.resolve(ETIA._logoBase64Cache);
+    if (ETIA._logoBase64Promise) return ETIA._logoBase64Promise;
+    if (!ETIA.companyId) return Promise.resolve('');
+
+    ETIA._logoBase64Promise = fetch(ApiClient.getLogoUrl(ETIA.companyId))
+        .then(function(resp) {
+            if (!resp.ok) return '';
+            return resp.blob();
+        })
+        .then(function(blob) {
+            if (!blob || blob.size === 0) return '';
+            return new Promise(function(resolve) {
+                var reader = new FileReader();
+                reader.onloadend = function() { resolve(reader.result || ''); };
+                reader.onerror = function() { resolve(''); };
+                reader.readAsDataURL(blob);
+            });
+        })
+        .then(function(dataUrl) {
+            ETIA._logoBase64Cache = dataUrl;
+            ETIA._logoBase64Promise = null;
+            return dataUrl;
+        })
+        .catch(function() {
+            ETIA._logoBase64Cache = '';
+            ETIA._logoBase64Promise = null;
+            return '';
+        });
+
+    return ETIA._logoBase64Promise;
+};
+
+/** Invalidate logo cache (e.g. after uploading a new logo) */
+ETIA.invalidateLogoCache = function() {
+    ETIA._logoBase64Cache = null;
+    ETIA._logoBase64Promise = null;
 };
 
 /* ─── Close TC popup on outside click ─── */

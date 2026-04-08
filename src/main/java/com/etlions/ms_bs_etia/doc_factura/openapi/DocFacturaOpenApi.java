@@ -47,6 +47,16 @@ public class DocFacturaOpenApi implements FacturaApi {
     }
 
     @Override
+    public ResponseEntity<FacturaResponseDto> emitirFacturaBorrador(String facturaId) {
+        return ResponseEntity.ok(docFacturaService.emitirFacturaBorrador(facturaId));
+    }
+
+    @Override
+    public ResponseEntity<FacturaResponseDto> actualizarFacturaBorrador(String facturaId, FacturaEmitirDto facturaEmitirDto) {
+        return ResponseEntity.ok(docFacturaService.actualizarBorrador(facturaId, facturaEmitirDto));
+    }
+
+    @Override
     public ResponseEntity<Resource> descargarFacturaXml(String facturaId) {
         DocFacturaService.FacturaXmlResult result = docFacturaService.descargarFacturaXml(facturaId);
 
@@ -59,6 +69,11 @@ public class DocFacturaOpenApi implements FacturaApi {
                         "attachment; filename=\"" + result.filename() + "\"")
                 .contentType(MediaType.APPLICATION_XML)
                 .body(new ByteArrayResource(result.content()));
+    }
+
+    @Override
+    public ResponseEntity<DocumentValidationResultDto> validarFactura(String facturaId) {
+        return ResponseEntity.ok(docFacturaService.validarFactura(facturaId));
     }
 }
 

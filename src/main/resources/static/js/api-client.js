@@ -56,6 +56,38 @@ var ApiClient = (function() {
         });
     }
 
+    function updateCompany(companyId, payload) {
+        return _put('/company?companyId=' + encodeURIComponent(companyId), payload);
+    }
+
+    function uploadCertificado(companyId, file) {
+        var url = BASE + '/company/certificado?companyId=' + encodeURIComponent(companyId);
+        var formData = new FormData();
+        formData.append('archivo', file);
+        return fetch(url, {
+            method: 'POST',
+            body: formData
+        }).then(function(r) { return _handleResponse(r, url); });
+    }
+
+    function probarConexionSunat(companyId) {
+        return _post('/company/probar-conexion?companyId=' + encodeURIComponent(companyId), {});
+    }
+
+    function uploadLogo(companyId, file) {
+        var url = BASE + '/company/logo?companyId=' + encodeURIComponent(companyId);
+        var formData = new FormData();
+        formData.append('archivo', file);
+        return fetch(url, {
+            method: 'POST',
+            body: formData
+        }).then(function(r) { return _handleResponse(r, url); });
+    }
+
+    function getLogoUrl(companyId) {
+        return BASE + '/company/logo?companyId=' + encodeURIComponent(companyId);
+    }
+
     /* ═══════ CLIENT ═══════ */
     function listClients(companyId) {
         return _get('/client?companyId=' + encodeURIComponent(companyId)).then(function(res) {
@@ -122,6 +154,14 @@ var ApiClient = (function() {
     }
 
     /* ═══════ PRODUCT ═══════ */
+    function listProducts(companyId) {
+        return _get('/product?companyId=' + encodeURIComponent(companyId) + '&size=1000').then(function(res) {
+            if (res.data && Array.isArray(res.data.content)) return res.data.content;
+            if (Array.isArray(res.data)) return res.data;
+            return [];
+        });
+    }
+
     function searchProducts(companyId, term, page, size) {
         var url = '/product?companyId=' + encodeURIComponent(companyId);
         if (term) url += '&term=' + encodeURIComponent(term);
@@ -233,6 +273,18 @@ var ApiClient = (function() {
         return _delete('/factura?facturaId=' + encodeURIComponent(facturaId));
     }
 
+    function emitirFacturaBorrador(facturaId) {
+        return _put('/factura/' + encodeURIComponent(facturaId) + '/emitir', {});
+    }
+
+    function actualizarFacturaBorrador(facturaId, payload) {
+        return _put('/factura/' + encodeURIComponent(facturaId) + '/actualizar', payload);
+    }
+
+    function validarFactura(facturaId) {
+        return _post('/factura/' + encodeURIComponent(facturaId) + '/validar', {});
+    }
+
     function descargarFacturaXml(facturaId) {
         var url = BASE + '/factura/' + encodeURIComponent(facturaId) + '/xml';
         return fetch(url).then(function(r) {
@@ -254,6 +306,10 @@ var ApiClient = (function() {
         return _get('/boleta?companyId=' + encodeURIComponent(companyId)).then(function(res) {
             return (res.data && res.data.content) ? res.data.content : [];
         });
+    }
+
+    function validarBoleta(boletaId) {
+        return _post('/boleta/' + encodeURIComponent(boletaId) + '/validar', {});
     }
 
     /* ═══════ NOTA CREDITO ═══════ */
@@ -339,6 +395,11 @@ var ApiClient = (function() {
     /* ═══════ PUBLIC API ═══════ */
     return {
         listCompanies:      listCompanies,
+        updateCompany:      updateCompany,
+        uploadCertificado:  uploadCertificado,
+        probarConexionSunat: probarConexionSunat,
+        uploadLogo:         uploadLogo,
+        getLogoUrl:         getLogoUrl,
         listClients:        listClients,
         registerClient:     registerClient,
         updateClient:       updateClient,
@@ -350,6 +411,7 @@ var ApiClient = (function() {
         registerEmployee:   registerEmployee,
         updateEmployee:     updateEmployee,
         deleteEmployee:     deleteEmployee,
+        listProducts:       listProducts,
         searchProducts:     searchProducts,
         createProduct:      createProduct,
         getProduct:         getProduct,
@@ -370,10 +432,14 @@ var ApiClient = (function() {
         listarFacturas:     listarFacturas,
         anularFactura:      anularFactura,
         eliminarFactura:    eliminarFactura,
+        emitirFacturaBorrador: emitirFacturaBorrador,
+        actualizarFacturaBorrador: actualizarFacturaBorrador,
+        validarFactura:     validarFactura,
         descargarFacturaXml: descargarFacturaXml,
         getFactura:         getFactura,
         emitirBoleta:       emitirBoleta,
         listarBoletas:      listarBoletas,
+        validarBoleta:      validarBoleta,
         getBoleta:          getBoleta,
         emitirNotaCredito:  emitirNotaCredito,
         listarNotasCredito: listarNotasCredito,

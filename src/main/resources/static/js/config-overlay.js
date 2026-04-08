@@ -99,6 +99,46 @@ function loadConfigValues() {
         el = document.getElementById('cfg-co-nombre');    if (el) el.value = co.nombreComercial || '';
         el = document.getElementById('cfg-co-regimen');   if (el) el.value = co.regimen || '';
         el = document.getElementById('cfg-co-direccion'); if (el) el.value = co.direccion || '';
+        el = document.getElementById('cfg-co-email');     if (el) el.value = co.emailContacto || '';
+        el = document.getElementById('cfg-co-telefono');  if (el) el.value = co.telefono || '';
+
+        /* Logo */
+        var logoImg = document.getElementById('cfg-co-logo-img');
+        var logoPlaceholder = document.getElementById('cfg-co-logo-placeholder');
+        var logoWrap = document.getElementById('cfg-co-logo-wrap');
+        if (co.tieneLogo && logoImg) {
+            logoImg.src = ApiClient.getLogoUrl(ETIA.companyId) + '&t=' + Date.now();
+            logoImg.style.display = 'block';
+            if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+            if (logoWrap) logoWrap.style.borderStyle = 'solid';
+        } else if (logoImg) {
+            logoImg.style.display = 'none';
+            if (logoPlaceholder) logoPlaceholder.style.display = '';
+            if (logoWrap) logoWrap.style.borderStyle = 'dashed';
+        }
+
+        /* Credenciales SUNAT */
+        el = document.getElementById('cfg-cred-usuario-sol'); if (el) el.value = co.usuarioSol || '';
+        el = document.getElementById('cfg-cred-clave-sol');   if (el) el.value = co.tieneClaveSol ? '••••••••' : '';
+        el = document.getElementById('cfg-cred-cert-password'); if (el) el.value = co.tieneCertificado ? '••••••••' : '';
+
+        /* Status indicators */
+        var solInd = document.getElementById('cfg-cred-sol-indicator');
+        if (solInd) {
+            if (co.tieneUsuarioSol && co.tieneClaveSol) {
+                solInd.innerHTML = '<span style="color:var(--accent);">✅ Configurado</span>';
+            } else {
+                solInd.innerHTML = '<span style="color:var(--danger);">❌ No configurado</span>';
+            }
+        }
+        var certInd = document.getElementById('cfg-cred-cert-indicator');
+        if (certInd) {
+            if (co.tieneCertificado) {
+                certInd.innerHTML = '<span style="color:var(--accent);">✅ Configurado</span>';
+            } else {
+                certInd.innerHTML = '<span style="color:var(--danger);">❌ No configurado</span>';
+            }
+        }
     }
 
     /* Preferencias */
@@ -116,6 +156,26 @@ function loadConfigValues() {
     /* Tipo de Cambio fuente */
     var tcFuenteSel = document.getElementById('cfg-tc-fuente-select');
     if (tcFuenteSel) tcFuenteSel.value = c.tipoCambioFuente || 'SBS';
+
+    /* Emisión en Envío */
+    var emisionChk = document.getElementById('cfg-emision-envio');
+    if (emisionChk) {
+        emisionChk.checked = c.emisionEnEnvio !== false;
+        _updateEmisionEnvioUI(emisionChk.checked);
+        emisionChk.addEventListener('change', function() {
+            _updateEmisionEnvioUI(emisionChk.checked);
+        });
+    }
+
+    /* Cuotas de Crédito */
+    var defCuotasEl = document.getElementById('cfg-default-cuotas');
+    if (defCuotasEl) defCuotasEl.value = c.defaultCuotas || '1';
+    var cuotaDistEl = document.getElementById('cfg-cuota-distribucion');
+    if (cuotaDistEl) cuotaDistEl.value = c.cuotaDistribucion || 'FIJA_30D';
+
+    /* Document Format */
+    var docFmtEl = document.getElementById('cfg-document-format');
+    if (docFmtEl) docFmtEl.value = c.documentFormat || 'standard';
 
     /* Series */
     var serieFac = document.getElementById('cfg-serie-fac');
@@ -171,6 +231,19 @@ function selectTheme(theme) {
     });
 }
 
+/* ─── Emisión en Envío UI ─── */
+function _updateEmisionEnvioUI(checked) {
+    var label = document.getElementById('cfg-emision-envio-label');
+    var hint = document.getElementById('cfg-emision-envio-hint');
+    var warn = document.getElementById('cfg-emision-envio-warn');
+    if (label) label.textContent = checked ? 'Activado' : 'Desactivado';
+    if (label) label.style.color = checked ? 'var(--accent)' : 'var(--danger)';
+    if (hint) hint.textContent = checked
+        ? 'Al crear un documento, se generará el XML UBL 2.1 automáticamente y se notificará la emisión.'
+        : 'Los documentos se guardarán como BORRADOR. Deberás emitirlos manualmente.';
+    if (warn) warn.style.display = checked ? 'none' : 'block';
+}
+
 /* ─── Save all config ─── */
 function saveConfig() {
     /* Preferencias */
@@ -184,7 +257,21 @@ function saveConfig() {
     var tcFuenteSel = document.getElementById('cfg-tc-fuente-select');
     if (tcFuenteSel) ETIA.saveConfig('tipoCambioFuente', tcFuenteSel.value);
 
-    /* Series */
+    /* Emisión en Envío */
+    var emisionChk = document.getElementById('cfg-emision-envio');
+    if (emisionChk) ETIA.saveConfig('emisionEnEnvio', emisionChk.checked);
+
+    /* Cuotas de Crédito */
+    var defCuotasEl = document.getElementById('cfg-default-cuotas');
+    if (defCuotasEl) ETIA.saveConfig('defaultCuotas', defCuotasEl.value);
+    var cuotaDistEl = document.getElementById('cfg-cuota-distribucion');
+    if (cuotaDistEl) ETIA.saveConfig('cuotaDistribucion', cuotaDistEl.value);
+
+    /* Document Format */
+    var docFmtEl = document.getElementById('cfg-document-format');
+    if (docFmtEl) ETIA.saveConfig('documentFormat', docFmtEl.value);
+
+    /* Sede */
     var serieFac = document.getElementById('cfg-serie-fac');
     var serieBol = document.getElementById('cfg-serie-bol');
     var serieNC  = document.getElementById('cfg-serie-nc');
@@ -220,6 +307,260 @@ function showConfigToast(msg) {
     document.body.appendChild(toast);
     setTimeout(function(){ toast.style.opacity = '0'; toast.style.transition = '0.4s'; }, 2000);
     setTimeout(function(){ toast.remove(); }, 2500);
+}
+
+/* ─── Save company contact (email + telefono) ─── */
+function saveCompanyContact() {
+    var emailEl = document.getElementById('cfg-co-email');
+    var telEl = document.getElementById('cfg-co-telefono');
+    var payload = {};
+    if (emailEl) payload.emailContacto = emailEl.value.trim();
+    if (telEl) payload.telefono = telEl.value.trim();
+
+    ApiClient.updateCompany(ETIA.companyId, payload).then(function(res) {
+        /* Update local state */
+        if (ETIA.company) {
+            if (payload.emailContacto !== undefined) ETIA.company.emailContacto = payload.emailContacto;
+            if (payload.telefono !== undefined) ETIA.company.telefono = payload.telefono;
+        }
+        showConfigToast('✅ Datos de contacto guardados');
+    }).catch(function(err) {
+        showConfigToast('❌ Error al guardar: ' + (err.message || 'desconocido'));
+    });
+}
+
+/* ─── Logo upload handler ─── */
+function handleLogoFileSelect(input) {
+    if (!input.files || input.files.length === 0) return;
+    var file = input.files[0];
+    var name = file.name.toLowerCase();
+    if (!name.endsWith('.png') && !name.endsWith('.jpg') && !name.endsWith('.jpeg')) {
+        showConfigToast('⚠️ Solo se permiten archivos .png, .jpg o .jpeg');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        showConfigToast('⚠️ El logo excede el tamaño máximo de 10 MB');
+        return;
+    }
+
+    var resultDiv = document.getElementById('cfg-logo-upload-result');
+
+    /* Upload immediately */
+    ApiClient.uploadLogo(ETIA.companyId, file).then(function(res) {
+        /* Update preview */
+        var logoImg = document.getElementById('cfg-co-logo-img');
+        var logoPlaceholder = document.getElementById('cfg-co-logo-placeholder');
+        var logoWrap = document.getElementById('cfg-co-logo-wrap');
+        if (logoImg) {
+            logoImg.src = URL.createObjectURL(file);
+            logoImg.style.display = 'block';
+        }
+        if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+        if (logoWrap) logoWrap.style.borderStyle = 'solid';
+        if (ETIA.company) ETIA.company.tieneLogo = true;
+
+        /* Invalidate logo base64 cache so PDF templates re-fetch the new logo */
+        if (ETIA.invalidateLogoCache) ETIA.invalidateLogoCache();
+
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(0,255,136,0.06)';
+            resultDiv.style.border = '1px solid rgba(0,255,136,0.2)';
+            resultDiv.style.color = 'var(--accent)';
+            resultDiv.textContent = '✅ Logo subido exitosamente';
+            setTimeout(function() { resultDiv.style.display = 'none'; }, 3000);
+        }
+        showConfigToast('✅ Logo de empresa actualizado');
+    }).catch(function(err) {
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(248,81,73,0.06)';
+            resultDiv.style.border = '1px solid rgba(248,81,73,0.2)';
+            resultDiv.style.color = 'var(--danger)';
+            resultDiv.textContent = '❌ Error: ' + (err.message || 'desconocido');
+        }
+        showConfigToast('❌ Error al subir logo');
+    });
+}
+
+/* ─── Save SUNAT credentials ─── */
+function saveCredentials() {
+    var userEl = document.getElementById('cfg-cred-usuario-sol');
+    var passEl = document.getElementById('cfg-cred-clave-sol');
+    var certPassEl = document.getElementById('cfg-cred-cert-password');
+
+    var payload = {};
+    if (userEl && userEl.value.trim()) payload.usuarioSol = userEl.value.trim();
+    if (passEl && passEl.value && passEl.value !== '••••••••') payload.claveSol = passEl.value;
+    if (certPassEl && certPassEl.value && certPassEl.value !== '••••••••') payload.certificadoPassword = certPassEl.value;
+
+    if (Object.keys(payload).length === 0) {
+        showConfigToast('⚠️ No hay cambios para guardar');
+        return;
+    }
+
+    ApiClient.updateCompany(ETIA.companyId, payload).then(function(res) {
+        /* Update local state */
+        if (ETIA.company) {
+            if (payload.usuarioSol) ETIA.company.usuarioSol = payload.usuarioSol;
+            if (payload.claveSol) ETIA.company.claveSol = '***';
+            if (payload.certificadoPassword) ETIA.company.certificadoPassword = '***';
+        }
+        /* Update indicators */
+        var solInd = document.getElementById('cfg-cred-sol-indicator');
+        if (solInd && payload.usuarioSol) {
+            solInd.innerHTML = '<span style="color:var(--accent);">✅ Configurado</span>';
+        }
+        /* Reset password fields to masked */
+        if (passEl && payload.claveSol) passEl.value = '••••••••';
+        if (certPassEl && payload.certificadoPassword) certPassEl.value = '••••••••';
+        showConfigToast('✅ Credenciales SUNAT guardadas');
+    }).catch(function(err) {
+        showConfigToast('❌ Error al guardar credenciales: ' + (err.message || 'desconocido'));
+    });
+}
+
+/* ─── Test SUNAT connection (via backend API) ─── */
+function testSunatConnection() {
+    var btn = document.getElementById('cfg-cred-test-btn');
+    var resultDiv = document.getElementById('cfg-cred-test-result');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Conectando...'; }
+    if (resultDiv) { resultDiv.style.display = 'none'; }
+
+    ApiClient.probarConexionSunat(ETIA.companyId).then(function(res) {
+        if (btn) { btn.disabled = false; btn.textContent = '🔗 Probar Conexión SUNAT'; }
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            if (res.exitoso) {
+                resultDiv.style.background = 'rgba(0,255,136,0.06)';
+                resultDiv.style.border = '1px solid rgba(0,255,136,0.2)';
+                resultDiv.style.color = 'var(--accent)';
+            } else {
+                resultDiv.style.background = 'rgba(248,81,73,0.06)';
+                resultDiv.style.border = '1px solid rgba(248,81,73,0.2)';
+                resultDiv.style.color = 'var(--danger)';
+            }
+            resultDiv.innerHTML = '<strong>' + (res.exitoso ? '✅' : '❌') + '</strong> ' + (res.mensaje || 'Sin mensaje')
+                + '<br/><span style="font-size:0.72rem;color:var(--text-secondary);">Modo: ' + (res.modo || '—')
+                + ' · SOL: ' + (res.tieneUsuarioSol && res.tieneClaveSol ? '✅' : '❌')
+                + ' · Certificado: ' + (res.tieneCertificado ? '✅' : '❌') + '</span>';
+        }
+    }).catch(function(err) {
+        if (btn) { btn.disabled = false; btn.textContent = '🔗 Probar Conexión SUNAT'; }
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(248,81,73,0.06)';
+            resultDiv.style.border = '1px solid rgba(248,81,73,0.2)';
+            resultDiv.style.color = 'var(--danger)';
+            resultDiv.innerHTML = '❌ <strong>Error de conexión:</strong> ' + (err.message || 'desconocido');
+        }
+    });
+}
+
+/* ─── Certificate file handling ─── */
+var _selectedCertFile = null;
+
+function handleCertFileSelect(input) {
+    if (input.files && input.files.length > 0) {
+        _setCertFile(input.files[0]);
+    }
+}
+
+function handleCertFileDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : [];
+    if (files.length > 0) {
+        _setCertFile(files[0]);
+    }
+}
+
+function _setCertFile(file) {
+    var name = file.name.toLowerCase();
+    if (!name.endsWith('.p12') && !name.endsWith('.pfx')) {
+        showConfigToast('⚠️ Solo se permiten archivos .p12 o .pfx');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        showConfigToast('⚠️ El archivo excede el tamaño máximo de 10 MB');
+        return;
+    }
+    _selectedCertFile = file;
+
+    /* Update UI */
+    var iconEl = document.getElementById('cfg-cert-upload-icon');
+    var textEl = document.getElementById('cfg-cert-upload-text');
+    var fnameEl = document.getElementById('cfg-cert-upload-filename');
+    var barEl = document.getElementById('cfg-cert-upload-bar');
+    if (iconEl) iconEl.textContent = '✅';
+    if (textEl) textEl.style.display = 'none';
+    if (fnameEl) { fnameEl.textContent = '📜 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)'; fnameEl.style.display = 'block'; }
+    if (barEl) barEl.style.display = 'block';
+
+    /* Style the dropzone */
+    var dropzone = document.getElementById('cfg-cert-dropzone');
+    if (dropzone) {
+        dropzone.style.borderColor = 'var(--accent)';
+        dropzone.style.background = 'rgba(0,255,136,0.04)';
+    }
+}
+
+function uploadCertificado() {
+    if (!_selectedCertFile) {
+        showConfigToast('⚠️ Selecciona un archivo primero');
+        return;
+    }
+    var btn = document.getElementById('cfg-cert-upload-btn');
+    var progressDiv = document.getElementById('cfg-cert-upload-progress');
+    var resultDiv = document.getElementById('cfg-cert-upload-result');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Subiendo...'; }
+    if (progressDiv) progressDiv.style.display = 'block';
+    if (resultDiv) resultDiv.style.display = 'none';
+
+    /* Animate progress bar */
+    var bar = document.getElementById('cfg-cert-upload-progress-bar');
+    if (bar) { bar.style.width = '30%'; }
+
+    ApiClient.uploadCertificado(ETIA.companyId, _selectedCertFile).then(function(res) {
+        if (bar) bar.style.width = '100%';
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Subir Certificado'; }
+
+        /* Update local state */
+        if (ETIA.company) {
+            ETIA.company.tieneCertificado = true;
+            if (res.data) ETIA.company.certificadoPath = res.data.certificadoPath;
+        }
+
+        /* Update indicator */
+        var certInd = document.getElementById('cfg-cred-cert-indicator');
+        if (certInd) certInd.innerHTML = '<span style="color:var(--accent);">✅ Configurado</span>';
+
+        /* Show success */
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(0,255,136,0.06)';
+            resultDiv.style.border = '1px solid rgba(0,255,136,0.2)';
+            resultDiv.style.color = 'var(--accent)';
+            resultDiv.innerHTML = '✅ <strong>Certificado subido exitosamente.</strong> Recuerda configurar la contraseña del certificado.';
+        }
+        showConfigToast('✅ Certificado digital subido');
+
+        /* Reset file selection */
+        _selectedCertFile = null;
+        setTimeout(function() { if (progressDiv) progressDiv.style.display = 'none'; }, 1000);
+
+    }).catch(function(err) {
+        if (bar) bar.style.width = '0%';
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Subir Certificado'; }
+        if (progressDiv) progressDiv.style.display = 'none';
+
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(248,81,73,0.06)';
+            resultDiv.style.border = '1px solid rgba(248,81,73,0.2)';
+            resultDiv.style.color = 'var(--danger)';
+            resultDiv.innerHTML = '❌ <strong>Error al subir certificado:</strong> ' + (err.message || 'desconocido');
+        }
+        showConfigToast('❌ Error al subir certificado');
+    });
 }
 
 /* ═══════════════════════════════════════════════
