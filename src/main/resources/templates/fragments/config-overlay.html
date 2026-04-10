@@ -54,14 +54,8 @@
                 <!-- ══ PANEL: Empresa ══ -->
                 <div class="cfg-panel active" id="cfg-panel-empresa">
                     <div class="cfg-company-card">
-                        <!-- Logo type selector + preview -->
+                        <!-- Logo preview + upload -->
                         <div style="display:flex;align-items:center;gap:0.6rem;">
-                            <select id="cfg-logo-type-select" onchange="onLogoTypeChange(this.value)"
-                                    style="font-size:0.72rem;padding:2px 4px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);width:60px;">
-                                <option value="png">PNG</option>
-                                <option value="jpg">JPG</option>
-                                <option value="svg">SVG</option>
-                            </select>
                             <div id="cfg-co-logo-wrap" style="position:relative;width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;border:2px dashed var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);transition:all 0.2s;"
                                  onclick="document.getElementById('cfg-logo-file-input').click()"
                                  title="Subir logo de empresa">

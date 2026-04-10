@@ -3,22 +3,7 @@
 <head th:replace="~{fragments/head :: head('ETIA — Bienvenido')}"></head>
 <body>
 
-<!-- Header minimal -->
-<header class="g-header">
-    <div class="g-header-left">
-        <span class="g-logo" id="hdr-logo">
-            <img id="hdr-logo-img" class="g-logo-img" style="display:none;" alt="Logo"/>
-            <span id="hdr-logo-emoji">🧾</span>
-        </span>
-        <div class="g-brand">
-            <h1>ETIA</h1>
-            <sub>Facturación Electrónica · v0.1.0</sub>
-        </div>
-    </div>
-    <div class="g-header-right">
-        <span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono);">Facturación Electrónica</span>
-    </div>
-</header>
+<!-- No header bar on landing — clean full-screen experience -->
 
 <!-- ═══════════════════════════════════════════════════
      VIEW 1 — HERO
@@ -37,7 +22,7 @@
             <div class="onb-hero-badge">🇵🇪 Hecho en Perú · Para emprendedores peruanos</div>
             <div class="onb-hero-icon" id="onb-hero-icon">
                 <img id="onb-hero-logo-img" style="display:none;width:80px;height:80px;object-fit:contain;" alt="Logo"/>
-                <span id="onb-hero-logo-emoji">🧾</span>
+                <img id="onb-hero-logo-svg" th:src="@{/favicon.svg}" style="width:80px;height:80px;" alt="ETIA"/>
             </div>
             <h1 class="onb-hero-title">
                 Facturación Electrónica<br>
@@ -212,22 +197,13 @@
             <!-- Logo upload widget -->
             <div class="f-group" style="margin-top:1.2rem;">
                 <label>🖼️ Logo de tu Empresa <span style="font-size:.72rem;color:var(--text-muted);">(Opcional)</span></label>
-                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
-                    <span style="font-size:.78rem;color:var(--text-secondary);">Formato:</span>
-                    <select id="onb-logo-type-select" onchange="onbLogoTypeChange(this.value)"
-                            style="font-size:0.78rem;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);">
-                        <option value="png">PNG</option>
-                        <option value="jpg">JPG</option>
-                        <option value="svg">SVG</option>
-                    </select>
-                </div>
                 <div id="onb-logo-upload-wrap" onclick="document.getElementById('onb-logo-file-input').click()"
                      style="display:flex;align-items:center;gap:1rem;padding:1rem;border:2px dashed var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--bg-secondary);transition:all 0.2s;">
                     <img id="onb-logo-preview" style="display:none;width:56px;height:56px;object-fit:contain;border-radius:var(--radius-sm);" alt="Logo preview"/>
                     <span id="onb-logo-placeholder" style="font-size:2rem;width:56px;text-align:center;">📷</span>
                     <div style="flex:1;">
                         <p style="font-size:.82rem;color:var(--text-secondary);margin:0;">Haz clic para subir tu logo</p>
-                        <p id="onb-logo-hint" style="font-size:.72rem;color:var(--text-muted);margin:0.2rem 0 0;">Solo archivos .png · Máx 10MB</p>
+                        <p id="onb-logo-hint" style="font-size:.72rem;color:var(--text-muted);margin:0.2rem 0 0;">PNG, JPG o SVG · Máx 10MB</p>
                     </div>
                     <input type="file" id="onb-logo-file-input" accept="image/png,image/jpeg,image/svg+xml,.png,.PNG,.jpg,.JPG,.jpeg,.JPEG,.svg,.SVG" style="display:none;" onchange="onbHandleLogoUpload(this)"/>
                 </div>
@@ -607,47 +583,33 @@
         });
     });
 
-    /* ═══ Onboarding Logo Type Selector ═══ */
-    var _onbLogoAcceptMap = { png: '.png', jpg: '.jpg,.jpeg', svg: '.svg' };
-
-    function onbLogoTypeChange(type) {
-        var input = document.getElementById('onb-logo-file-input');
-        if (input) { input.accept = _onbLogoAcceptMap[type] || '.png'; input.value = ''; }
-        var hint = document.getElementById('onb-logo-hint');
-        if (hint) hint.textContent = 'Solo archivos .' + type + ' · Máx 10MB';
-    }
-
-    function _onbValidateMagicBytes(file, expectedType) {
+    /* ═══ Onboarding Logo Upload — Auto-detect type ═══ */
+    function _onbDetectImageType(file) {
         return new Promise(function(resolve) {
-            if (expectedType === 'svg') {
-                var tr = new FileReader();
-                tr.onload = function() { resolve((tr.result || '').toLowerCase().indexOf('<svg') >= 0); };
-                tr.onerror = function() { resolve(false); };
-                tr.readAsText(file.slice(0, 1024));
-                return;
-            }
-            var r = new FileReader();
-            r.onload = function() {
-                var a = new Uint8Array(r.result);
-                if (expectedType === 'png') resolve(a.length >= 4 && a[0]===0x89 && a[1]===0x50 && a[2]===0x4E && a[3]===0x47);
-                else if (expectedType === 'jpg') resolve(a.length >= 3 && a[0]===0xFF && a[1]===0xD8 && a[2]===0xFF);
-                else resolve(true);
+            /* Try SVG first (text-based) */
+            var tr = new FileReader();
+            tr.onload = function() {
+                if ((tr.result || '').toLowerCase().indexOf('<svg') >= 0) { resolve('svg'); return; }
+                /* Binary check for PNG / JPG */
+                var br = new FileReader();
+                br.onload = function() {
+                    var a = new Uint8Array(br.result);
+                    if (a.length >= 4 && a[0]===0x89 && a[1]===0x50 && a[2]===0x4E && a[3]===0x47) { resolve('png'); return; }
+                    if (a.length >= 3 && a[0]===0xFF && a[1]===0xD8 && a[2]===0xFF) { resolve('jpg'); return; }
+                    resolve(null);
+                };
+                br.onerror = function() { resolve(null); };
+                br.readAsArrayBuffer(file.slice(0, 8));
             };
-            r.onerror = function() { resolve(false); };
-            r.readAsArrayBuffer(file.slice(0, 8));
+            tr.onerror = function() { resolve(null); };
+            tr.readAsText(file.slice(0, 1024));
         });
     }
 
-    /* ═══ Onboarding Logo Upload ═══ */
     function onbHandleLogoUpload(input) {
         if (!input.files || input.files.length === 0) return;
         var file = input.files[0];
-        var name = file.name.toLowerCase();
         var resultDiv = document.getElementById('onb-logo-result');
-
-        /* Get expected type from selector */
-        var typeSelect = document.getElementById('onb-logo-type-select');
-        var expectedType = typeSelect ? typeSelect.value : 'png';
 
         if (file.size > 10 * 1024 * 1024) {
             _showOnbLogoResult(resultDiv, false, '⚠️ Excede 10 MB');
@@ -658,15 +620,14 @@
             return;
         }
 
-        /* Magic bytes are the source of truth — extension is just a hint */
-        _onbValidateMagicBytes(file, expectedType).then(function(isValid) {
-            if (!isValid) {
-                _showOnbLogoResult(resultDiv, false, '⚠️ El contenido no corresponde a ' + expectedType.toUpperCase() + '. Verifica el archivo.');
+        _onbDetectImageType(file).then(function(detectedType) {
+            if (!detectedType) {
+                _showOnbLogoResult(resultDiv, false, '⚠️ Formato no reconocido. Usa PNG, JPG o SVG.');
                 input.value = '';
                 return;
             }
 
-            if (expectedType === 'svg') { _doOnbLogoUpload(file, resultDiv, expectedType); return; }
+            if (detectedType === 'svg') { _doOnbLogoUpload(file, resultDiv, detectedType); return; }
 
             var img = new Image();
             img.onload = function() {
@@ -678,12 +639,12 @@
                     var canvas = document.createElement('canvas');
                     canvas.width = Math.round(w * ratio); canvas.height = Math.round(h * ratio);
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(function(blob) { _doOnbLogoUpload(new File([blob], file.name, { type: file.type }), resultDiv, expectedType); }, file.type);
+                    canvas.toBlob(function(blob) { _doOnbLogoUpload(new File([blob], file.name, { type: file.type }), resultDiv, detectedType); }, file.type);
                     return;
                 }
-                _doOnbLogoUpload(file, resultDiv, expectedType);
+                _doOnbLogoUpload(file, resultDiv, detectedType);
             };
-            img.onerror = function() { _doOnbLogoUpload(file, resultDiv, expectedType); };
+            img.onerror = function() { _doOnbLogoUpload(file, resultDiv, detectedType); };
             img.src = URL.createObjectURL(file);
         });
     }

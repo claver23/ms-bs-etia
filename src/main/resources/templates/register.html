@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETIA — Registro</title>
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <style>
+        body { display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:var(--bg-primary,#0d1117); font-family:var(--font-primary,'Segoe UI',sans-serif); }
+        .auth-card { background:var(--bg-secondary,#161b22); border:1px solid var(--border-primary,#30363d); border-radius:12px; padding:2.5rem; width:100%; max-width:400px; }
+        .auth-card h1 { text-align:center; color:var(--text-primary,#e6edf3); margin:0 0 .5rem; font-size:1.5rem; }
+        .auth-card p.subtitle { text-align:center; color:var(--text-secondary,#8b949e); margin:0 0 2rem; font-size:.9rem; }
+        .auth-field { margin-bottom:1.2rem; }
+        .auth-field label { display:block; color:var(--text-secondary,#8b949e); font-size:.85rem; margin-bottom:.3rem; }
+        .auth-field input { width:100%; padding:.65rem .8rem; border:1px solid var(--border-primary,#30363d); border-radius:6px; background:var(--bg-tertiary,#0d1117); color:var(--text-primary,#e6edf3); font-size:.95rem; box-sizing:border-box; }
+        .auth-field input:focus { outline:none; border-color:var(--accent-primary,#58a6ff); }
+        .auth-btn { width:100%; padding:.75rem; background:var(--accent-primary,#238636); color:#fff; border:none; border-radius:6px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:.5rem; }
+        .auth-btn:hover { opacity:.9; }
+        .auth-error { color:#f85149; font-size:.85rem; text-align:center; min-height:1.2rem; margin-top:.5rem; }
+        .auth-link { text-align:center; margin-top:1.5rem; color:var(--text-secondary,#8b949e); font-size:.85rem; }
+        .auth-link a { color:var(--accent-primary,#58a6ff); text-decoration:none; }
+        .auth-logo { text-align:center; font-size:2.5rem; margin-bottom:.5rem; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-logo">⚡</div>
+        <h1>Crear Cuenta</h1>
+        <p class="subtitle">Registrate en ETIA Suite</p>
+        <form id="registerForm" onsubmit="return handleRegister(event)">
+            <div class="auth-field">
+                <label for="nombre">Nombre completo</label>
+                <input type="text" id="nombre" required placeholder="Juan Perez" />
+            </div>
+            <div class="auth-field">
+                <label for="email">Email</label>
+                <input type="email" id="email" required placeholder="tu@empresa.com" autocomplete="email" />
+            </div>
+            <div class="auth-field">
+                <label for="password">Contrasena</label>
+                <input type="password" id="password" required minlength="6" placeholder="Minimo 6 caracteres" autocomplete="new-password" />
+            </div>
+            <div class="auth-field">
+                <label for="password2">Confirmar contrasena</label>
+                <input type="password" id="password2" required minlength="6" placeholder="Repite tu contrasena" autocomplete="new-password" />
+            </div>
+            <button type="submit" class="auth-btn">Registrarme</button>
+            <div id="errorMsg" class="auth-error"></div>
+        </form>
+        <div class="auth-link">
+            Ya tienes cuenta? <a href="/login">Inicia sesion</a>
+        </div>
+    </div>
+    <script src="/js/api-client.js"></script>
+    <script>
+        function handleRegister(e) {
+            e.preventDefault();
+            var nombre = document.getElementById('nombre').value;
+            var email = document.getElementById('email').value;
+            var pass = document.getElementById('password').value;
+            var pass2 = document.getElementById('password2').value;
+            document.getElementById('errorMsg').textContent = '';
+            if (pass !== pass2) {
+                document.getElementById('errorMsg').textContent = 'Las contrasenas no coinciden';
+                return false;
+            }
+            ApiClient.register(nombre, email, pass).then(function(res) {
+                if (res.isSuccess) {
+                    window.location.href = '/onboarding';
+                } else {
+                    document.getElementById('errorMsg').textContent = res.message || 'Error al registrar';
+                }
+            }).catch(function(err) {
+                document.getElementById('errorMsg').textContent = 'Error de conexion';
+            });
+            return false;
+        }
+        if (localStorage.getItem('etia_token')) window.location.href = '/menu';
+    </script>
+</body>
+</html>
+

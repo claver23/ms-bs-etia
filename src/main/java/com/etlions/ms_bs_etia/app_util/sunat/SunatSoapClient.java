@@ -13,6 +13,16 @@ package com.etlions.ms_bs_etia.app_util.sunat;
 public interface SunatSoapClient {
 
     /**
+     * Envia un comprobante individual (factura/NC/ND) a SUNAT via sendBill.
+     *
+     * @param zipBytes  ZIP conteniendo el XML firmado
+     * @param filename  Nombre del archivo (RUC-tipoDoc-serie-numero.zip)
+     * @param ruc       RUC del emisor
+     * @return BillResult con CDR si fue exitoso
+     */
+    BillResult sendBill(byte[] zipBytes, String filename, String ruc);
+
+    /**
      * Envía un resumen diario (Summary Documents) a SUNAT.
      *
      * @param identificador Identificador del resumen (RC-YYYYMMDD-NNN)

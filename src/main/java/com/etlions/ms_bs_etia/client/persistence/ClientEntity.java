@@ -53,7 +53,10 @@ public class ClientEntity {
 
     private String telefono;
 
+    @Column(name = "es_demo")
+    @Builder.Default
+    private Boolean esDemo = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }
-

@@ -1,23 +1,25 @@
 package com.etlions.ms_bs_etia.app_util.sunat;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 /**
  * Mock de SunatSoapClient para desarrollo y pruebas.
- * <p>
  * Simula respuestas exitosas de SUNAT sin realizar llamadas SOAP reales.
- * <p>
- * TODO: FASE-3 — Reemplazar con implementación real cuando se tenga acceso
- * al servidor beta de SUNAT. Para ello:
- * 1. Crear clase RealSunatSoapClient implements SunatSoapClient
- * 2. Anotarla con @Service @Profile("production")
- * 3. Anotar esta clase con @Profile("!production")
- * 4. Activar perfil "production" en application.yaml
+ * Activo cuando NO se usa el perfil "sunat-real".
  */
 @Slf4j
 @Service
+@Profile("!sunat-real")
 public class MockSunatSoapClient implements SunatSoapClient {
+
+    @Override
+    public BillResult sendBill(byte[] zipBytes, String filename, String ruc) {
+        log.info("[MOCK-SUNAT] sendBill({}, {}) → aceptado", filename, ruc);
+        String mockHash = "mock-hash-" + System.currentTimeMillis();
+        return new BillResult(true, mockHash, "0", "La Factura fue aceptada (MOCK)", null);
+    }
 
     @Override
     public SendResult sendSummary(String identificador, String ruc) {

@@ -81,6 +81,12 @@ function _cacheInvalidate(key) {
 
 /* ─── Bootstrap: load company + client + sedes + notifications from API ─── */
 ETIA.init = function() {
+    /* Auth check — redirect to login if not authenticated */
+    if (!ApiClient.isAuthenticated()) {
+        window.location.href = '/login';
+        return Promise.resolve(null);
+    }
+
     /* Try cache first for company/clients/sedes */
     var cachedCompany = _cacheGet('company');
     var cachedClients = _cacheGet('clients');
@@ -184,15 +190,7 @@ function _applyCompanyData(c) {
         if (hdrLogoEmoji) hdrLogoEmoji.style.display = '';
     }
 
-    /* ── Pre-select logo type in Settings selector ── */
-    var cfgLogoTypeSelect = document.getElementById('cfg-logo-type-select');
-    if (cfgLogoTypeSelect && c.logoFormat) {
-        var fmt = c.logoFormat.toLowerCase();
-        if (fmt === 'jpeg') fmt = 'jpg';
-        cfgLogoTypeSelect.value = fmt;
-        /* Update file input accept accordingly */
-        if (typeof onLogoTypeChange === 'function') onLogoTypeChange(fmt);
-    }
+    /* Logo type selector removed — auto-detect now */
 }
 
 function _applyClientsData(clients) {
@@ -605,6 +603,10 @@ function _loadPreferencesFromBackend(companyId) {
 }
 
 /* ─── Cambiar Empresa (with proper cleanup) ─── */
+ETIA.logout = function() {
+    ApiClient.logout();
+};
+
 ETIA.cambiarEmpresa = function() {
     if (!confirm('¿Cerrar sesión y cambiar de empresa? Se perderá la configuración local.')) return;
     /* Keep theme preference across company switch */

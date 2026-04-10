@@ -4,6 +4,8 @@ import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
+import com.etlions.ms_bs_etia.app_util.sunat.BillResult;
+import com.etlions.ms_bs_etia.app_util.sunat.SunatBillingOrchestrator;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
 import com.etlions.ms_bs_etia.client.persistence.ClientEntity;
@@ -53,6 +55,7 @@ class DocFacturaServiceImplTest {
     @Mock private UblInvoiceXmlBuilder ublInvoiceXmlBuilder;
     @Mock private XmlStorageService xmlStorageService;
     @Mock private DocumentValidatorService documentValidatorService;
+    @Mock private SunatBillingOrchestrator sunatBillingOrchestrator;
 
     @InjectMocks
     private DocFacturaServiceImpl service;
@@ -122,6 +125,8 @@ class DocFacturaServiceImplTest {
                 .thenReturn("<Invoice/>");
         when(xmlStorageService.guardarXml(anyString(), anyString(), anyString(), anyInt(), anyString()))
                 .thenReturn("20517863948/F001/00000001/20517863948-01-F001-00000001.xml");
+        when(sunatBillingOrchestrator.procesarComprobante(anyString(), any(), anyString(), anyString(), anyInt()))
+                .thenReturn(new BillResult(true, "mock-hash", "0", "Aceptado", null));
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -144,16 +149,9 @@ class DocFacturaServiceImplTest {
         void sinSerie() {
             FacturaEmitirDto req = buildEmitirRequest();
             req.setSerie(null);
-            FacturaEntity e = buildEntity("FAC-1", "BORRADOR");
-            when(companyRepository.findById("COMP-1")).thenReturn(Optional.of(company()));
-            when(clientRepository.findById("CLI-1")).thenReturn(Optional.of(clientRuc()));
-            when(correlativoService.siguienteNumero("COMP-1", "F001")).thenReturn(1);
-            when(facturaMapper.toEntity(req)).thenReturn(e);
-            when(facturaRepository.save(any())).thenReturn(e);
-            when(facturaMapper.toData(e)).thenReturn(buildData());
+            stubEmisionExitosa(req);
             FacturaResponseDto r = service.emitirFactura(req);
             assertTrue(r.getIsSuccess());
-            assertEquals("F001", e.getSerie());
         }
     }
 

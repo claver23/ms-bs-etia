@@ -135,14 +135,7 @@ function loadConfigValues() {
             if (logoWrap) logoWrap.style.borderStyle = 'dashed';
         }
 
-        /* Pre-select logo type */
-        var typeSelect = document.getElementById('cfg-logo-type-select');
-        if (typeSelect && co.logoFormat) {
-            var fmt = co.logoFormat.toLowerCase();
-            if (fmt === 'jpeg') fmt = 'jpg';
-            typeSelect.value = fmt;
-            onLogoTypeChange(fmt);
-        }
+        /* Pre-select logo type — removed (auto-detect now) */
 
         /* Credenciales SUNAT */
         el = document.getElementById('cfg-cred-usuario-sol'); if (el) el.value = co.usuarioSol || '';
@@ -448,15 +441,30 @@ function _validateLogoMagicBytes(file, expectedType) {
     });
 }
 
-/* ─── Logo upload handler ─── */
+/* ─── Logo upload handler (auto-detect type) ─── */
+function _detectImageType(file) {
+    return new Promise(function(resolve) {
+        var tr = new FileReader();
+        tr.onload = function() {
+            if ((tr.result || '').toLowerCase().indexOf('<svg') >= 0) { resolve('svg'); return; }
+            var br = new FileReader();
+            br.onload = function() {
+                var a = new Uint8Array(br.result);
+                if (a.length >= 4 && a[0]===0x89 && a[1]===0x50 && a[2]===0x4E && a[3]===0x47) { resolve('png'); return; }
+                if (a.length >= 3 && a[0]===0xFF && a[1]===0xD8 && a[2]===0xFF) { resolve('jpg'); return; }
+                resolve(null);
+            };
+            br.onerror = function() { resolve(null); };
+            br.readAsArrayBuffer(file.slice(0, 8));
+        };
+        tr.onerror = function() { resolve(null); };
+        tr.readAsText(file.slice(0, 1024));
+    });
+}
+
 function handleLogoFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
     var file = input.files[0];
-    var name = file.name.toLowerCase();
-
-    /* Determine expected type from selector */
-    var typeSelect = document.getElementById('cfg-logo-type-select');
-    var expectedType = typeSelect ? typeSelect.value : 'png';
 
     if (file.size > 10 * 1024 * 1024) {
         showConfigToast('⚠️ El logo excede el tamaño máximo de 10 MB');
@@ -465,17 +473,16 @@ function handleLogoFileSelect(input) {
 
     var resultDiv = document.getElementById('cfg-logo-upload-result');
 
-    /* Magic bytes are the source of truth — extension is just a hint */
-    _validateLogoMagicBytes(file, expectedType).then(function(isValid) {
-        if (!isValid) {
-            showConfigToast('⚠️ El contenido del archivo no corresponde a ' + expectedType.toUpperCase() + '. Verifica que sea una imagen válida.');
+    _detectImageType(file).then(function(detectedType) {
+        if (!detectedType) {
+            showConfigToast('⚠️ Formato no reconocido. Usa PNG, JPG o SVG.');
             input.value = '';
             return;
         }
 
         /* SVG: skip dimension validation, upload directly */
-        if (expectedType === 'svg') {
-            _doLogoUpload(file, resultDiv, expectedType);
+        if (detectedType === 'svg') {
+            _doLogoUpload(file, resultDiv, detectedType);
             return;
         }
 
@@ -488,17 +495,20 @@ function handleLogoFileSelect(input) {
             if (dimResult.tooLarge) {
                 if (confirm('⚠️ Imagen muy grande (' + dimResult.width + '×' + dimResult.height + '). ¿Deseas redimensionar automáticamente a máx 2000px?')) {
                     _resizeLogoFile(file, 2000, 2000).then(function(resized) {
-                        _doLogoUpload(resized, resultDiv, expectedType);
+                        _doLogoUpload(resized, resultDiv, detectedType);
                     });
                 } else {
-                    _doLogoUpload(file, resultDiv, expectedType);
+                    _doLogoUpload(file, resultDiv, detectedType);
                 }
                 return;
             }
-            _doLogoUpload(file, resultDiv, expectedType);
+            _doLogoUpload(file, resultDiv, detectedType);
         });
     });
 }
+
+/* Legacy stub — no-op since selector was removed */
+function onLogoTypeChange() {}
 
 function _validateLogoDimensions(file) {
     return new Promise(function(resolve) {

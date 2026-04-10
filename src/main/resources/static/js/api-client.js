@@ -8,8 +8,22 @@ var ApiClient = (function() {
 
     var BASE = '/api/v1';
 
+    /* ─── Helper: get auth headers ─── */
+    function _headers(contentType) {
+        var h = {};
+        if (contentType) h['Content-Type'] = contentType;
+        var token = localStorage.getItem('etia_token');
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        return h;
+    }
+
     /* ─── Helper: handle response with error toast ─── */
     function _handleResponse(r, url) {
+        if (r.status === 401) {
+            localStorage.removeItem('etia_token');
+            window.location.href = '/login';
+            throw new Error('Sesion expirada');
+        }
         if (!r.ok) {
             return r.text().then(function(body) {
                 var detail = { status: r.status, message: r.statusText, url: url, body: body };
@@ -22,14 +36,14 @@ var ApiClient = (function() {
 
     function _get(path) {
         var url = BASE + path;
-        return fetch(url).then(function(r) { return _handleResponse(r, url); });
+        return fetch(url, { headers: _headers() }).then(function(r) { return _handleResponse(r, url); });
     }
 
     function _post(path, body) {
         var url = BASE + path;
         return fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: _headers('application/json'),
             body: JSON.stringify(body)
         }).then(function(r) { return _handleResponse(r, url); });
     }
@@ -38,14 +52,14 @@ var ApiClient = (function() {
         var url = BASE + path;
         return fetch(url, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: _headers('application/json'),
             body: JSON.stringify(body)
         }).then(function(r) { return _handleResponse(r, url); });
     }
 
     function _delete(path) {
         var url = BASE + path;
-        return fetch(url, { method: 'DELETE' })
+        return fetch(url, { method: 'DELETE', headers: _headers() })
             .then(function(r) { return _handleResponse(r, url); });
     }
 
@@ -66,6 +80,7 @@ var ApiClient = (function() {
         formData.append('archivo', file);
         return fetch(url, {
             method: 'POST',
+            headers: _headers(),
             body: formData
         }).then(function(r) { return _handleResponse(r, url); });
     }
@@ -80,6 +95,7 @@ var ApiClient = (function() {
         formData.append('archivo', file);
         return fetch(url, {
             method: 'POST',
+            headers: _headers(),
             body: formData
         }).then(function(r) { return _handleResponse(r, url); });
     }
@@ -460,8 +476,50 @@ var ApiClient = (function() {
             .then(function(res) { return res.data || res; });
     }
 
+    /* ═══════ AUTH ═══════ */
+    function login(email, password) {
+        return _post('/auth/login', { email: email, password: password }).then(function(res) {
+            if (res.isSuccess && res.data && res.data.token) {
+                localStorage.setItem('etia_token', res.data.token);
+            }
+            return res;
+        });
+    }
+
+    function register(nombre, email, password) {
+        return _post('/auth/register', { nombre: nombre, email: email, password: password }).then(function(res) {
+            if (res.isSuccess && res.data && res.data.token) {
+                localStorage.setItem('etia_token', res.data.token);
+            }
+            return res;
+        });
+    }
+
+    function logout() {
+        localStorage.removeItem('etia_token');
+        window.location.href = '/login';
+    }
+
+    function isAuthenticated() {
+        return !!localStorage.getItem('etia_token');
+    }
+
+    function getCompanyIdFromToken() {
+        var token = localStorage.getItem('etia_token');
+        if (!token) return '';
+        try {
+            var payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.companyId || '';
+        } catch (e) { return ''; }
+    }
+
     /* ═══════ PUBLIC API ═══════ */
     return {
+        login:              login,
+        register:           register,
+        logout:             logout,
+        isAuthenticated:    isAuthenticated,
+        getCompanyIdFromToken: getCompanyIdFromToken,
         listCompanies:      listCompanies,
         updateCompany:      updateCompany,
         uploadCertificado:  uploadCertificado,

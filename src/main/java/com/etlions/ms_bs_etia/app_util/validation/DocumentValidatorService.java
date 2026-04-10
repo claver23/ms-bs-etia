@@ -148,6 +148,120 @@ public class DocumentValidatorService {
     }
 
     /**
+     * Valida una nota de crédito completa (Cat.09 — código motivo, documento referencia, montos, detalle).
+     */
+    public DocumentValidationResult validarNotaCredito(
+            String serie, Integer numero, String clientId,
+            String moneda, BigDecimal tipoCambio,
+            String formaPago, LocalDate fechaEmision, LocalDate fechaVenc,
+            String tipoOperacion, String leyenda,
+            BigDecimal gravadas, BigDecimal igv, BigDecimal total,
+            BigDecimal totalCargos, BigDecimal totalDescuentos,
+            String detalleJson,
+            String serieDocRef, Integer numeroDocRef, String tipoDocumentoReferencia,
+            String codigoMotivoSunat, String motivo) {
+
+        List<String> errores = new ArrayList<>();
+        List<String> advertencias = new ArrayList<>();
+
+        // ── Serie NC: debe iniciar con F (si ref factura) o B (si ref boleta) ──
+        if (serie != null && !serie.isBlank()) {
+            validateSerieNcNd(serie, tipoDocumentoReferencia, errores);
+        } else {
+            errores.add("La serie es obligatoria");
+        }
+
+        // ── Documento referencia ──
+        validateDocumentoReferencia(serieDocRef, numeroDocRef, tipoDocumentoReferencia, errores);
+
+        // ── Código motivo SUNAT Cat.09 (01-10) ──
+        validateCodigoMotivo(codigoMotivoSunat, "09", errores);
+
+        // ── Motivo/descripción ──
+        if (motivo == null || motivo.isBlank()) {
+            advertencias.add("Se recomienda incluir el motivo descriptivo de la nota de crédito");
+        }
+
+        // ── Cliente ──
+        if (clientId != null && !clientId.isBlank()) {
+            validateCliente(clientId, tipoDocumentoReferencia != null && tipoDocumentoReferencia.toLowerCase().contains("boleta") ? "BOLETA" : "FACTURA", errores);
+        }
+
+        // ── Moneda y tipo de cambio ──
+        validateMonedaTipoCambio(moneda, tipoCambio, errores, advertencias);
+
+        // ── Fecha ──
+        validateFechaEmision(fechaEmision, errores);
+
+        // ── Montos ──
+        validateMontos(gravadas, igv, total, totalCargos, totalDescuentos, errores);
+
+        // ── Detalle ──
+        validateDetalle(detalleJson, errores);
+
+        return errores.isEmpty()
+                ? DocumentValidationResult.ok(advertencias)
+                : DocumentValidationResult.fail(errores, advertencias);
+    }
+
+    /**
+     * Valida una nota de débito completa (Cat.10 — código motivo, documento referencia, montos, detalle).
+     */
+    public DocumentValidationResult validarNotaDebito(
+            String serie, Integer numero, String clientId,
+            String moneda, BigDecimal tipoCambio,
+            String formaPago, LocalDate fechaEmision, LocalDate fechaVenc,
+            String tipoOperacion, String leyenda,
+            BigDecimal gravadas, BigDecimal igv, BigDecimal total,
+            BigDecimal totalCargos, BigDecimal totalDescuentos,
+            String detalleJson,
+            String serieDocRef, Integer numeroDocRef, String tipoDocumentoReferencia,
+            String codigoMotivoSunat, String motivo) {
+
+        List<String> errores = new ArrayList<>();
+        List<String> advertencias = new ArrayList<>();
+
+        // ── Serie ND: debe iniciar con F (si ref factura) o B (si ref boleta) ──
+        if (serie != null && !serie.isBlank()) {
+            validateSerieNcNd(serie, tipoDocumentoReferencia, errores);
+        } else {
+            errores.add("La serie es obligatoria");
+        }
+
+        // ── Documento referencia ──
+        validateDocumentoReferencia(serieDocRef, numeroDocRef, tipoDocumentoReferencia, errores);
+
+        // ── Código motivo SUNAT Cat.10 (01-03) ──
+        validateCodigoMotivo(codigoMotivoSunat, "10", errores);
+
+        // ── Motivo/descripción ──
+        if (motivo == null || motivo.isBlank()) {
+            advertencias.add("Se recomienda incluir el motivo descriptivo de la nota de débito");
+        }
+
+        // ── Cliente ──
+        if (clientId != null && !clientId.isBlank()) {
+            validateCliente(clientId, tipoDocumentoReferencia != null && tipoDocumentoReferencia.toLowerCase().contains("boleta") ? "BOLETA" : "FACTURA", errores);
+        }
+
+        // ── Moneda y tipo de cambio ──
+        validateMonedaTipoCambio(moneda, tipoCambio, errores, advertencias);
+
+        // ── Fecha ──
+        validateFechaEmision(fechaEmision, errores);
+
+        // ── Montos ──
+        validateMontos(gravadas, igv, total, totalCargos, totalDescuentos, errores);
+
+        // ── Detalle ──
+        validateDetalle(detalleJson, errores);
+
+        return errores.isEmpty()
+                ? DocumentValidationResult.ok(advertencias)
+                : DocumentValidationResult.fail(errores, advertencias);
+    }
+
+    /**
      * Serializa una lista de errores a JSON para persistir en la entidad.
      */
     public String erroresAJson(List<String> errores) {
@@ -314,6 +428,72 @@ public class DocumentValidatorService {
             return new BigDecimal(value.toString());
         } catch (Exception e) {
             return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * Valida la serie de NC/ND: debe empezar con F si ref es factura, B si ref es boleta.
+     */
+    private void validateSerieNcNd(String serie, String tipoDocumentoReferencia, List<String> errores) {
+        if (serie == null || !serie.matches("^[A-Z]\\d{3}$")) {
+            errores.add("Formato de serie inválido '" + serie + "'. Debe ser 1 letra + 3 dígitos (ej: F001)");
+            return;
+        }
+        if (tipoDocumentoReferencia != null) {
+            String tipoRef = tipoDocumentoReferencia.toLowerCase();
+            if (tipoRef.contains("factura") && !serie.startsWith("F")) {
+                errores.add("NC/ND referenciada a factura debe tener serie que inicie con 'F'. Serie recibida: " + serie);
+            } else if (tipoRef.contains("boleta") && !serie.startsWith("B")) {
+                errores.add("NC/ND referenciada a boleta debe tener serie que inicie con 'B'. Serie recibida: " + serie);
+            }
+        }
+    }
+
+    /**
+     * Valida documento de referencia obligatorio para NC/ND.
+     */
+    private void validateDocumentoReferencia(String serieDocRef, Integer numeroDocRef,
+                                              String tipoDocumentoReferencia, List<String> errores) {
+        if (serieDocRef == null || serieDocRef.isBlank()) {
+            errores.add("La serie del documento de referencia (serieDocRef) es obligatoria");
+        }
+        if (numeroDocRef == null || numeroDocRef <= 0) {
+            errores.add("El número del documento de referencia (numeroDocRef) es obligatorio y debe ser > 0");
+        }
+        if (tipoDocumentoReferencia == null || tipoDocumentoReferencia.isBlank()) {
+            errores.add("El tipo de documento de referencia es obligatorio ('factura' o 'boleta')");
+        }
+    }
+
+    /**
+     * Valida código de motivo SUNAT.
+     * Cat.09 para NC (01-10), Cat.10 para ND (01-03).
+     */
+    private void validateCodigoMotivo(String codigo, String catalogo, List<String> errores) {
+        if (codigo == null || codigo.isBlank()) {
+            errores.add("El código de motivo SUNAT (Cat." + catalogo + ") es obligatorio");
+            return;
+        }
+        if ("09".equals(catalogo)) {
+            // Cat.09: 01-10 son códigos válidos para NC
+            try {
+                int val = Integer.parseInt(codigo);
+                if (val < 1 || val > 10) {
+                    errores.add("Código de motivo NC inválido '" + codigo + "'. Cat.09 acepta valores del 01 al 10");
+                }
+            } catch (NumberFormatException e) {
+                errores.add("Código de motivo NC debe ser numérico: " + codigo);
+            }
+        } else if ("10".equals(catalogo)) {
+            // Cat.10: 01-03 son códigos válidos para ND
+            try {
+                int val = Integer.parseInt(codigo);
+                if (val < 1 || val > 3) {
+                    errores.add("Código de motivo ND inválido '" + codigo + "'. Cat.10 acepta valores del 01 al 03");
+                }
+            } catch (NumberFormatException e) {
+                errores.add("Código de motivo ND debe ser numérico: " + codigo);
+            }
         }
     }
 }

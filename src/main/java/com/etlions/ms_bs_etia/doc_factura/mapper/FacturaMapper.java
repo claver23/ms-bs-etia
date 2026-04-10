@@ -27,6 +27,8 @@ public interface FacturaMapper {
     @Mapping(target = "descripcionRespuestaSunat", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
     @Mapping(target = "erroresValidacion", ignore = true)
+    @Mapping(target = "xmlContent", ignore = true)
+    @Mapping(target = "xmlPath", ignore = true)
     @Mapping(target = "moneda", expression = "java(request.getMoneda() != null ? request.getMoneda().getValue() : null)")
     @Mapping(target = "formaPago", expression = "java(request.getFormaPago() != null ? request.getFormaPago().getValue() : \"CONTADO\")")
     @Mapping(target = "horaEmision", expression = "java(request.getHoraEmision() != null ? java.time.LocalTime.parse(request.getHoraEmision()) : null)")

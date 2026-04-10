@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ar:ApplicationResponse xmlns:ar="urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2"
+                        xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+                        xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+    <cac:DocumentResponse>
+        <cac:Response>
+            <cbc:ResponseCode>2100</cbc:ResponseCode>
+            <cbc:Description>El documento no cumple con el formato establecido</cbc:Description>
+        </cac:Response>
+        <cac:DocumentReference>
+            <cbc:ID>F001-00000001</cbc:ID>
+        </cac:DocumentReference>
+    </cac:DocumentResponse>
+</ar:ApplicationResponse>
+

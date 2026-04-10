@@ -16,12 +16,14 @@ public interface EmployeeMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", constant = "false")
     EmployeeEntity toEntity(EmployeeCreateDto request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "companyId", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", ignore = true)
     void updateEntity(EmployeeUpdateDto request, @MappingTarget EmployeeEntity entity);
 
     @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? EmployeeData.EstadoEnum.fromValue(entity.getEstado()) : EmployeeData.EstadoEnum.ACTIVO)")

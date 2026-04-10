@@ -1,0 +1,12 @@
+target/
+.git/
+.idea/
+*.iml
+.env
+etia_storage/
+certs/
+docs/
+*.md
+.dockerignore
+docker-compose.yml
+

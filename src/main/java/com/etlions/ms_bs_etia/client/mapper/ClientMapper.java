@@ -13,12 +13,14 @@ public interface ClientMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", constant = "false")
     @Mapping(target = "tipoDocumento", expression = "java(request.getTipoDocumento() != null ? request.getTipoDocumento().getValue() : null)")
     ClientEntity toEntity(ClientRegisterDto request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "companyId", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", ignore = true)
     @Mapping(target = "tipoDocumento", ignore = true)
     @Mapping(target = "numeroDocumento", ignore = true)
     void updateEntity(ClientUpdateDto request, @MappingTarget ClientEntity entity);

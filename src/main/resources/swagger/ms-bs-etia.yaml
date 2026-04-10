@@ -47,6 +47,8 @@ tags:
     description: Catálogos oficiales SUNAT para comprobantes electrónicos (CPE)
   - name: resumen_diario
     description: Resúmenes diarios de boletas para envío masivo a SUNAT
+  - name: onboarding
+    description: Registro de empresa con configuración inicial (onboarding)
 
 paths:
   # ==================== COMPANY ====================
@@ -713,6 +715,40 @@ paths:
         "404":
           description: Factura no encontrada
 
+  /factura/{facturaId}/pdf:
+    get:
+      tags:
+        - factura
+      summary: Descargar representación impresa PDF de la factura
+      description: |
+        Genera y descarga el PDF con representación impresa de la factura electrónica.
+        Incluye logo, datos emisor/receptor, detalle, totales, QR con formato SUNAT y hash CDR.
+      operationId: descargarFacturaPdf
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura
+      responses:
+        "200":
+          description: PDF generado exitosamente
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "inline; filename=\"{serie}-{numero}.pdf\""
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: Factura no tiene datos suficientes para generar PDF
+        "404":
+          description: Factura no encontrada
+
   # ==================== BOLETA ====================
   /boleta:
     post:
@@ -948,6 +984,40 @@ paths:
         "404":
           description: Boleta no encontrada
 
+  /boleta/{boletaId}/pdf:
+    get:
+      tags:
+        - boleta
+      summary: Descargar representación impresa PDF de la boleta
+      description: |
+        Genera y descarga el PDF con representación impresa de la boleta de venta electrónica.
+        Incluye logo, datos emisor/receptor, detalle, totales, QR con formato SUNAT y hash CDR.
+      operationId: descargarBoletaPdf
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta
+      responses:
+        "200":
+          description: PDF generado exitosamente
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "inline; filename=\"{serie}-{numero}.pdf\""
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: Boleta no tiene datos suficientes para generar PDF
+        "404":
+          description: Boleta no encontrada
+
   # ==================== RESUMEN DIARIO ====================
   /resumen-diario:
     post:
@@ -1101,6 +1171,17 @@ paths:
           schema:
             type: string
             format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+          description: Filtrar por serie
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          description: Filtrar por estado
         - name: page
           in: query
           schema:
@@ -1189,6 +1270,95 @@ paths:
         "404":
           description: Nota de crédito no encontrada
 
+  /nota_credito/{notaCreditoId}/validar:
+    post:
+      tags:
+        - nota_credito
+      summary: Validar una nota de crédito internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una nota de crédito existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre notas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarNotaCredito
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Nota de crédito no encontrada
+
+  /nota_credito/{notaCreditoId}/emitir:
+    put:
+      tags:
+        - nota_credito
+      summary: Emitir una nota de crédito en estado BORRADOR
+      description: |
+        Toma una nota de crédito existente con estado BORRADOR o VALIDADO, genera el XML UBL 2.1
+        tipo CreditNote (07), lo persiste en disco y BD, y publica la notificación de emisión.
+      operationId: emitirNotaCreditoBorrador
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito borrador a emitir
+      responses:
+        "200":
+          description: Nota de crédito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
+        "400":
+          description: La nota de crédito no está en estado BORRADOR o VALIDADO
+        "404":
+          description: Nota de crédito no encontrada
+
+  /nota_credito/{notaCreditoId}/xml:
+    get:
+      tags:
+        - nota_credito
+      summary: Descargar XML UBL 2.1 de una nota de crédito
+      description: |
+        Retorna el XML UBL 2.1 tipo CreditNote (07) generado para la nota de crédito indicada.
+        El nombre del archivo sigue el formato SUNAT: {RUC}-07-{serie}-{numero}.xml
+      operationId: descargarNotaCreditoXml
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito
+      responses:
+        "200":
+          description: XML UBL 2.1 de la nota de crédito
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{RUC}-07-{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La nota de crédito existe pero aún no tiene XML generado
+        "404":
+          description: Nota de crédito no encontrada
+
   # ==================== NOTA DÉBITO ====================
   /nota_debito:
     post:
@@ -1239,6 +1409,17 @@ paths:
           schema:
             type: string
             format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+          description: Filtrar por serie
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          description: Filtrar por estado
         - name: page
           in: query
           schema:
@@ -1320,6 +1501,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotaDebitoResponseDto'
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/validar:
+    post:
+      tags:
+        - nota_debito
+      summary: Validar una nota de débito internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una nota de débito existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre notas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarNotaDebito
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/emitir:
+    put:
+      tags:
+        - nota_debito
+      summary: Emitir una nota de débito en estado BORRADOR
+      description: |
+        Toma una nota de débito existente con estado BORRADOR o VALIDADO, genera el XML UBL 2.1
+        tipo DebitNote (08), lo persiste en disco y BD, y publica la notificación de emisión.
+      operationId: emitirNotaDebitoBorrador
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito borrador a emitir
+      responses:
+        "200":
+          description: Nota de débito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
+        "400":
+          description: La nota de débito no está en estado BORRADOR o VALIDADO
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/xml:
+    get:
+      tags:
+        - nota_debito
+      summary: Descargar XML UBL 2.1 de una nota de débito
+      description: |
+        Retorna el XML UBL 2.1 tipo DebitNote (08) generado para la nota de débito indicada.
+        El nombre del archivo sigue el formato SUNAT: {RUC}-08-{serie}-{numero}.xml
+      operationId: descargarNotaDebitoXml
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito
+      responses:
+        "200":
+          description: XML UBL 2.1 de la nota de débito
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{RUC}-08-{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La nota de débito existe pero aún no tiene XML generado
         "404":
           description: Nota de débito no encontrada
 
@@ -2199,6 +2469,32 @@ paths:
         "404":
           description: Catálogo no encontrado
 
+  # ==================== ONBOARDING ====================
+  /onboarding:
+    post:
+      tags:
+        - onboarding
+      summary: Registrar nueva empresa con configuración inicial completa
+      description: |
+        Crea empresa, sede principal, 4 series (F001, B001, FC01, FD01)
+        y 4 correlativos iniciales en una sola operación transaccional.
+      operationId: registrarOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequestDto'
+      responses:
+        "200":
+          description: Empresa registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResponseDto'
+        "400":
+          description: Error de validación en datos de onboarding
+
 components:
   schemas:
     # ===== GENERIC =====
@@ -2697,32 +2993,126 @@ components:
       type: object
       required:
         - companyId
-        - facturaReferenciaId
+        - documentoReferenciaId
         - motivo
-        - montoDescuento
+        - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
           type: string
+          example: "cli_123456"
+        documentoReferenciaId:
+          type: string
+          description: "ID del documento de referencia (factura o boleta)"
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          default: "factura"
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
           example: "devolucion"
-        montoDescuento:
-          type: number
-          example: 180.00
-        tipoDocumento:
+        codigoMotivoSunat:
           type: string
-          enum: [factura, boleta]
-          default: "factura"
+          description: "Catálogo 09 SUNAT"
+          default: "01"
+          example: "01"
         descripcion:
           type: string
           example: "Devolución de productos defectuosos"
+        serie:
+          type: string
+          example: "FC01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          default: "PEN"
+        montoDescuento:
+          type: number
+          example: 180.00
+        gravadas:
+          type: number
+          minimum: 0
+          example: 1000.00
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        igv:
+          type: number
+          minimum: 0
+          example: 180.00
+        total:
+          type: number
+          minimum: 0
+          example: 1180.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 1000.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 1180.00
+        leyenda:
+          type: string
+          example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          minimum: 0
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          default: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
 
@@ -2732,10 +3122,42 @@ components:
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
-        montoDescuento:
-          type: number
+        codigoMotivoSunat:
+          type: string
         descripcion:
           type: string
+        montoDescuento:
+          type: number
+        gravadas:
+          type: number
+        exoneradas:
+          type: number
+        inafectas:
+          type: number
+        gratuitas:
+          type: number
+        igv:
+          type: number
+        total:
+          type: number
+        subtotal:
+          type: number
+        totalCargos:
+          type: number
+        totalDescuentos:
+          type: number
+        totalConImpuestos:
+          type: number
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
         detalle:
           type: array
           items:
@@ -2746,28 +3168,125 @@ components:
       type: object
       required:
         - companyId
-        - facturaReferenciaId
+        - documentoReferenciaId
         - motivo
-        - montoIncremento
+        - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
           type: string
+          example: "cli_123456"
+        documentoReferenciaId:
+          type: string
+          description: "ID del documento de referencia (factura o boleta)"
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          default: "factura"
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
           example: "intereses"
-        montoIncremento:
-          type: number
-          example: 50.00
+        codigoMotivoSunat:
+          type: string
+          description: "Catálogo 10 SUNAT"
+          default: "01"
+          example: "01"
         descripcion:
           type: string
           example: "Intereses por mora en pago"
+        serie:
+          type: string
+          example: "FD01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          default: "PEN"
+        montoIncremento:
+          type: number
+          example: 50.00
+        gravadas:
+          type: number
+          minimum: 0
+          example: 50.00
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        igv:
+          type: number
+          minimum: 0
+          example: 9.00
+        total:
+          type: number
+          minimum: 0
+          example: 59.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 50.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 59.00
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          minimum: 0
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          default: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
 
@@ -2777,10 +3296,42 @@ components:
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
-        montoIncremento:
-          type: number
+        codigoMotivoSunat:
+          type: string
         descripcion:
           type: string
+        montoIncremento:
+          type: number
+        gravadas:
+          type: number
+        exoneradas:
+          type: number
+        inafectas:
+          type: number
+        gratuitas:
+          type: number
+        igv:
+          type: number
+        total:
+          type: number
+        subtotal:
+          type: number
+        totalCargos:
+          type: number
+        totalDescuentos:
+          type: number
+        totalConImpuestos:
+          type: number
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
         detalle:
           type: array
           items:
@@ -3358,27 +3909,117 @@ components:
         companyId:
           type: string
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
+          type: string
+          example: "cli_123456"
+        documentoReferenciaId:
           type: string
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          example: "factura"
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
           example: "devolucion"
+        codigoMotivoSunat:
+          type: string
+          example: "01"
         montoDescuento:
           type: number
           example: 180.00
-        tipoDocumento:
-          type: string
-          enum: [factura, boleta]
-          example: "factura"
         descripcion:
           type: string
           example: "Devolución de productos defectuosos"
+        serie:
+          type: string
+          example: "FC01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 1000.00
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        igv:
+          type: number
+          example: 180.00
+        total:
+          type: number
+          example: 1180.00
+        subtotal:
+          type: number
+          example: 1000.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          example: 1180.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
-          example: "ACEPTADA"
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "BORRADOR"
+        erroresValidacion:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: []
+        hashCdr:
+          type: string
+        codigoRespuestaSunat:
+          type: string
+        descripcionRespuestaSunat:
+          type: string
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
+        xmlPath:
+          type: string
         detalle:
           type: array
           items:
@@ -3397,23 +4038,117 @@ components:
         companyId:
           type: string
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
+          type: string
+          example: "cli_123456"
+        documentoReferenciaId:
           type: string
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          example: "factura"
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
           example: "intereses"
+        codigoMotivoSunat:
+          type: string
+          example: "01"
         montoIncremento:
           type: number
           example: 50.00
         descripcion:
           type: string
           example: "Intereses por mora en pago"
+        serie:
+          type: string
+          example: "FD01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 50.00
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        igv:
+          type: number
+          example: 9.00
+        total:
+          type: number
+          example: 59.00
+        subtotal:
+          type: number
+          example: 50.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          example: 59.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
-          example: "ACEPTADA"
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "BORRADOR"
+        erroresValidacion:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: []
+        hashCdr:
+          type: string
+        codigoRespuestaSunat:
+          type: string
+        descripcionRespuestaSunat:
+          type: string
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
+        xmlPath:
+          type: string
         detalle:
           type: array
           items:
@@ -4570,4 +5305,52 @@ components:
         ticket:
           type: string
           example: "mock-ticket-20260408-001"
+
+    # ===== ONBOARDING =====
+    OnboardingRequestDto:
+      type: object
+      required: [ruc, razonSocial]
+      properties:
+        ruc:
+          type: string
+          example: "20601234567"
+          description: RUC de la empresa (11 dígitos)
+        razonSocial:
+          type: string
+          example: "ETLIONS SAC"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        codigoUbigeo:
+          type: string
+          example: "150131"
+
+    OnboardingResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                companyId:
+                  type: string
+                  example: "uuid-company-001"
+                sedeId:
+                  type: string
+                  example: "uuid-sede-001"
+                seriesCreadas:
+                  type: array
+                  items:
+                    type: string
+                  example: ["F001", "B001", "FC01", "FD01"]
 

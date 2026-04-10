@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: etia
+      POSTGRES_USER: etia
+      POSTGRES_PASSWORD: ${DB_PASS:-etia_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U etia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: etia
+      DB_USER: etia
+      DB_PASS: ${DB_PASS:-etia_secret}
+      JWT_SECRET: ${JWT_SECRET:-cambiar-en-produccion-minimo-32-caracteres}
+      ETIA_STORAGE_PATH: /app/storage
+      ETIA_CERTS_PATH: /app/certs
+    volumes:
+      - etia_storage:/app/storage
+      - etia_certs:/app/certs
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  etia_storage:
+  etia_certs:
+

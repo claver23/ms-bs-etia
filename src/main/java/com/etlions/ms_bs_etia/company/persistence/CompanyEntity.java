@@ -80,10 +80,13 @@ public class CompanyEntity {
     @Builder.Default
     private Boolean emisionEnEnvio = true;
 
+    @Column(name = "es_demo")
+    @Builder.Default
+    private Boolean esDemo = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 }
-

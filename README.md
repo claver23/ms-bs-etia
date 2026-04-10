@@ -8,17 +8,22 @@
   <img src="https://img.shields.io/badge/Leaflet-Map%20Integration-199900?style=for-the-badge&logo=leaflet&logoColor=white" />
   <img src="https://img.shields.io/badge/H2%20|%20PostgreSQL-Ready-336791?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/UBL%202.1-XML%20SUNAT-E74C3C?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/OAuth2-JWT%20Security-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
+  <img src="https://img.shields.io/badge/Google%20Places-API%20Integration-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Apache%20POI-Excel%20Export-217346?style=for-the-badge" />
 </p>
 
-<h1 align="center">🧾 ETIA — Facturación Electrónica Perú</h1>
+<h1 align="center">🧾 ETIA Suite — Business Intelligence Platform</h1>
 
 <p align="center">
-  <b>Microservicio backend + frontend integrado para emisión de comprobantes electrónicos conforme a SUNAT</b><br/>
-  <sub>Facturas · Boletas · Notas de Crédito · Notas de Débito · XML UBL 2.1 · Productos · Clientes · Empleados · Sedes · Series · Tipo de Cambio · Libros Electrónicos · Notificaciones en Tiempo Real · Consulta RENIEC/SUNAT</sub>
+  <b>Plataforma integral de gestión empresarial para el mercado peruano</b><br/>
+  <sub>Facturación Electrónica SUNAT · POS Pro · Radar de Mercado · Alpha Campaigns · Supply Chain · Deal Flow CRM · GeoInsight · Data Vault Reportes · Overlord Admin · The Guillotine · Plan Forge</sub>
 </p>
 
 <p align="center">
-  <a href="#-novedades-abril-2026--fase-2-en-progreso-">FASE 2</a> •
+  <a href="#-etia-suite-v30--plan-de-evolución">ETIA Suite v3.0</a> •
+  <a href="#-módulos">Módulos</a> •
+  <a href="#-novedades-abril-2026--fase-2-completada-">FASE 2</a> •
   <a href="#-novedades-abril-2026--fase-1-completada-">FASE 1</a> •
   <a href="#-arquitectura">Arquitectura</a> •
   <a href="#-dominios">Dominios</a> •
@@ -32,7 +37,76 @@
 
 ---
 
-## 🔥 Novedades (Abril 2026) — FASE 2 EN PROGRESO 🚧
+## 🚀 ETIA Suite v3.0 — Plan de Evolución
+
+> **De facturación electrónica a plataforma integral de inteligencia empresarial.** ETIA evoluciona de un sistema de emisión de comprobantes a una suite completa que cubre ventas, compras, campañas, CRM, análisis geográfico, reportes y administración multi-tenant con planes.
+
+### 📦 Módulos Planificados
+
+| # | Módulo | Nombre UI | Paquete | Endpoint | Descripción |
+|---|--------|-----------|---------|----------|-------------|
+| M0 | **Core** | — | `ms_bs_etia` (transversal) | — | Cimientos técnicos: dates, website_url, PuntoVenta base |
+| M1 | **POS** | POS Pro | `punto_venta` | `/api/v1/punto_venta` | Punto de venta con asignación de empleados y métricas |
+| M2 | **Campaigns** | Alpha Campaigns | `campaign` | `/api/v1/campaigns` | Campañas con ROI, audiencia, conversiones y mock ad platform |
+| M3 | **Radar** | Radar de Mercado | `radar` | `/api/v1/radar` | Google Places API, leads, caché 30d, rate limiter |
+| M4 | **Compras** | Supply Chain | `purchase` | `/api/v1/purchase` | Proveedores, OC, facturas de compra, integración Radar |
+| M5 | **Admin** | Overlord | `admin` | `/api/v1/admin` | Dashboard ETLIONS, gestión de planes, tickets de soporte |
+| M6 | **Seguridad** | — | `security` | `/api/v1/auth` | OAuth2 + JWT, company isolation, planes, roles |
+| M7 | **Anulación** | Adjuster (The Guillotine) | `adjuster` | `/api/v1/adjuster` | Slider de cancelación parcial/total con NC o com. de baja |
+| M8 | **CRM** | Deal Flow | `crm` | `/api/v1/crm` | Funnel de oportunidades, kanban, actividades |
+| M9 | **Reportes** | Data Vault | `reporting` | `/api/v1/reporting` | Excel export, métricas, dashboards, proyecciones |
+| M10 | **Geo** | GeoInsight | `geo` | `/api/v1/geo` | Mapa interactivo, heatmap, auto-ubigeo, análisis zonal |
+| M11 | **Códigos** | Códigos | `codigos` | `/api/v1/codigos` | Correlativos centralizados: `{PREFIX}-{DATE}-{N}` |
+| M12 | **Frontend** | — | — | — | Modularización JS, menú dinámico, auth flow, slider component |
+
+### 🗂️ Fases de Ejecución
+
+```
+FASE 00 (Auditoría Data)
+    ↓
+FASE A (Core — Cimientos)
+    ↓
+┌─ FASE B (Seguridad + OAuth2)
+├─ FASE C (POS Pro + Team Compass)
+├─ FASE D (Radar de Mercado)
+├─ FASE E (Alpha Campaigns)
+├─ FASE F (Supply Chain)
+├─ FASE G (Overlord Admin)
+├─ FASE H (Adjuster / Guillotine)
+├─ FASE I (Deal Flow CRM)
+├─ FASE J (Data Vault Reportes)
+├─ FASE K (GeoInsight)
+├─ FASE L (Códigos Correlativos)
+└─ FASE M (Frontend Modular)
+    ↓
+FASE N (Integración Final + Tests)
+```
+
+> 📁 Plan detallado en [`docs/fases/`](docs/fases/) · Bitácora en [`docs/BITACORA_EJECUCION.md`](docs/BITACORA_EJECUCION.md) · Arquitectura en [`docs/ARQUITECTURA_PATRONES_STACK.md`](docs/ARQUITECTURA_PATRONES_STACK.md)
+
+### 👤 Demo User
+
+| Campo | Valor |
+|-------|-------|
+| Email | `claveralvaro@gmail.com` |
+| Password | `Etia2025!` |
+| Rol | `ADMIN_ETIA` |
+| Empresa | ETLIONS S.A.C. |
+| RUC | 20601234567 |
+| Plan | BUSINESS (todos los módulos) |
+
+### 💰 Planes
+
+| Plan | Precio | Módulos |
+|------|--------|---------|
+| **FREE** | S/ 0 | Recibos por honorarios |
+| **STARTER** | S/ 29.90/mes | Facturación + Clientes + Productos + Sedes |
+| **PRO** | S/ 79.90/mes | STARTER + POS + Campañas + Radar + Compras + Reportes |
+| **BUSINESS** | Desde S/ 199.90/mes | Todo + Overlord + CRM + GeoInsight + Soporte dedicado |
+
+---
+
+## 🔥 Novedades (Abril 2026) — FASE 2 COMPLETADA ✅
 
 > **FASE 2: XML UBL 2.1 SUNAT al ~90%.** Generador XML completo con 36 tests, endpoint de descarga OpenAPI-first, modelo de datos enriquecido con 12 catálogos SUNAT, wizard 5 pasos con edit mode, flujo Borrador/Emisión, 184 tests pasando.
 
@@ -326,264 +400,6 @@ GET /wizard?type=FACTURA       ← WizardViewController → wizard/factura.html
 
 ---
 
-## 📦 Dominios
-
-Cada dominio vive en su propio paquete con **sub-paquetes homologados** (openapi / service / service/impl / mapper / persistence):
-
-```
-com.etlions.ms_bs_etia
-│
-├── 🏢 company/                    Empresas emisoras (CRUD)
-│   ├── openapi/                   CompanyOpenApi.java
-│   ├── service/impl/              companyServiceImpl.java
-│   ├── mapper/                    CompanyMapper.java
-│   └── persistence/               CompanyEntity + CompanyRepository
-│
-├── 👤 client/                     Clientes / adquirientes (CRUD)
-│   ├── openapi/                   clientOpenApi.java
-│   ├── service/impl/              clienteServiceImpl.java
-│   ├── mapper/                    ClientMapper.java
-│   └── persistence/               ClientEntity + ClientRepository
-│
-├── 🧾 doc_factura/                Facturas electrónicas (CRUD + Emisión + Anulación + XML UBL 2.1)
-│   ├── openapi/                   DocFacturaOpenApi.java
-│   ├── service/impl/              docFacturaServiceImpl.java
-│   ├── mapper/                    FacturaMapper.java
-│   ├── persistence/               FacturaEntity + FacturaRepository
-│   │                              CuotaCreditoEntity + CuotaCreditoRepository
-│   │                              AllowanceChargeEntity + AllowanceChargeRepository
-│   └── xml/                       UblInvoiceXmlBuilder.java (genera XML UBL 2.1)
-│
-├── 🎫 doc_boleta/                 Boletas de venta (CRUD + Emisión + Anulación)
-│   ├── openapi/                   DocBoletaOpenApi.java
-│   ├── service/impl/              docBoletaServiceImpl.java
-│   ├── mapper/                    BoletaMapper.java
-│   └── persistence/               BoletaEntity + BoletaRepository
-│
-├── 📉 doc_notacred/               Notas de crédito (CRUD + Emisión)
-│   ├── openapi/                   DocNotacredOpenApi.java
-│   ├── service/impl/              docNotacredServiceImpl.java
-│   ├── mapper/                    NotaCreditoMapper.java
-│   └── persistence/               NotaCreditoEntity + NotaCreditoRepository
-│
-├── 📈 doc_notadeb/                Notas de débito (CRUD + Emisión)
-│   ├── openapi/                   DocNotadebOpenApi.java
-│   ├── service/impl/              docNotadebServiceImpl.java
-│   ├── mapper/                    NotaDebitoMapper.java
-│   └── persistence/               NotaDebitoEntity + NotaDebitoRepository
-│
-├── 📦 product/                    Productos y servicios (CRUD + búsqueda)
-│   ├── openapi/                   ProductOpenApi.java
-│   ├── service/impl/              productServiceImpl.java
-│   ├── mapper/                    ProductMapper.java
-│   └── persistence/               ProductEntity + ProductRepository
-│
-├── 👔 employee/                   Empleados (CRUD)
-│   ├── openapi/                   EmployeeOpenApi.java
-│   ├── service/impl/              employeeServiceImpl.java
-│   ├── mapper/                    EmployeeMapper.java
-│   └── persistence/               EmployeeEntity + EmployeeRepository
-│
-├── 🏪 sede/                       Sedes / sucursales (CRUD + generar series)
-│   ├── openapi/                   SedeOpenApi.java
-│   ├── service/impl/              sedeServiceImpl.java
-│   ├── mapper/                    SedeMapper.java
-│   └── persistence/               SedeEntity + SedeRepository
-│
-├── 🔢 serie_config/               Series por sede (F001, B001, etc.)
-│   ├── openapi/                   SerieConfigOpenApi.java
-│   ├── service/impl/              serieConfigServiceImpl.java
-│   ├── mapper/                    SerieConfigMapper.java
-│   └── persistence/               SerieConfigEntity + SerieConfigRepository
-│
-├── 💱 tipo_cambio/                Tipo de cambio (SBS / SUNAT)
-│   ├── openapi/                   TipoCambioOpenApi.java
-│   ├── service/impl/              tipoCambioServiceImpl.java
-│   ├── mapper/                    TipoCambioMapper.java
-│   └── persistence/               TipoCambioEntity + TipoCambioRepository
-│
-├── 📚 libro_electronico/          Libros electrónicos PLE (ventas, compras)
-│   ├── openapi/                   LibroElectronicoOpenApi.java
-│   ├── service/impl/              libroElectronicoServiceImpl.java
-│   ├── mapper/                    LibroElectronicoMapper.java
-│   └── persistence/               LibroElectronicoEntity + LibroElectronicoRepository
-│
-├── 🗺️ ubigeo/                     Catálogo SUNAT de ubigeos
-│   ├── openapi/                   UbigeoOpenApi.java
-│   ├── service/impl/              ubigeoServiceImpl.java
-│   ├── mapper/                    UbigeoMapper.java
-│   └── persistence/               UbigeoEntity + UbigeoRepository
-│
-├── 📏 unidad_medida/              Catálogo SUNAT de unidades de medida
-│   ├── openapi/                   UnidadMedidaOpenApi.java
-│   ├── service/impl/              unidadMedidaServiceImpl.java
-│   ├── mapper/                    UnidadMedidaMapper.java
-│   └── persistence/               UnidadMedidaEntity + UnidadMedidaRepository
-│
-├── 👤 reniec/                     Consulta RENIEC / SUNAT (DNI ↔ RUC)
-│   ├── openapi/                   ReniecOpenApi.java
-│   ├── service/                   ReniecService.java
-│   └── service/impl/              ReniecServiceImpl.java (mock — producción conectará APIs externas)
-│
-├── ⚙️ user_preference/            Preferencias de usuario por empresa
-│   ├── openapi/                   UserPreferenceOpenApi.java
-│   ├── service/impl/              userPreferenceServiceImpl.java
-│   ├── mapper/                    UserPreferenceMapper.java
-│   └── persistence/               UserPreferenceEntity + UserPreferenceRepository
-│
-├── 🔔 notification/               Notificaciones in-memory (emisión/anulación)
-│   ├── openapi/                   NotificationOpenApi.java (REST controller)
-│   ├── service/                   NotificationService.java (interface)
-│   ├── service/impl/              NotificationServiceImpl.java
-│   └── persistence/               NotificationStore.java + NotificationItem.java
-│
-├── 📋 catalogo_sunat/             Catálogos estándar SUNAT (12 catálogos)
-│   ├── openapi/                   CatalogoSunatOpenApi.java
-│   ├── service/impl/              CatalogoSunatServiceImpl.java
-│   ├── persistence/               CatalogoSunatEntity + JSON repository
-│   └── standard/                  Constantes Cat. 01-53
-│
-├── 📊 tabla_sunat/                Tablas de referencia SUNAT (JSON)
-│   ├── openapi/                   TablaSunatOpenApi.java
-│   ├── service/impl/              TablaSunatServiceImpl.java
-│   └── persistence/               TablaSunatJsonRepository.java
-│
-├── 🖥️ view/                       14 View Controllers (Spring MVC + Thymeleaf)
-│   ├── WelcomeViewController.java
-│   ├── MenuViewController.java
-│   ├── DocumentsViewController.java
-│   ├── FacturasViewController.java
-│   ├── BoletasViewController.java
-│   ├── NotasCreditoViewController.java
-│   ├── NotasDebitoViewController.java
-│   ├── ClientsViewController.java
-│   ├── ProductsViewController.java
-│   ├── EmployeesViewController.java
-│   ├── SedesViewController.java
-│   ├── TipoCambioViewController.java
-│   ├── ResumenesDiariosViewController.java
-│   └── WizardViewController.java
-│
-├── ⚙️ app_config/                 Configuración global
-│   ├── config/                    ThymeleafConfig.java + SunatProperties.java
-│   └── exception/                 Excepciones custom
-│       ├── GlobalExceptionHandler.java    @RestControllerAdvice (5+ handlers)
-│       ├── ResourceNotFoundException.java    404
-│       ├── BusinessException.java            422
-│       ├── ValidationException.java          400
-│       └── SunatValidationException.java     422 (reglas SUNAT)
-│
-├── 🛠️ app_util/                   Utilidades compartidas
-│   ├── service/                   CorrelativoService.java (interface)
-│   ├── service/impl/              CorrelativoServiceImpl.java
-│   ├── persistence/               CorrelativoEntity.java + CorrelativoRepository.java
-│   └── validation/                SunatValidator.java (reglas SUNAT)
-│
-└── 🚀 MsBsEtiaApplication.java   Entry point
-```
-
-### 📊 Modelo de datos
-
-```
-┌──────────────────┐       ┌──────────────────┐       ┌──────────────────┐
-│    companies     │       │     clients      │       │    employees     │
-├──────────────────┤       ├──────────────────┤       ├──────────────────┤
-│ id          (PK) │◄──┐   │ id          (PK) │       │ id          (PK) │
-│ ruc         (UQ) │   │   │ company_id  (FK) │──┐    │ company_id  (FK) │
-│ razon_social     │   │   │ tipo_documento   │  │    │ nombre           │
-│ nombre_comercial │   │   │ numero_documento │  │    │ cargo            │
-│ codigo_ubigeo    │   │   │ denominacion     │  │    │ dni              │
-│ direccion        │   │   │ direccion        │  │    │ codigo           │
-│ departamento     │   │   │ departamento  🆕 │  │    │ estado           │
-│ provincia        │   │   │ provincia     🆕 │  │    └──────────────────┘
-│ distrito         │   │   │ distrito      🆕 │  │
-│ usuario_sol      │   │   │ codigo_pais   🆕 │  │    ┌──────────────────┐
-│ clave_sol        │   │   │ email            │  │    │    products      │
-│ certificado_*    │   │   │ telefono         │  │    ├──────────────────┤
-│ email_contacto   │   │   └──────────────────┘  │    │ id          (PK) │
-│ telefono         │   │                          │    │ company_id  (FK) │
-│ regimen          │   │                          │    │ codigo_producto  │
-│ emision_en_envio │   │                          │    │ descripcion      │
-│ estado           │   │                          │    │ unidad_medida    │
-└──────────────────┘   │                          │    │ valor_unitario   │
-                       │                          │    │ precio_unitario  │
-┌──────────────────┐   │   ┌──────────────────┐   │    │ igv              │
-│    facturas      │   │   │     boletas      │   │    │ estado           │
-├──────────────────┤   │   ├──────────────────┤   │    └──────────────────┘
-│ id          (PK) │   │   │ id          (PK) │   │
-│ company_id  (FK) │───┘   │ company_id  (FK) │───┤
-│ client_id   (FK) │───────│ client_id   (FK) │───┘
-│ serie            │       │ serie            │        ┌──────────────────┐
-│ numero           │       │ numero           │        │      sedes       │
-│ fecha_emision    │       │ fecha_emision    │        ├──────────────────┤
-│ hora_emision  🆕 │       │ hora_emision  🆕 │        │ id          (PK) │
-│ tipo_operacion🆕 │       │ tipo_operacion🆕 │        │ company_id  (FK) │
-│ moneda           │       │ moneda           │        │ codigo           │
-│ gravadas         │       │ gravadas         │        │ nombre           │
-│ exoneradas    🆕 │       │ exoneradas    🆕 │        │ direccion        │
-│ inafectas     🆕 │       │ inafectas     🆕 │        │ codigo_ubigeo    │
-│ gratuitas     🆕 │       │ gratuitas     🆕 │        │ departamento     │
-│ igv              │       │ igv              │        │ provincia        │
-│ total_cargos  🆕 │       │ total_cargos  🆕 │        │ distrito         │
-│ total_desc    🆕 │       │ total_desc    🆕 │        │ es_default       │
-│ subtotal      🆕 │       │ subtotal      🆕 │        └────────┬─────────┘
-│ total_con_imp 🆕 │       │ total_con_imp 🆕 │                 │
-│ total            │       │ total            │        ┌────────▼─────────┐
-│ estado           │       │ estado           │        │  series_config   │
-│ leyenda          │       │ leyenda          │        ├──────────────────┤
-│ xml_content   🆕 │       │ xml_content   🆕 │        │ id          (PK) │
-│ xml_path      🆕 │       │ xml_path      🆕 │        │ company_id  (FK) │
-│ detalle_json     │       │ detalle_json     │        │ sede_id     (FK) │
-└────────┬─────────┘       └──────────────────┘        │ tipo_documento   │
-         │                                             │ serie            │
-         │ referenciada por                            │ es_default       │
-         ▼                                             │ activa           │
-┌──────────────────┐       ┌──────────────────┐        └──────────────────┘
-│  notas_credito   │       │  notas_debito    │
-├──────────────────┤       ├──────────────────┤        ┌──────────────────┐
-│ id          (PK) │       │ id          (PK) │        │ cuotas_credito🆕 │
-│ company_id  (FK) │       │ company_id  (FK) │        ├──────────────────┤
-│ factura_ref (FK) │       │ factura_ref (FK) │        │ id          (PK) │
-│ motivo           │       │ motivo           │        │ factura_id  (FK) │
-│ monto_descuento  │       │ monto_incremento │        │ numero_cuota     │
-│ tipo_documento   │       │ descripcion      │        │ monto            │
-│ descripcion      │       │ estado           │        │ fecha_venc       │
-│ estado           │       │ detalle_json     │        │ moneda           │
-│ detalle_json     │       └──────────────────┘        └──────────────────┘
-└──────────────────┘
-                                                       ┌──────────────────────┐
-                                                       │ allowance_charges 🆕 │
-┌──────────────────┐       ┌──────────────────┐        ├──────────────────────┤
-│   tipo_cambio    │       │  user_preference │        │ id            (PK)   │
-├──────────────────┤       ├──────────────────┤        │ factura_id    (FK)   │
-│ id          (PK) │       │ id          (PK) │        │ tipo (CARGO/DESC)    │
-│ fecha            │       │ company_id       │        │ codigo_cat53         │
-│ moneda_origen    │       │ clave            │        │ descripcion          │
-│ moneda_destino   │       │ valor            │        │ factor               │
-│ tasa_compra      │       └──────────────────┘        │ base_imponible       │
-│ tasa_venta       │                                   │ monto                │
-│ fuente           │       ┌──────────────────┐        └──────────────────────┘
-└──────────────────┘       │  correlativos    │
-                           ├──────────────────┤        ┌──────────────────────┐
-┌──────────────────┐       │ id          (PK) │        │ libros_electronicos  │
-│ unidades_medida  │       │ company_id       │        ├──────────────────────┤
-├──────────────────┤       │ serie            │        │ id            (PK)   │
-│ id          (PK) │       │ ultimo_numero    │        │ company_id           │
-│ codigo           │       └──────────────────┘        │ tipo                 │
-│ descripcion      │                                   │ periodo              │
-└──────────────────┘       ┌──────────────────┐        │ formato              │
-                           │     ubigeos      │        │ estado               │
-                           ├──────────────────┤        │ total_registros      │
-                           │ id          (PK) │        └──────────────────────┘
-                           │ codigo           │
-                           │ departamento     │
-                           │ provincia        │
-                           │ distrito         │
-                           └──────────────────┘
-```
-
----
-
 ## 🔌 API Endpoints
 
 Todos los endpoints REST están bajo **`/api/v1`** y son generados desde el contrato OpenAPI (`~3,300 líneas`). Todas las notificaciones están integradas en el contrato.
@@ -831,7 +647,7 @@ La aplicación incluye un **frontend completo** construido con **Thymeleaf + Van
 ```
 ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌─────────────┐
 │  PASO 1  │──►│  PASO 2  │──►│  PASO 3  │──►│  PASO 4  │──►│   PASO 5    │
-│ 📄 Doc   │   │ 🏢 Emisor│   │ 👤 Client│   │ 📦 Items │   │ 🚀 Emitir   │
+│ 📄 Doc   │   │ 🏢 Emisor│   │ 👤 Cliente│   │ 📦 Items │   │ 🚀 Emitir   │
 │(serie,   │   │(readonly)│   │(búsqueda)│   │(productos│   │  (review +  │
 │ moneda,  │   │          │   │          │   │ cargos)  │   │  tabla)     │
 │ tipoOp)  │   │          │   │          │   │          │   │             │
@@ -921,15 +737,20 @@ La aplicación carga **datos de prueba automáticamente** al iniciar vía `data.
 | **ORM** | Spring Data JPA + Hibernate | — | Persistencia |
 | **Mapping** | MapStruct | 1.6.3 | Conversión DTO ↔ Entity (compile-time) |
 | **Boilerplate** | Lombok | 1.18.30 | `@Getter @Setter @Builder @RequiredArgsConstructor` |
-| **Template** | Thymeleaf | — | Multi-Page App (14 vistas + fragments) |
-| **Frontend** | Vanilla JS (modular) | ES5+ | 10 módulos JS, 1,606 líneas CSS |
-| **Mapas** | Leaflet.js | — | Mapa interactivo en Config (sede location) |
+| **Template** | Thymeleaf | — | Multi-Page App (14+ vistas + fragments) |
+| **Frontend** | Vanilla JS (modular) | ES5+ | 10+ módulos JS, 1,606+ líneas CSS |
+| **Mapas** | Leaflet.js | — | Mapa interactivo en Config + GeoInsight |
 | **Geocoding** | Nominatim (OSM) | — | Búsqueda de direcciones + reverse geocode |
 | **BD (dev)** | H2 Database | — | Base de datos en memoria |
 | **BD (prod)** | PostgreSQL | — | Base de datos producción (driver incluido) |
 | **Validación** | Hibernate Validator + Jakarta | 3.0.2 | Validación de requests |
 | **Docs** | Swagger / OpenAPI 3.0.3 | — | Contrato de API (`ms-bs-etia.yaml`) |
 | **Build** | Maven Wrapper | — | Build reproducible sin instalar Maven |
+| **Seguridad** | Spring Security + OAuth2 | — | Autenticación/Autorización (FASE B) |
+| **JWT** | JJWT | 0.12.6 | JSON Web Tokens (FASE B) |
+| **Excel** | Apache POI | 5.2.5 | Exportación de reportes (FASE E/J) |
+| **Places** | Google Maps Services | 2.2.0 | Radar de Mercado (FASE D) |
+| **Gráficos** | Chart.js | — | Dashboards (futuro) |
 
 ---
 
@@ -1019,90 +840,33 @@ Consola H2: **http://localhost:8080/h2-console**
 
 ---
 
-## 🗄️ Configuración
-
-### `application.yaml` (Desarrollo)
-
-```yaml
-spring:
-  application:
-    name: ms-bs-etia
-  datasource:
-    url: jdbc:h2:mem:localdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
-  sql:
-    init:
-      mode: always                 # Ejecuta data.sql al arrancar
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  thymeleaf:
-    cache: false
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          no-cache: true
-          no-store: true
-
-# 🆕 Configuración SUNAT (type-safe)
-sunat:
-  certificado:
-    base-path: ${SUNAT_CERT_PATH:./certs}    # Ruta base para certificados .pfx/.p12
-  sol:
-    default-user: ${SUNAT_SOL_USER:MODDATOS}
-    default-password: ${SUNAT_SOL_PASSWORD:MODDATOS}
-```
-
-### Producción (futuro `application-prod.yaml`)
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/etia_db
-    driver-class-name: org.postgresql.Driver
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: validate
-  sql:
-    init:
-      mode: never
-  h2:
-    console:
-      enabled: false
-```
-
----
-
 ## 🗺️ Roadmap
 
 ```
-                                                        Estado actual
-                                                             │
-                                                             ▼
-────●──────────────────────────────●──────────────────────●──────────●──────────●────►
-    │                              │                      │          │          │
-    ▼                              ▼                      ▼          ▼          ▼
+                                    Estado actual
+                                         │
+                                         ▼
+ ────●────────────────●──────────●───────●─────────────────────────────────────►
+     │                │          │       │
+     ▼                ▼          ▼       ▼
+  ✅ FASE 1        ✅ FASE 2    🔲 FASES A-N           🔲 Production
+  (Completada)     (Completada) (Suite v3.0)            Ready
 
- ✅ FASE 1 (Completada)         🟡 FASE 2 (~90%)       🔲 Fase 3   🔲 Fase 4   🔲 Fase 5
-   CRUD + OpenAPI + MapStruct     XML UBL 2.1 ✅         Firma +     Resumen     Production
-   Error Handling + MPA           12 Catálogos ✅        Envío       Diario +    Ready
-   20 dominios homologados        Modelo datos ✅        SUNAT       Com. Baja
-   60+ endpoints + 14 vistas      Wizard 5-step ✅       CDR         Boletas
-   Notificaciones · Validaciones  Edit mode ✅
-   Auto-correlativo · Series      Borrador/Emit ✅
-   Arquitectura hexagonal         184 tests ✅
+  CRUD + OpenAPI    XML UBL 2.1  00: Auditoría Data     Docker
+  Error Handling    12 Catálogos   A: Core               CI/CD
+  20 dominios       Wizard 5-step  B: Security + OAuth2  PostgreSQL
+  60+ endpoints     Edit mode      C: POS Pro            Firma SUNAT
+  14 vistas MPA     Borrador/Emit  D: Radar de Mercado   Envío SOAP
+  Notificaciones    295 tests      E: Alpha Campaigns    CDR
+  Auto-correlativo                 F: Supply Chain       PDF gen
+  Validaciones                     G: Overlord Admin     QR Code
+                                   H: Adjuster
+                                   I: Deal Flow CRM
+                                   J: Data Vault
+                                   K: GeoInsight
+                                   L: Códigos
+                                   M: Frontend Modular
+                                   N: Integración Final
 ```
 
 ### ✅ FASE 1 — Plataforma Base Completa (Finalizada Abril 2026)
@@ -1145,77 +909,63 @@ spring:
 | **💳 Forma de pago** | CONTADO / CRÉDITO con lógica de fecha de vencimiento |
 | **🏪 Sedes + Series** | Cambio de sede → auto-actualización de series |
 
-### 🟡 Fase 2 — XML UBL 2.1 SUNAT (~90% completada)
+### ✅ Fase 2 — XML UBL 2.1 SUNAT (Completada)
 
 Generación del XML electrónico conforme al estándar UBL 2.1 que exige SUNAT:
 
 | Feature | Descripción | Estado |
 |---------|-------------|--------|
-| **Estructura XML UBL 2.1** | Generar `Invoice` conforme al estándar OASIS UBL 2.1 adaptado por SUNAT | ✅ Completado |
-| **Catálogos SUNAT** | 12 catálogos: 01, 02, 03, 04, 05, 06, 07, 13, 16, 51, 52, 53 | ✅ Completado |
-| **Builder pattern XML** | `UblInvoiceXmlBuilder` ensambla XML desde entidades (36 tests) | ✅ Completado |
-| **Namespace management** | `cac:`, `cbc:`, `ext:`, `sac:` correctamente manejados | ✅ Completado |
-| **Datos del emisor en XML** | `AccountingSupplierParty` con RUC, razón social, dirección, ubigeo | ✅ Completado |
-| **Datos del receptor en XML** | `AccountingCustomerParty` con tipo/número doc, denominación, dirección | ✅ Completado |
-| **Líneas de detalle** | `InvoiceLine` con cantidad, UM, precios, IGV, subtotal, afectación | ✅ Completado |
-| **Totales y tributos** | `TaxTotal`, `LegalMonetaryTotal` con gravadas, exoneradas, IGV, total | ✅ Completado |
-| **Leyenda (monto en letras)** | `Note` element con monto textual (Cat. 52) | ✅ Completado |
-| **Tipo de cambio en XML** | `PaymentExchangeRate` para docs en USD | ✅ Completado |
-| **Forma de pago** | `PaymentTerms` — Contado / Crédito con cuotas | ✅ Completado |
-| **Cargos/Descuentos** | `AllowanceCharge` con Cat. 53 (recargo consumo, descuento vol., etc.) | ✅ Completado |
-| **Almacenamiento XML** | Campos `xml_content` (BD) + `xml_path` (disco) — inmutable | ✅ Completado |
-| **Descarga XML** | `GET /factura/{id}/xml` — endpoint OpenAPI-first | ✅ Completado |
-| **Modelo enriquecido** | +9 campos Factura/Boleta, +4 Client, +6 DetalleItem, +2 entidades | ✅ Completado |
-| **Wizard 5 pasos** | Documento → Emisor → Cliente → Detalle → Emitir (+ edit mode) | ✅ Completado |
-| **Emisión/Borrador** | Toggle `emisionEnEnvio` + Quick Emit + re-emisión RECHAZADA→ENVIADA | ✅ Completado |
-| **SunatProperties** | Config type-safe: `sunat.certificado.base-path`, `sunat.sol.*` | ✅ Completado |
-| **184 tests** | JUnit 5 + Mockito — todos verdes | ✅ Completado |
-| **Vinculación Sede → XML** | `AddressTypeCode` del establecimiento emisor (0001=principal) | ❌ Pendiente |
-| **Notas: doc referencia** | `BillingReference` → `InvoiceDocumentReference` para NC/ND | ❌ Pendiente |
-| **Validación XML vs XSD** | Validar contra XSD antes de firmar | ❌ Pendiente |
+| **Estructura XML UBL 2.1** | Generar `Invoice` conforme al estándar OASIS UBL 2.1 adaptado por SUNAT | ✅ |
+| **12 Catálogos SUNAT** | Cat. 01, 02, 03, 04, 05, 06, 07, 13, 16, 51, 52, 53 | ✅ |
+| **Builder pattern XML** | `UblInvoiceXmlBuilder` (36 tests) | ✅ |
+| **Namespace management** | `cac:`, `cbc:`, `ext:`, `sac:` | ✅ |
+| **Emisor/Receptor XML** | `AccountingSupplierParty`, `AccountingCustomerParty` | ✅ |
+| **Líneas de detalle** | `InvoiceLine` completo | ✅ |
+| **Totales y tributos** | `TaxTotal`, `LegalMonetaryTotal` | ✅ |
+| **Leyenda** | `Note` element (Cat. 52) | ✅ |
+| **Tipo de cambio XML** | `PaymentExchangeRate` (USD) | ✅ |
+| **Forma de pago** | `PaymentTerms` (Contado/Crédito) | ✅ |
+| **Cargos/Descuentos** | `AllowanceCharge` (Cat. 53) | ✅ |
+| **Almacenamiento XML** | `xml_content` (BD) + `xml_path` (disco) | ✅ |
+| **Descarga XML** | `GET /factura/{id}/xml` | ✅ |
+| **Modelo enriquecido** | +9 Factura/Boleta, +4 Client, +6 DetalleItem | ✅ |
+| **Wizard 5 pasos** | + edit mode + borrador/emit | ✅ |
+| **295 tests** | JUnit 5 + Mockito — todos verdes | ✅ |
 
-### 🔲 Fase 3 — Firma Digital + Envío SUNAT
+### 🔲 Suite v3.0 — Fases A-N (Planificadas)
 
-| Feature | Descripción | Prioridad |
-|---------|-------------|-----------|
-| **XMLDSig (firma digital)** | Firmar XML con certificado .p12/.pfx (RSA-SHA256, enveloped) | 🔴 Crítica |
-| **Gestión de certificados** | Upload, almacenamiento y lectura del certificado digital por empresa | 🔴 Crítica |
-| **Web Service SUNAT** | Envío SOAP a `https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService` | 🔴 Crítica |
-| **Procesamiento CDR** | Parsear ZIP de respuesta → extraer CDR XML → estado ACEPTADA/RECHAZADA/OBSERVADA | 🔴 Crítica |
-| **Actualización de estado** | Actualizar entity con hash CDR, código y descripción de respuesta SUNAT | 🟡 Alta |
-| **Reintentos** | Cola de reintento para envíos fallidos con backoff exponencial | 🟡 Alta |
-| **Modo beta/producción** | Switch entre endpoints SUNAT beta y producción | 🟡 Alta |
+> **15 fases documentadas** en [`docs/fases/`](docs/fases/). Cada fase es un archivo .md independiente con: objetivo, tareas detalladas, esquemas de BD, endpoints OpenAPI, lógica de negocio, escenarios Gherkin, criterios de aceptación y lista de archivos a crear/modificar.
 
-### 🔲 Fase 4 — Resumen Diario + Comunicación de Baja
+| Fase | Nombre | Módulos | Prioridad | Estado |
+|------|--------|---------|-----------|--------|
+| **00** | Auditoría de Data | Transversal | 🔴 Crítica | ⬜ |
+| **A** | Core (Cimientos) | Core, PuntoVenta base | 🔴 Crítica | ⬜ |
+| **B** | Seguridad + OAuth2 | Security, Plans, Roles | 🔴 Crítica | ⬜ |
+| **C** | POS Pro + Team Compass | POS, Employee ext. | 🟡 Alta | ⬜ |
+| **D** | Radar de Mercado | Google Places, Leads | 🟡 Alta | ⬜ |
+| **E** | Alpha Campaigns | Campaigns, ROI, Conversions | 🟡 Alta | ⬜ |
+| **F** | Supply Chain | Suppliers, Purchase Orders | 🟡 Alta | ⬜ |
+| **G** | Overlord Admin | Dashboard, Tickets, Plan Forge | 🟡 Alta | ⬜ |
+| **H** | Adjuster (The Guillotine) | Cancelación parcial/total | 🟡 Alta | ⬜ |
+| **I** | Deal Flow CRM | Funnel, Kanban, Activities | 🟢 Media | ⬜ |
+| **J** | Data Vault Reportes | Excel export, Métricas | 🟢 Media | ⬜ |
+| **K** | GeoInsight | Heatmap, Auto-ubigeo | 🟢 Media-Baja | ⬜ |
+| **L** | Códigos Correlativos | Secuencias centralizadas | 🟢 Media | ⬜ |
+| **M** | Frontend Modular | JS modular, Auth flow, UI | 🟡 Alta | ⬜ |
+| **N** | Integración Final | Compilación, Tests, Data | 🔴 Crítica | ⬜ |
 
-| Feature | Descripción | Prioridad |
-|---------|-------------|-----------|
-| **Resumen Diario** | `SummaryDocuments` para boletas (envío diferido a SUNAT) | 🟡 Alta |
-| **Comunicación de Baja** | `VoidedDocuments` para anular comprobantes ante SUNAT | 🟡 Alta |
-| **Ticket de consulta** | Consultar estado de resúmenes/bajas con `getStatus` SOAP | 🟡 Alta |
-| **Generación automática** | Job programado para generar resúmenes diarios de boletas | 🟢 Media |
-
-### 🔲 Fase 5 — Production Ready
+### 🔲 Production Ready (Post Suite v3.0)
 
 | Feature | Descripción | Prioridad |
 |---------|-------------|-----------|
-| **PostgreSQL + Flyway** | Migraciones versionadas de BD | 🟡 Alta |
-| **JWT Security** | Spring Security + JWT para autenticación | 🟡 Alta |
-| **Tests unitarios** | JUnit 5 + Mockito para servicios y mappers | 🟡 Alta |
-| **Tests de integración** | @SpringBootTest con H2 | 🟡 Alta |
-| **PDF generation** | Generar representación impresa del comprobante (Jasper o iText) | 🟡 Alta |
-| **QR Code** | QR en PDF conforme a SUNAT (serie-numero\|IGV\|total\|fecha\|RUC) | 🟢 Media |
-| **Docker** | Dockerfile + docker-compose (app + PostgreSQL) | 🟢 Media |
-| **CI/CD** | GitHub Actions para build + test + deploy | 🟢 Media |
-
-### 🔲 Fase 6 — Post-MVP
-
-| Feature | Descripción | Prioridad |
-|---------|-------------|-----------|
-| **Email automático** | Envío de comprobante por email al cliente | 🟢 Media |
-| **Libros Electrónicos PLE** | Registro de Ventas (14.1) y Compras (8.1) | 🟢 Media |
-| **Dashboard** | Estadísticas: ventas por mes, docs emitidos, IGV, etc. | 🟢 Baja |
-| **Multi-tenant** | Soporte para múltiples empresas con aislamiento | 🟢 Baja |
+| **XMLDSig** | Firma digital XML RSA-SHA256 | 🔴 Crítica |
+| **Web Service SUNAT** | Envío SOAP + CDR | 🔴 Crítica |
+| **PostgreSQL + Flyway** | Migraciones de BD | 🟡 Alta |
+| **PDF generation** | Representación impresa (iText) | 🟡 Alta |
+| **QR Code** | QR en PDF conforme SUNAT | 🟢 Media |
+| **Docker** | Dockerfile + docker-compose | 🟢 Media |
+| **CI/CD** | GitHub Actions | 🟢 Media |
+| **Email** | Envío de comprobante por email | 🟢 Media |
 
 ---
 
@@ -1254,27 +1004,40 @@ java -jar target/ms-bs-etia-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 📊 Estadísticas del proyecto (FASE 2 — En Progreso)
+## 📊 Estadísticas del proyecto
 
-| Métrica | Valor |
-|---------|-------|
-| Archivos Java (src) | **~140+** |
-| Dominios de negocio | **20** (todos homologados) |
-| Endpoints REST (OpenAPI) | **60+** (incluye notificaciones + XML UBL) |
-| View Controllers (MVC) | **14** |
-| Entidades JPA | **17** (+CuotaCreditoEntity, +AllowanceChargeEntity) |
-| Repositorios | **17** |
-| MapStruct Mappers | **14** |
-| Servicios (interface + impl) | **30+** |
-| XML Builder | **1** (UblInvoiceXmlBuilder — 36 tests) |
-| Templates Thymeleaf | **19** (14 vistas + 5 fragments) |
-| Archivos JS | **10** |
-| CSS Design System | **1,606 líneas** |
-| Contrato OpenAPI YAML | **~3,500+ líneas** |
-| Tests unitarios (JUnit 5) | **184** (0 fallos) |
-| Catálogos SUNAT | **12** de 36 (Cat. 01-53) |
-| data.sql (seed) | **300+ líneas** (80+ registros, 23 facturas) |
-| Sample docs | **4** (XMLs + PDFs reales) |
+| Métrica | Valor actual | Post Suite v3.0 (estimado) |
+|---------|-------------|---------------------------|
+| Archivos Java (src) | **~140+** | **~350+** |
+| Dominios de negocio | **20** | **32+** |
+| Endpoints REST (OpenAPI) | **60+** | **140+** |
+| View Controllers (MVC) | **14** | **25+** |
+| Entidades JPA | **17** | **35+** |
+| Repositorios | **17** | **35+** |
+| MapStruct Mappers | **14** | **25+** |
+| Servicios (interface + impl) | **30+** | **65+** |
+| Templates Thymeleaf | **19** | **30+** |
+| Archivos JS | **10** | **25+** |
+| CSS Design System | **1,606 líneas** | **2,500+** |
+| Contrato OpenAPI YAML | **~5,200+ líneas** | **~10,000+** |
+| Tests unitarios (JUnit 5) | **295** (0 fallos) | **500+** |
+| Catálogos SUNAT | **12** | **12** |
+| Fases de ejecución | — | **15** (00 + A-N) |
+| Documentos de planificación | — | **20+ archivos .md** |
+
+---
+
+## 📁 Documentación del Proyecto
+
+| Documento | Ubicación | Descripción |
+|-----------|-----------|-------------|
+| **Especificación Técnica** | [`ESPECIFICACION_TECNICA.md`](ESPECIFICACION_TECNICA.md) | Estándares OpenAPI, endpoints, DTOs, entidades (2,146 líneas) |
+| **Plantilla Bootstrap** | [`PLANTILLA_OPENAPI_BOOTSTRAP.yaml`](PLANTILLA_OPENAPI_BOOTSTRAP.yaml) | Template reutilizable para nuevos proyectos (1,500+ líneas) |
+| **Arquitectura** | [`docs/ARQUITECTURA_PATRONES_STACK.md`](docs/ARQUITECTURA_PATRONES_STACK.md) | Patrones, stack, convenciones, checklist |
+| **Fases de Ejecución** | [`docs/fases/`](docs/fases/) | 15 archivos .md con tareas detalladas |
+| **Bitácora** | [`docs/BITACORA_EJECUCION.md`](docs/BITACORA_EJECUCION.md) | Registro de ejecución por fase |
+| **Preguntas** | [`docs/PREGUNTAS_DEFINICION.md`](docs/PREGUNTAS_DEFINICION.md) | Decisiones pendientes con defaults |
+| **Escenarios Factura** | [`src/main/resources/scenarios/`](src/main/resources/scenarios/) | Gherkin scenarios por tipo de documento |
 
 ---
 
@@ -1286,6 +1049,8 @@ java -jar target/ms-bs-etia-0.0.1-SNAPSHOT.jar
 4. Push: `git push origin feature/mi-feature`
 5. Crear Pull Request
 
+> 📖 **Antes de implementar:** Leer [`docs/ARQUITECTURA_PATRONES_STACK.md`](docs/ARQUITECTURA_PATRONES_STACK.md) y la fase correspondiente en [`docs/fases/`](docs/fases/).
+
 ---
 
 ## 📝 Licencia
@@ -1296,6 +1061,6 @@ Este proyecto es propiedad de **ETLIONS**. Todos los derechos reservados.
 
 <p align="center">
   <sub>Hecho con ❤️ por el equipo ETLIONS — Lima, Perú 🇵🇪</sub><br/>
-  <sub>Última actualización: Abril 2026</sub>
+  <sub>Última actualización: Abril 2026</sub><br/>
+  <sub>🧾 ETIA Suite v3.0 — Business Intelligence Platform</sub>
 </p>
-

@@ -7,7 +7,7 @@
         <a th:href="@{/menu}" class="g-brand-link" title="Ir al menú">
             <span class="g-logo" id="hdr-logo">
                 <img id="hdr-logo-img" class="g-logo-img" style="display:none;" alt="Logo"/>
-                <span id="hdr-logo-emoji">🧾</span>
+                <img id="hdr-logo-emoji" th:src="@{/favicon.svg}" class="g-logo-svg" alt="ETIA" style="width:28px;height:28px;"/>
             </span>
         </a>
         <nav class="g-breadcrumb" id="hdr-breadcrumb" th:if="${breadcrumb != null}">

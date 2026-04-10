@@ -16,6 +16,7 @@ public interface ProductMapper {
     @Mapping(target = "igv", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", constant = "false")
     ProductEntity toEntity(ProductCreateDto request);
 
     @Mapping(target = "id", ignore = true)
@@ -24,6 +25,7 @@ public interface ProductMapper {
     @Mapping(target = "igv", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "esDemo", ignore = true)
     void updateEntity(ProductUpdateDto request, @MappingTarget ProductEntity entity);
 
     @Mapping(target = "estado", expression = "java(entity.getEstado() != null ? ProductData.EstadoEnum.fromValue(entity.getEstado()) : ProductData.EstadoEnum.ACTIVO)")

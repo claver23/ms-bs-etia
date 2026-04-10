@@ -57,8 +57,11 @@ public class ProductEntity {
     @Builder.Default
     private String estado = "ACTIVO";
 
+    @Column(name = "es_demo")
+    @Builder.Default
+    private Boolean esDemo = false;
+
     @JsonIgnore
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }
-

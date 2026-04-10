@@ -4,6 +4,8 @@ import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
 import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
+import com.etlions.ms_bs_etia.app_util.sunat.BillResult;
+import com.etlions.ms_bs_etia.app_util.sunat.SunatBillingOrchestrator;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
 import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
@@ -44,6 +46,7 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     private final UblInvoiceXmlBuilder ublInvoiceXmlBuilder;
     private final XmlStorageService xmlStorageService;
     private final DocumentValidatorService documentValidatorService;
+    private final SunatBillingOrchestrator sunatBillingOrchestrator;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
 
@@ -542,15 +545,28 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                 company.getRuc(), "01", entity.getSerie(), entity.getNumero(), xmlContent);
         entity.setXmlPath(xmlRelPath);
 
-        // ── Transición de estado: BORRADOR/RECHAZADA → ENVIADA ──
-        entity.setEstado("ENVIADA");
+        // ── Firma + Envío SUNAT via orquestador ──
+        BillResult result = sunatBillingOrchestrator.procesarComprobante(
+                xmlContent, company, "01", entity.getSerie(), entity.getNumero());
+
+        if (result.success()) {
+            entity.setEstado("ENVIADA");
+            entity.setHashCdr(result.hashCdr());
+            entity.setCodigoRespuestaSunat(result.codigoRespuesta());
+            entity.setDescripcionRespuestaSunat(result.descripcionRespuesta());
+        } else {
+            entity.setEstado("RECHAZADA");
+            entity.setCodigoRespuestaSunat(result.codigoRespuesta());
+            entity.setDescripcionRespuestaSunat(result.descripcionRespuesta());
+        }
 
         FacturaEntity saved = facturaRepository.save(entity);
 
         String serieNumero = SunatFormatter.formatNumeroComprobante(saved.getSerie(), saved.getNumero());
-        notificationService.publicar(saved.getCompanyId(), "EMITIDA", "FACTURA",
+        String accion = result.success() ? "EMITIDA" : "RECHAZADA";
+        notificationService.publicar(saved.getCompanyId(), accion, "FACTURA",
                 saved.getId(), serieNumero,
-                "Factura " + serieNumero + " emitida");
+                "Factura " + serieNumero + " " + accion.toLowerCase());
 
         return saved;
     }
