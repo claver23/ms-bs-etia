@@ -3,7 +3,10 @@ package com.etlions.ms_bs_etia.doc_boleta.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.service.PdfGeneratorService;
 import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidatorService;
 import com.etlions.ms_bs_etia.app_util.validation.SunatFormatter;
@@ -21,6 +24,10 @@ import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +55,10 @@ public class DocBoletaServiceImpl implements DocBoletaService {
     private final DocumentValidatorService documentValidatorService;
     private final UblInvoiceXmlBuilder ublInvoiceXmlBuilder;
     private final XmlStorageService xmlStorageService;
+    private final PdfGeneratorService pdfGeneratorService;
 
     private static final String DEFAULT_SERIE_BOLETA = "B001";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     @Transactional
@@ -213,17 +222,27 @@ public class DocBoletaServiceImpl implements DocBoletaService {
     public BoletaListResponseDto listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
                                                    String serie, Integer numero,
                                                    Integer page, Integer size) {
-        List<BoletaEntity> entities = boletaRepository.findByCompanyId(companyId);
-        List<BoletaData> dataList = entities.stream()
+        int safePage = page != null && page >= 0 ? page : 0;
+        int safeSize = size != null && size > 0 ? Math.min(size, 100) : 10;
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "fechaEmision", "numero"));
+
+        LocalDate desde = desdeFecha != null ? new java.sql.Date(desdeFecha.getTime()).toLocalDate() : null;
+        LocalDate hasta = hastaFecha != null ? new java.sql.Date(hastaFecha.getTime()).toLocalDate() : null;
+        String serieFiltro = serie != null && !serie.isBlank() ? serie.toUpperCase() : null;
+
+        Page<BoletaEntity> entityPage = boletaRepository.buscarConFiltros(
+                companyId, desde, hasta, serieFiltro, numero, pageable);
+
+        List<BoletaData> dataList = entityPage.getContent().stream()
                 .map(this::buildBoletaData)
                 .toList();
         BoletaListResponseDtoAllOfData responseData = new BoletaListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
-                .currentPage(page)
-                .pageSize(size)
-                .totalElements((long) dataList.size())
-                .totalPages(1));
+                .currentPage(entityPage.getNumber())
+                .pageSize(entityPage.getSize())
+                .totalElements(entityPage.getTotalElements())
+                .totalPages(entityPage.getTotalPages()));
         BoletaListResponseDto response = new BoletaListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
@@ -413,6 +432,42 @@ public class DocBoletaServiceImpl implements DocBoletaService {
         return new BoletaXmlResult(null, filename, false);
     }
 
+    @Override
+    public BoletaPdfResult descargarBoletaPdf(String boletaId) {
+        BoletaEntity boleta = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boleta", boletaId));
+
+        var company = companyRepository.findById(boleta.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", boleta.getCompanyId()));
+
+        // Cliente: puede ser anónimo en boletas
+        ClientEntity client = null;
+        if (boleta.getClientId() != null && !boleta.getClientId().isBlank()) {
+            client = clientRepository.findById(boleta.getClientId()).orElse(null);
+        }
+        if (client == null) {
+            client = new ClientEntity();
+            client.setTipoDocumento("-");
+            client.setNumeroDocumento("00000000");
+            client.setDenominacion("CLIENTE VARIOS");
+            client.setCodigoPais("PE");
+        }
+
+        List<java.util.Map<String, Object>> detalle = parseDetalleJson(boleta.getDetalleJson());
+
+        String filename = SunatFormatter.formatFilename(
+                company.getRuc(), "03", boleta.getSerie(), boleta.getNumero())
+                .replace(".xml", ".pdf");
+
+        if (detalle == null || detalle.isEmpty()) {
+            return new BoletaPdfResult(null, filename, false);
+        }
+
+        byte[] pdfBytes = pdfGeneratorService.generateBoletaPdf(boleta, company, client, detalle);
+
+        return new BoletaPdfResult(pdfBytes, filename, pdfBytes != null && pdfBytes.length > 0);
+    }
+
     // ═══════ HELPERS ═══════
 
     /** Genera XML UBL 2.1 tipo "03" y lo persiste en disco + BD */
@@ -544,5 +599,14 @@ public class DocBoletaServiceImpl implements DocBoletaService {
                     .build());
         }
         return allowanceChargeRepository.saveAll(entities);
+    }
+
+    private List<java.util.Map<String, Object>> parseDetalleJson(String detalleJson) {
+        if (detalleJson == null || detalleJson.isBlank()) return List.of();
+        try {
+            return OBJECT_MAPPER.readValue(detalleJson, new TypeReference<>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

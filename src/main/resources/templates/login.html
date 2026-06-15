@@ -50,14 +50,13 @@
             var email = document.getElementById('email').value;
             var pass = document.getElementById('password').value;
             document.getElementById('errorMsg').textContent = '';
+
+            // Clear any stale token before attempting login
+            localStorage.removeItem('etia_token');
+
             ApiClient.login(email, pass).then(function(res) {
                 if (res.isSuccess) {
-                    var companyId = res.data.companyId;
-                    if (!companyId) {
-                        window.location.href = '/onboarding';
-                    } else {
-                        window.location.href = '/menu';
-                    }
+                    window.location.href = ApiClient.resolveInitialRoute();
                 } else {
                     document.getElementById('errorMsg').textContent = res.message || 'Error al iniciar sesion';
                 }
@@ -66,8 +65,13 @@
             });
             return false;
         }
-        // If already authenticated, redirect
-        if (localStorage.getItem('etia_token')) window.location.href = '/menu';
+        // If already authenticated with a valid token, redirect to the right route
+        (function() {
+            var next = ApiClient.resolveInitialRoute();
+            if (next !== '/login') {
+                window.location.href = next;
+            }
+        })();
     </script>
 </body>
 </html>

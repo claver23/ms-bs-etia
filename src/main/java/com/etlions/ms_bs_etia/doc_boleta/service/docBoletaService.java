@@ -31,8 +31,14 @@ public interface DocBoletaService {
 
     /** Descarga el XML UBL 2.1 tipo "03" de la boleta */
     BoletaXmlResult descargarBoletaXml(String boletaId);
+    
+    /** Genera y devuelve el PDF de representación impresa de una boleta */
+    BoletaPdfResult descargarBoletaPdf(String boletaId);
 
     /** Result record para descarga de XML */
     record BoletaXmlResult(byte[] content, String filename, boolean hasContent) {}
+    
+    /** Result record para descarga de PDF */
+    record BoletaPdfResult(byte[] content, String filename, boolean hasContent) {}
 }
 

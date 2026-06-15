@@ -20,14 +20,22 @@ var ApiClient = (function() {
     /* ─── Helper: handle response with error toast ─── */
     function _handleResponse(r, url) {
         if (r.status === 401) {
+            // Don't redirect on auth endpoints (login/register handle their own errors)
+            if (url.indexOf('/auth/login') !== -1 || url.indexOf('/auth/register') !== -1) {
+                return r.json();
+            }
             localStorage.removeItem('etia_token');
             window.location.href = '/login';
             throw new Error('Sesion expirada');
         }
         if (!r.ok) {
+            // For auth endpoints, return the JSON body so the form can show the message
+            if (url.indexOf('/auth/login') !== -1 || url.indexOf('/auth/register') !== -1) {
+                return r.json();
+            }
             return r.text().then(function(body) {
                 var detail = { status: r.status, message: r.statusText, url: url, body: body };
-                if (ETIA.showError) ETIA.showError(detail);
+                if (typeof ETIA !== 'undefined' && ETIA.showError) ETIA.showError(detail);
                 throw new Error('HTTP ' + r.status + ': ' + r.statusText);
             });
         }
@@ -500,17 +508,40 @@ var ApiClient = (function() {
         window.location.href = '/login';
     }
 
+    function _getTokenPayload() {
+        var token = localStorage.getItem('etia_token');
+        if (!token) return null;
+        try {
+            var parts = token.split('.');
+            if (parts.length < 2) return null;
+            return JSON.parse(atob(parts[1]));
+        } catch (e) {
+            return null;
+        }
+    }
+
     function isAuthenticated() {
-        return !!localStorage.getItem('etia_token');
+        var payload = _getTokenPayload();
+        if (!payload) {
+            localStorage.removeItem('etia_token');
+            return false;
+        }
+        if (payload.exp && (payload.exp * 1000) <= Date.now()) {
+            localStorage.removeItem('etia_token');
+            return false;
+        }
+        return true;
     }
 
     function getCompanyIdFromToken() {
-        var token = localStorage.getItem('etia_token');
-        if (!token) return '';
-        try {
-            var payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.companyId || '';
-        } catch (e) { return ''; }
+        if (!isAuthenticated()) return '';
+        var payload = _getTokenPayload();
+        return (payload && payload.companyId) ? payload.companyId : '';
+    }
+
+    function resolveInitialRoute() {
+        if (!isAuthenticated()) return '/login';
+        return getCompanyIdFromToken() ? '/menu' : '/onboarding';
     }
 
     /* ═══════ PUBLIC API ═══════ */
@@ -520,6 +551,7 @@ var ApiClient = (function() {
         logout:             logout,
         isAuthenticated:    isAuthenticated,
         getCompanyIdFromToken: getCompanyIdFromToken,
+        resolveInitialRoute: resolveInitialRoute,
         listCompanies:      listCompanies,
         updateCompany:      updateCompany,
         uploadCertificado:  uploadCertificado,

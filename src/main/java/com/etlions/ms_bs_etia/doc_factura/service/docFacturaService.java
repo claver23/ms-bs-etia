@@ -35,7 +35,13 @@ public interface DocFacturaService {
     /** Ejecuta validación interna de una factura y actualiza su estado a VALIDADO o CON_ERROR */
     DocumentValidationResultDto validarFactura(String facturaId);
 
+    /** Genera y devuelve el PDF de representación impresa de una factura */
+    FacturaPdfResult descargarFacturaPdf(String facturaId);
+
     /** Resultado de la generación XML */
     record FacturaXmlResult(byte[] content, String filename, boolean hasContent) {}
+    
+    /** Resultado de la generación PDF */
+    record FacturaPdfResult(byte[] content, String filename, boolean hasContent) {}
 }
 

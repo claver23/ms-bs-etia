@@ -19,6 +19,10 @@ import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -125,17 +129,30 @@ public class DocNotadebServiceImpl implements DocNotadebService {
                                                            Date desdeFecha, Date hastaFecha,
                                                            String serie, String estado,
                                                            Integer page, Integer size) {
-        List<NotaDebitoEntity> entities = notaDebitoRepository.findByCompanyId(companyId);
-        List<NotaDebitoData> dataList = entities.stream()
+        int safePage = page != null && page >= 0 ? page : 0;
+        int safeSize = size != null && size > 0 ? Math.min(size, 100) : 10;
+        Pageable pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.DESC, "fechaEmision", "numero"));
+
+        LocalDate desde = desdeFecha != null ? new java.sql.Date(desdeFecha.getTime()).toLocalDate() : null;
+        LocalDate hasta = hastaFecha != null ? new java.sql.Date(hastaFecha.getTime()).toLocalDate() : null;
+        String refFiltro = facturaReferenciaId != null && !facturaReferenciaId.isBlank() ? facturaReferenciaId : null;
+        String serieFiltro = serie != null && !serie.isBlank() ? serie.toUpperCase() : null;
+        String estadoFiltro = estado != null && !estado.isBlank() ? estado.toUpperCase() : null;
+
+        Page<NotaDebitoEntity> entityPage = notaDebitoRepository.buscarConFiltros(
+                companyId, refFiltro, desde, hasta, serieFiltro, estadoFiltro, pageable);
+
+        List<NotaDebitoData> dataList = entityPage.getContent().stream()
                 .map(notaDebitoMapper::toData)
                 .toList();
         NotaDebitoListResponseDtoAllOfData responseData = new NotaDebitoListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
-                .currentPage(page)
-                .pageSize(size)
-                .totalElements((long) dataList.size())
-                .totalPages(1));
+                .currentPage(entityPage.getNumber())
+                .pageSize(entityPage.getSize())
+                .totalElements(entityPage.getTotalElements())
+                .totalPages(entityPage.getTotalPages()));
         NotaDebitoListResponseDto response = new NotaDebitoListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");

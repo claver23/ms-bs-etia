@@ -36,12 +36,9 @@ public class SecurityConfig {
                 .requestMatchers("/swagger/**", "/v3/api-docs/**").permitAll()
                 // All other API endpoints require authentication
                 .requestMatchers("/api/v1/**").authenticated()
-                // MPA views require authentication
-                .requestMatchers("/menu", "/facturas", "/boletas", "/notas-credito",
-                        "/notas-debito", "/clients", "/products", "/employees",
-                        "/sedes", "/resumenes-diarios", "/libros-electronicos",
-                        "/catalogo-sunat", "/tablas-sunat", "/tipo-cambio",
-                        "/documents", "/formato-documentos").authenticated()
+                // MPA views are public shells — auth is enforced client-side via
+                // localStorage JWT check (app-state.js → redirect to /login).
+                // Data security is guaranteed by the /api/v1/** rule above.
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

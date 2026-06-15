@@ -27,6 +27,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -632,22 +635,29 @@ class DocFacturaServiceImplTest {
         void listar() {
             FacturaEntity e1 = buildEntity("F1", "BORRADOR");
             FacturaEntity e2 = buildEntity("F2", "ENVIADA");
-            when(facturaRepository.findByCompanyId("COMP-1")).thenReturn(List.of(e1, e2));
+            Page<FacturaEntity> page = new PageImpl<>(List.of(e1, e2), PageRequest.of(0, 10), 2);
+            when(facturaRepository.buscarConFiltros(eq("COMP-1"), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
+                    .thenReturn(page);
             when(facturaMapper.toData(e1)).thenReturn(buildData());
             when(facturaMapper.toData(e2)).thenReturn(buildData());
             FacturaListResponseDto r = service.listarFacturas("COMP-1",
                     null, null, null, null, null, 0, 10);
             assertTrue(r.getIsSuccess());
             assertEquals(2, r.getData().getContent().size());
+            assertEquals(2L, r.getData().getPagination().getTotalElements());
+            assertEquals(1, r.getData().getPagination().getTotalPages());
         }
 
         @Test @DisplayName("lista vacía")
         void vacio() {
-            when(facturaRepository.findByCompanyId("X")).thenReturn(Collections.emptyList());
+            Page<FacturaEntity> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
+            when(facturaRepository.buscarConFiltros(eq("X"), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
+                    .thenReturn(page);
             FacturaListResponseDto r = service.listarFacturas("X",
                     null, null, null, null, null, 0, 10);
             assertTrue(r.getIsSuccess());
             assertEquals(0, r.getData().getContent().size());
+            assertEquals(0L, r.getData().getPagination().getTotalElements());
         }
     }
 }

@@ -69,5 +69,21 @@ public class DocBoletaOpenApi implements BoletaApi {
                 .contentLength(result.content().length)
                 .body(resource);
     }
+
+    @Override
+    public ResponseEntity<Resource> descargarBoletaPdf(String boletaId) {
+        DocBoletaService.BoletaPdfResult result = docBoletaService.descargarBoletaPdf(boletaId);
+
+        if (!result.hasContent()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        ByteArrayResource resource = new ByteArrayResource(result.content());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + result.filename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(result.content().length)
+                .body(resource);
+    }
 }
 

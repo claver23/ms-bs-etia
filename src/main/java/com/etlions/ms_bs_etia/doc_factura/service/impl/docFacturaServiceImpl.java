@@ -3,7 +3,10 @@ package com.etlions.ms_bs_etia.doc_factura.service.impl;
 import com.etlions.ms_bs_etia.app_config.exception.ResourceNotFoundException;
 import com.etlions.ms_bs_etia.app_config.exception.SunatValidationException;
 import com.etlions.ms_bs_etia.app_util.service.CorrelativoService;
+import com.etlions.ms_bs_etia.app_util.service.PdfGeneratorService;
 import com.etlions.ms_bs_etia.app_util.service.XmlStorageService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.etlions.ms_bs_etia.app_util.sunat.BillResult;
 import com.etlions.ms_bs_etia.app_util.sunat.SunatBillingOrchestrator;
 import com.etlions.ms_bs_etia.app_util.validation.DocumentValidationResult;
@@ -20,6 +23,10 @@ import com.etlions.ms_bs_etia.doc_factura.xml.UblInvoiceXmlBuilder;
 import com.etlions.ms_bs_etia.notification.service.NotificationService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +54,10 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     private final XmlStorageService xmlStorageService;
     private final DocumentValidatorService documentValidatorService;
     private final SunatBillingOrchestrator sunatBillingOrchestrator;
+    private final PdfGeneratorService pdfGeneratorService;
 
     private static final String DEFAULT_SERIE_FACTURA = "F001";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     @Transactional
@@ -378,17 +387,28 @@ public class DocFacturaServiceImpl implements DocFacturaService {
     public FacturaListResponseDto listarFacturas(String companyId, Date desdeFecha, Date hastaFecha,
                                                      String serie, Integer numero, String estado,
                                                      Integer page, Integer size) {
-        List<FacturaEntity> entities = facturaRepository.findByCompanyId(companyId);
-        List<FacturaData> dataList = entities.stream()
+        int safePage = page != null && page >= 0 ? page : 0;
+        int safeSize = size != null && size > 0 ? Math.min(size, 100) : 10;
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "fechaEmision", "numero"));
+
+        LocalDate desde = desdeFecha != null ? new java.sql.Date(desdeFecha.getTime()).toLocalDate() : null;
+        LocalDate hasta = hastaFecha != null ? new java.sql.Date(hastaFecha.getTime()).toLocalDate() : null;
+        String serieFiltro = serie != null && !serie.isBlank() ? serie.toUpperCase() : null;
+        String estadoFiltro = estado != null && !estado.isBlank() ? estado.toUpperCase() : null;
+
+        Page<FacturaEntity> entityPage = facturaRepository.buscarConFiltros(
+                companyId, desde, hasta, serieFiltro, numero, estadoFiltro, pageable);
+
+        List<FacturaData> dataList = entityPage.getContent().stream()
                 .map(this::buildFacturaData)
                 .toList();
         FacturaListResponseDtoAllOfData responseData = new FacturaListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
-                .currentPage(page)
-                .pageSize(size)
-                .totalElements((long) dataList.size())
-                .totalPages(1));
+                .currentPage(entityPage.getNumber())
+                .pageSize(entityPage.getSize())
+                .totalElements(entityPage.getTotalElements())
+                .totalPages(entityPage.getTotalPages()));
         FacturaListResponseDto response = new FacturaListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");
@@ -440,6 +460,35 @@ public class DocFacturaServiceImpl implements DocFacturaService {
         //    NO se genera on-the-fly para garantizar que lo descargado sea EXACTAMENTE
         //    lo que se transmitió/transmitirá a SUNAT. El usuario debe emitir primero.
         return new FacturaXmlResult(null, filename, false);
+    }
+
+    @Override
+    public FacturaPdfResult descargarFacturaPdf(String facturaId) {
+        FacturaEntity factura = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura", facturaId));
+
+        var company = companyRepository.findById(factura.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", factura.getCompanyId()));
+
+        ClientEntity client = clientRepository.findById(factura.getClientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", factura.getClientId()));
+
+        List<java.util.Map<String, Object>> detalle = parseDetalleJson(factura.getDetalleJson());
+
+        if (detalle == null || detalle.isEmpty()) {
+            String filename = SunatFormatter.formatFilename(
+                    company.getRuc(), "01", factura.getSerie(), factura.getNumero())
+                    .replace(".xml", ".pdf");
+            return new FacturaPdfResult(null, filename, false);
+        }
+
+        byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(factura, company, client, detalle);
+
+        String filename = SunatFormatter.formatFilename(
+                company.getRuc(), "01", factura.getSerie(), factura.getNumero())
+                .replace(".xml", ".pdf");
+
+        return new FacturaPdfResult(pdfBytes, filename, pdfBytes != null && pdfBytes.length > 0);
     }
 
     // ═══════ VALIDACIÓN INTERNA ═══════
@@ -649,5 +698,14 @@ public class DocFacturaServiceImpl implements DocFacturaService {
                     .build());
         }
         return allowanceChargeRepository.saveAll(entities);
+    }
+
+    private List<java.util.Map<String, Object>> parseDetalleJson(String detalleJson) {
+        if (detalleJson == null || detalleJson.isBlank()) return List.of();
+        try {
+            return OBJECT_MAPPER.readValue(detalleJson, new TypeReference<>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

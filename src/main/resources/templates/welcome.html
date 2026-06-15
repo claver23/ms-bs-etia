@@ -525,62 +525,37 @@
         var select = document.getElementById('onb-tipo-doc');
         if (!select) return Promise.resolve();
 
-        return ApiClient.obtenerCatalogoSunat('Catálogo No. 06: Códigos de tipos de documentos de identidad')
-            .then(function(catalogo) {
-                var registros = (catalogo && catalogo.data) ? catalogo.data : catalogo;
-                select.innerHTML = '';
-                if (Array.isArray(registros)) {
-                    registros.forEach(function(item) {
-                        var opt = document.createElement('option');
-                        opt.value = String(item.codigo);
-                        opt.textContent = item.codigo + ' — ' + item.descripcion;
-                        select.appendChild(opt);
-                    });
-                    /* Seleccionar RUC (codigo 6) por defecto */
-                    select.value = '6';
-                }
-                updateDocField();
-            })
-            .catch(function() {
-                /* Fallback si la API falla */
-                select.innerHTML = '';
-                var fb = [
-                    { codigo: '6', desc: 'REG. UNICO DE CONTRIBUYENTES' },
-                    { codigo: '1', desc: 'DOC. NACIONAL DE IDENTIDAD' }
-                ];
-                fb.forEach(function(item) {
-                    var opt = document.createElement('option');
-                    opt.value = item.codigo;
-                    opt.textContent = item.codigo + ' — ' + item.desc;
-                    select.appendChild(opt);
-                });
-                select.value = '6';
-                updateDocField();
-            });
+        /* Landing publica: no consumir APIs protegidas al cargar */
+        select.innerHTML = '';
+        var fb = [
+            { codigo: '6', desc: 'REG. UNICO DE CONTRIBUYENTES' },
+            { codigo: '1', desc: 'DOC. NACIONAL DE IDENTIDAD' }
+        ];
+        fb.forEach(function(item) {
+            var opt = document.createElement('option');
+            opt.value = item.codigo;
+            opt.textContent = item.codigo + ' — ' + item.desc;
+            select.appendChild(opt);
+        });
+        select.value = '6';
+        updateDocField();
+        return Promise.resolve();
     }
 
     /* ═══ Tipo doc selector ═══ */
     document.addEventListener('DOMContentLoaded', function() {
+        var nextRoute = ApiClient.resolveInitialRoute();
+        if (nextRoute !== '/login') {
+            window.location.href = nextRoute;
+            return;
+        }
+
         var tipoDoc = document.getElementById('onb-tipo-doc');
         if (tipoDoc) {
             tipoDoc.addEventListener('change', updateDocField);
         }
 
-        /* Cargar Catálogo SUNAT Nº 06 + Pre-populate from API */
-        cargarTiposDocumento().then(function() {
-            return ETIA.init();
-        }).then(function(company) {
-            if (company) {
-                var el;
-                el = document.getElementById('onb-numdoc');   if (el && !el.value) el.value = company.ruc || '';
-                el = document.getElementById('onb-usersol');   if (el && !el.value) el.value = company.usuarioSol || '';
-                el = document.getElementById('onb-clavesol');  if (el && !el.value) el.value = company.claveSol || '';
-                el = document.getElementById('onb-email');     if (el && !el.value) el.value = company.emailContacto || '';
-                el = document.getElementById('onb-phone');     if (el && !el.value) el.value = company.telefono || '';
-
-                /* Logo is NOT shown in welcome header/hero — only after entering the app */
-            }
-        });
+        cargarTiposDocumento();
     });
 
     /* ═══ Onboarding Logo Upload — Auto-detect type ═══ */

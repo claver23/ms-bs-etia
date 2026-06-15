@@ -7,6 +7,10 @@ import com.etlions.ms_bs_etia.client.persistence.ClientRepository;
 import com.etlions.ms_bs_etia.client.service.ClientService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -63,17 +67,28 @@ public class ClientServiceImpl implements ClientService {
     public ClientListResponseDto listarClientes(String companyId, String tipoDocumento,
                                                      String numeroDocumento, String denominacion,
                                                      Integer page, Integer size) {
-        List<ClientEntity> entities = clientRepository.findByCompanyId(companyId);
-        List<ClientData> dataList = entities.stream()
+        int safePage = page != null && page >= 0 ? page : 0;
+        int safeSize = size != null && size > 0 ? Math.min(size, 100) : 10;
+        Pageable pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.DESC, "fechaCreacion"));
+
+        String tipoDocFiltro = tipoDocumento != null && !tipoDocumento.isBlank() ? tipoDocumento : null;
+        String numeroDocFiltro = numeroDocumento != null && !numeroDocumento.isBlank() ? numeroDocumento : null;
+        String denominacionFiltro = denominacion != null && !denominacion.isBlank() ? denominacion : null;
+
+        Page<ClientEntity> pageResult = clientRepository.buscarConFiltros(
+                companyId, tipoDocFiltro, numeroDocFiltro, denominacionFiltro, pageable);
+
+        List<ClientData> dataList = pageResult.getContent().stream()
                 .map(clientMapper::toData)
                 .toList();
         ClientListResponseDtoAllOfData responseData = new ClientListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
-                .currentPage(page)
-                .pageSize(size)
-                .totalElements((long) dataList.size())
-                .totalPages(1));
+                .currentPage(pageResult.getNumber())
+                .pageSize(pageResult.getSize())
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages()));
         ClientListResponseDto response = new ClientListResponseDto();
         response.setIsSuccess(true);
         response.setStatus("OK");

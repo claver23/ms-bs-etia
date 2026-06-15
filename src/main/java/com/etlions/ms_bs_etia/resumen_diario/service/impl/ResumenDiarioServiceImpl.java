@@ -16,6 +16,10 @@ import com.etlions.ms_bs_etia.resumen_diario.service.ResumenDiarioService;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -112,19 +116,23 @@ public class ResumenDiarioServiceImpl implements ResumenDiarioService {
 
     @Override
     public ResumenDiarioListResponseDto listarResumenesDiarios(String companyId, Integer page, Integer size) {
-        List<ResumenDiarioEntity> entities = resumenDiarioRepository
-                .findByCompanyIdOrderByFechaGeneracionDesc(companyId);
-        List<ResumenDiarioData> dataList = entities.stream()
+        int safePage = page != null && page >= 0 ? page : 0;
+        int safeSize = size != null && size > 0 ? Math.min(size, 100) : 10;
+        Pageable pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.DESC, "fechaGeneracion"));
+
+        Page<ResumenDiarioEntity> entityPage = resumenDiarioRepository.findByCompanyId(companyId, pageable);
+        List<ResumenDiarioData> dataList = entityPage.getContent().stream()
                 .map(e -> toData(e, null))
                 .toList();
 
         ResumenDiarioListResponseDtoAllOfData responseData = new ResumenDiarioListResponseDtoAllOfData();
         responseData.setContent(dataList);
         responseData.setPagination(new PaginationMeta()
-                .currentPage(page)
-                .pageSize(size)
-                .totalElements((long) dataList.size())
-                .totalPages(1));
+                .currentPage(entityPage.getNumber())
+                .pageSize(entityPage.getSize())
+                .totalElements(entityPage.getTotalElements())
+                .totalPages(entityPage.getTotalPages()));
 
         ResumenDiarioListResponseDto response = new ResumenDiarioListResponseDto();
         response.setIsSuccess(true);

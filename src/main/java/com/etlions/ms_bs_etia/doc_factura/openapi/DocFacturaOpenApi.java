@@ -72,6 +72,22 @@ public class DocFacturaOpenApi implements FacturaApi {
     }
 
     @Override
+    public ResponseEntity<Resource> descargarFacturaPdf(String facturaId) {
+        DocFacturaService.FacturaPdfResult result = docFacturaService.descargarFacturaPdf(facturaId);
+
+        if (!result.hasContent()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + result.filename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(result.content().length)
+                .body(new ByteArrayResource(result.content()));
+    }
+
+    @Override
     public ResponseEntity<DocumentValidationResultDto> validarFactura(String facturaId) {
         return ResponseEntity.ok(docFacturaService.validarFactura(facturaId));
     }

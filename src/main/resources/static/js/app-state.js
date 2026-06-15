@@ -86,6 +86,10 @@ ETIA.init = function() {
         window.location.href = '/login';
         return Promise.resolve(null);
     }
+    if (!ApiClient.getCompanyIdFromToken()) {
+        window.location.href = '/onboarding';
+        return Promise.resolve(null);
+    }
 
     /* Try cache first for company/clients/sedes */
     var cachedCompany = _cacheGet('company');

@@ -20,6 +20,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -348,8 +351,9 @@ class ResumenDiarioServiceImplTest {
             ResumenDiarioEntity rd2 = buildResumen("rd-002", "ENVIADO");
             rd2.setFechaGeneracion(LocalDate.of(2026, 4, 8));
 
-            when(resumenDiarioRepository.findByCompanyIdOrderByFechaGeneracionDesc("COMP-1"))
-                    .thenReturn(List.of(rd2, rd1)); // ya ordenado DESC
+            Page<ResumenDiarioEntity> page = new PageImpl<>(List.of(rd2, rd1), PageRequest.of(0, 10), 2);
+            when(resumenDiarioRepository.findByCompanyId(eq("COMP-1"), any()))
+                    .thenReturn(page);
 
             ResumenDiarioListResponseDto r = service.listarResumenesDiarios("COMP-1", 0, 10);
 

@@ -66,7 +66,7 @@
             }
             ApiClient.register(nombre, email, pass).then(function(res) {
                 if (res.isSuccess) {
-                    window.location.href = '/onboarding';
+                    window.location.href = ApiClient.resolveInitialRoute();
                 } else {
                     document.getElementById('errorMsg').textContent = res.message || 'Error al registrar';
                 }
@@ -75,7 +75,12 @@
             });
             return false;
         }
-        if (localStorage.getItem('etia_token')) window.location.href = '/menu';
+        (function() {
+            var next = ApiClient.resolveInitialRoute();
+            if (next !== '/login') {
+                window.location.href = next;
+            }
+        })();
     </script>
 </body>
 </html>

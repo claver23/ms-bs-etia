@@ -155,6 +155,6 @@ UPDATE clients SET departamento = 'LIMA', provincia = 'LIMA', distrito = 'CERCAD
 -- Password: Etia2025! (BCrypt hash)
 INSERT INTO users (id, email, password_hash, nombre, company_id, rol, activo, fecha_creacion)
 VALUES ('usr-admin-001', 'admin@etlions.com',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2a$10$iFW9hvuulHFrv5DyUBrFv.ePIIS1fg4gK6wUXur/zMB9QHKRrUu8S',
         'Admin ETLIONS', 'cmp-demo-001', 'ADMIN', TRUE, CURRENT_TIMESTAMP);
 

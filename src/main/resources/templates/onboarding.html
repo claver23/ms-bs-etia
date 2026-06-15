@@ -219,6 +219,14 @@
 <!-- ═══ JS ═══ -->
 <script th:src="@{/js/api-client.js}"></script>
 <script>
+/* Entry guard for onboarding route */
+(function() {
+    var next = ApiClient.resolveInitialRoute();
+    if (next === '/login' || next === '/menu') {
+        window.location.href = next;
+    }
+})();
+
 var currentStep = 1;
 var certMode = 'demo';
 
@@ -276,13 +284,24 @@ function onbSubmitOnboarding() {
         codigoUbigeo: (document.getElementById('onb-ubigeo').value || '').trim()
     };
 
+    var headers = { 'Content-Type': 'application/json' };
+    var token = localStorage.getItem('etia_token');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
     fetch('/api/v1/onboarding', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload)
     })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
+    .then(function(res) {
+        // Capture new token from header before parsing body
+        var newToken = res.headers.get('X-New-Token');
+        return res.json().then(function(data) {
+            return { data: data, newToken: newToken };
+        });
+    })
+    .then(function(result) {
+        var data = result.data;
         if (data.isSuccess && data.data) {
             document.getElementById('onb-res-company').textContent = data.data.companyId || '—';
             document.getElementById('onb-res-sede').textContent = data.data.sedeId || '—';
@@ -290,6 +309,11 @@ function onbSubmitOnboarding() {
                 document.getElementById('onb-res-series').textContent = data.data.seriesCreadas.join(', ');
             }
             document.getElementById('onb-result-msg').textContent = data.message || 'Empresa registrada exitosamente';
+
+            // Update token with fresh one containing companyId
+            if (result.newToken) {
+                localStorage.setItem('etia_token', result.newToken);
+            }
 
             // Store companyId for session
             if (data.data.companyId) {
