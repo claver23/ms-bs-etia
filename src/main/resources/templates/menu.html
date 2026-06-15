@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Menú Principal')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl=null, backLabel=null, breadcrumb=null)}"></header>
+
+<div class="screen">
+    <div class="container mc-container">
+        <div class="menu-title">
+            <h2>¿Qué deseas hacer hoy?</h2>
+            <p>Selecciona una opción para continuar</p>
+        </div>
+
+        <!-- TC Widget del día -->
+        <div class="tc-widget" id="tc-menu-widget" style="display:none;">
+            <div class="tcw-header">
+                <span class="tcw-icon">💱</span>
+                <div class="tcw-title-wrap">
+                    <span class="tcw-title">Tipo de Cambio Hoy</span>
+                    <span class="tcw-fuente">Cargando...</span>
+                </div>
+            </div>
+            <div class="tcw-rates">
+                <div class="tcw-rate-box">
+                    <span class="tcw-rate-label">📈 COMPRA</span>
+                    <span class="tcw-rate-val tcw-compra-val">—</span>
+                </div>
+                <div class="tcw-divider"></div>
+                <div class="tcw-rate-box">
+                    <span class="tcw-rate-label">📉 VENTA</span>
+                    <span class="tcw-rate-val tcw-rate-val-accent tcw-venta-val">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Operaciones principales ═══ -->
+        <div class="mc-row-label">
+            <span class="mc-row-dot" style="background:var(--accent);"></span>
+            Operaciones
+        </div>
+        <div class="mc-grid">
+            <!-- DOCUMENTOS -->
+            <a th:href="@{/documents}" class="mc-card mc-green">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-green">🧾</div>
+                <h3 class="mc-title">Documentos</h3>
+                <p class="mc-desc">Factura, boleta, notas de crédito y débito electrónicos</p>
+                <span class="mc-go">Ir a documentos <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- RESÚMENES DIARIOS -->
+            <a th:href="@{/resumenes-diarios}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-purple">📑</div>
+                <h3 class="mc-title">Resúmenes Diarios</h3>
+                <p class="mc-desc">Consolidación diaria de boletas para envío a SUNAT</p>
+                <span class="mc-go">Ver resúmenes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- PRODUCTOS -->
+            <a th:href="@{/products}" class="mc-card mc-blue">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-blue">📦</div>
+                <h3 class="mc-title">Productos</h3>
+                <p class="mc-desc">Gestiona tu catálogo de productos y servicios para facturar</p>
+                <span class="mc-go">Abrir catálogo <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- CLIENTES -->
+            <a th:href="@{/clients}" class="mc-card mc-gold">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-gold">👥</div>
+                <h3 class="mc-title">Clientes</h3>
+                <p class="mc-desc">Administra tu cartera de adquirientes y contribuyentes</p>
+                <span class="mc-go">Ver clientes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- MIS SEDES -->
+            <a th:href="@{/sedes}" class="mc-card mc-green">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-green">🏢</div>
+                <h3 class="mc-title">Mis Sedes</h3>
+                <p class="mc-desc">Locales comerciales, sucursales y series por punto de venta</p>
+                <span class="mc-go">Gestionar sedes <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- EMPLEADOS -->
+            <a th:href="@{/employees}" class="mc-card mc-blue">
+                <span class="mc-chip mc-chip-info"><span class="mc-dot"></span> Consulta</span>
+                <div class="mc-orb mc-orb-blue">🧑‍💼</div>
+                <h3 class="mc-title">Empleados</h3>
+                <p class="mc-desc">Operadores y personal registrado en el sistema</p>
+                <span class="mc-go">Ver empleados <span class="mc-arrow">→</span></span>
+            </a>
+        </div>
+
+        <!-- ═══ Herramientas y consultas ═══ -->
+        <div class="mc-row-label">
+            <span class="mc-row-dot" style="background:var(--info);"></span>
+            Herramientas
+        </div>
+        <div class="mc-grid">
+            <!-- TIPO DE CAMBIO -->
+            <a th:href="@{/tipo-cambio}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-purple">💱</div>
+                <h3 class="mc-title">Tipo de Cambio</h3>
+                <p class="mc-desc">Consulta tasas de cambio SBS y SUNAT del día</p>
+                <span class="mc-go">Ver tasas <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- TABLAS SUNAT -->
+            <a th:href="@{/tablas-sunat}" class="mc-card mc-gold">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-gold">📋</div>
+                <h3 class="mc-title">Tablas SUNAT</h3>
+                <p class="mc-desc">Catálogo oficial de tablas parametrizadas de SUNAT</p>
+                <span class="mc-go">Ver tablas <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- CATÁLOGO SUNAT -->
+            <a th:href="@{/catalogo-sunat}" class="mc-card mc-green">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-green">📚</div>
+                <h3 class="mc-title">Catálogo SUNAT</h3>
+                <p class="mc-desc">Catálogos oficiales CPE: tributos, IGV, notas, leyendas, medios de pago</p>
+                <span class="mc-go">Ver catálogos <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- FORMATO DOCUMENTOS -->
+            <a th:href="@{/formato-documentos}" class="mc-card mc-blue">
+                <span class="mc-chip mc-chip-dev"><span class="mc-dot"></span> 🚧 En Desarrollo</span>
+                <div class="mc-orb mc-orb-blue">📐</div>
+                <h3 class="mc-title">Formato Documentos</h3>
+                <p class="mc-desc">Elige el formato de tus comprobantes impresos: estándar, compacto o detallado</p>
+                <span class="mc-go">Configurar formato <span class="mc-arrow">→</span></span>
+            </a>
+
+            <!-- PUNTO DE VENTA -->
+            <div class="mc-card mc-gold mc-disabled">
+                <span class="mc-chip mc-chip-soon">Próximamente</span>
+                <div class="mc-orb mc-orb-gold">🛒</div>
+                <h3 class="mc-title">Punto de Venta</h3>
+                <p class="mc-desc">Terminal de venta rápida con asignación de cajero</p>
+                <span class="mc-go mc-go-muted">En construcción</span>
+            </div>
+
+            <!-- LIBROS ELECTRÓNICOS -->
+            <a th:href="@{/libros-electronicos}" class="mc-card mc-purple">
+                <span class="mc-chip mc-chip-ok"><span class="mc-dot"></span> Disponible</span>
+                <div class="mc-orb mc-orb-purple">📊</div>
+                <h3 class="mc-title">Libros Electrónicos</h3>
+                <p class="mc-desc">Genera libros de ventas, compras y anexos para SUNAT</p>
+                <span class="mc-go">Ver libros <span class="mc-arrow">→</span></span>
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Mis Facturas')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/documents', backLabel='Documentos', breadcrumb='Facturas')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>🧾 Mis Facturas</h2>
+            <p>Facturas electrónicas emitidas — Serie F001+</p>
+        </div>
+
+        <div class="view-toolbar">
+            <div class="vt-actions">
+                <a th:href="@{/wizard(type='FACTURA')}" class="btn btn-accent">✨ Crear Factura</a>
+            </div>
+        </div>
+
+        <!-- Search / Filter bar -->
+        <div class="doc-search-bar">
+            <input class="doc-search-input" id="fac-search"
+                   placeholder="🔍 Buscar y presionar Enter para agregar filtro..."
+                   onkeydown="onSearchKeydown(event)" autocomplete="off"/>
+        </div>
+        <!-- Filter chips -->
+        <div class="filter-chips-bar" id="fac-chips"></div>
+
+        <div class="panel active">
+            <div id="doc-content">
+                <p class="pm-empty">⏳ Cargando facturas...</p>
+            </div>
+            <div id="doc-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+<!-- Document Preview Modal -->
+<div th:replace="~{fragments/doc-preview :: docPreviewModal}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script th:src="@{/js/pdf-template.js}"></script>
+<script th:src="@{/js/doc-preview.js}"></script>
+<script>
+    var allDocs = [], currentPage = 0, PAGE_SIZE = 10;
+    var filterChips = [];
+    var highlightDocId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        /* Restore filter chips from sessionStorage */
+        try { filterChips = JSON.parse(sessionStorage.getItem('etia_fac_chips') || '[]'); } catch(e) { filterChips = []; }
+        renderChips();
+        /* Restore highlight target */
+        highlightDocId = sessionStorage.getItem('etia_fac_highlight_id') || null;
+        sessionStorage.removeItem('etia_fac_highlight_id');
+        ETIA.init().then(function() { loadDocs(); });
+    });
+
+    /* ─── Chip management ─── */
+    function onSearchKeydown(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var input = document.getElementById('fac-search');
+        var val = (input.value || '').trim();
+        if (!val) return;
+        /* Avoid duplicates */
+        if (filterChips.indexOf(val) === -1) {
+            filterChips.push(val);
+            _persistChips();
+            renderChips();
+        }
+        input.value = '';
+        currentPage = 0;
+        renderPage();
+    }
+
+    function removeChip(idx) {
+        filterChips.splice(idx, 1);
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function clearAllChips() {
+        filterChips = [];
+        _persistChips();
+        renderChips();
+        currentPage = 0;
+        renderPage();
+    }
+
+    function _persistChips() {
+        sessionStorage.setItem('etia_fac_chips', JSON.stringify(filterChips));
+    }
+
+    function renderChips() {
+        var container = document.getElementById('fac-chips');
+        if (!container) return;
+        if (filterChips.length === 0) { container.innerHTML = ''; return; }
+        var html = '';
+        filterChips.forEach(function(chip, idx) {
+            html += '<span class="filter-chip">' +
+                chip +
+                '<button class="filter-chip-x" onclick="removeChip(' + idx + ')" title="Quitar filtro">✕</button>' +
+            '</span>';
+        });
+        html += '<button class="filter-clear-all" onclick="clearAllChips()">Limpiar todo</button>';
+        container.innerHTML = html;
+    }
+
+    function getFilteredDocs() {
+        if (filterChips.length === 0) return allDocs;
+        var terms = filterChips.map(function(c) { return c.toLowerCase(); });
+        return allDocs.filter(function(d) {
+            var sn = ETIA.formatNumero(d.serie, d.numero).toLowerCase();
+            var estado = (d.estado || '').toLowerCase();
+            var cliente = (d.clientDenom || '').toLowerCase();
+            var haystack = sn + ' ' + estado + ' ' + cliente;
+            /* OR: al menos un chip debe coincidir */
+            return terms.some(function(term) { return haystack.indexOf(term) !== -1; });
+        });
+    }
+
+    function renderItemDetail(detalle) {
+        if (!detalle || detalle.length === 0) return '';
+        var html = '<div class="doc-item-detail">';
+        detalle.forEach(function(it) {
+            html += '<div class="doc-item-chip">' +
+                '<span class="dic-desc">' + (it.descripcion || '—') + '</span>' +
+                '<span class="dic-meta">×' + (it.cantidad || 1) + '</span>' +
+                '<span class="dic-amount">S/ ' + parseFloat(it.subtotal || 0).toFixed(2) + '</span>' +
+                '</div>';
+        });
+        return html + '</div>';
+    }
+
+    function loadDocs() {
+        ApiClient.listarFacturas(ETIA.companyId).then(function(docs) {
+            allDocs = docs || [];
+            currentPage = 0;
+            renderPage();
+        }).catch(function() {
+            document.getElementById('doc-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando facturas</p>';
+        });
+    }
+
+    function renderPage() {
+        var filteredDocs = getFilteredDocs();
+        var total = filteredDocs.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE;
+        var pageItems = filteredDocs.slice(start, start + PAGE_SIZE);
+        if (total === 0) {
+            document.getElementById('doc-content').innerHTML = filterChips.length > 0
+                ? '<p class="pm-empty">🔍 Sin resultados para los filtros activos</p>'
+                : '<p class="pm-empty">📭 No hay facturas emitidas aún</p>';
+            document.getElementById('doc-pag').style.display = 'none';
+            return;
+        }
+        var html = '<div class="doc-list-cards">';
+        pageItems.forEach(function(d) {
+            var estado = d.estado || '—';
+            var badgeMap = { 'BORRADOR': 'badge-gray', 'VALIDADO': 'badge-blue', 'CON_ERROR': 'badge-red', 'ENVIADA': 'badge-blue', 'ACEPTADA': 'badge-green', 'RECHAZADA': 'badge-red', 'ANULADA': 'badge-yellow' };
+            var badgeCls = badgeMap[estado] || 'badge-gray';
+            var estadoLabel = estado === 'CON_ERROR' ? '⚠ CON ERROR' : estado === 'VALIDADO' ? '✅ VALIDADO' : estado;
+            var monSym = (d.moneda === 'USD' || d.moneda === 'usd') ? 'US$ ' : 'S/ ';
+            var strikeStyle = estado === 'ANULADA' ? 'text-decoration:line-through;opacity:0.6;' : '';
+            var serieNumero = ETIA.formatNumero(d.serie, d.numero);
+
+            /* ─── State-driven inline actions ─── */
+            var actions = '';
+            /* Export actions — always JSON (clipboard); XML+PDF only for docs with XML */
+            var exports = '<button class="dli-action dli-action-json" onclick="event.stopPropagation();quickJson(\'' + d.id + '\');">📋 JSON</button>';
+            var hasXml = (estado === 'ENVIADA' || estado === 'ACEPTADA' || estado === 'RECHAZADA');
+            if (hasXml) {
+                exports += '<button class="dli-action dli-action-xml" onclick="event.stopPropagation();quickXml(\'' + d.id + '\',this);">📥 XML</button>' +
+                           '<button class="dli-action dli-action-pdf" onclick="event.stopPropagation();quickPdf(\'' + d.id + '\');">📄 PDF</button>';
+            }
+            switch (estado) {
+                case 'BORRADOR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Validar</button>' +
+                              '<button class="dli-action dli-action-emit" onclick="event.stopPropagation();quickEmit(\'' + d.id + '\',this);">📤 Emitir</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'VALIDADO':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Editar</a>' +
+                              '<button class="dli-action dli-action-emit" onclick="event.stopPropagation();quickEmit(\'' + d.id + '\',this);">📤 Emitir</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'CON_ERROR':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">✏️ Corregir</a>' +
+                              '<button class="dli-action dli-action-validate" onclick="event.stopPropagation();quickValidar(\'' + d.id + '\',this);">🔍 Re-validar</button>' +
+                              '<button class="dli-action dli-action-delete" onclick="event.stopPropagation();quickDelete(\'' + d.id + '\',\'' + serieNumero + '\',this);">🗑️</button>';
+                    break;
+                case 'ENVIADA':
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + serieNumero + '\',this);">🚫 Anular</button>';
+                    break;
+                case 'ACEPTADA':
+                    actions = '<button class="dli-action dli-action-annul" onclick="event.stopPropagation();quickAnular(\'' + d.id + '\',\'' + serieNumero + '\',this);">🚫 Anular</button>';
+                    break;
+                case 'RECHAZADA':
+                    actions = '<a class="dli-action dli-action-edit" href="/wizard?type=FACTURA&id=' + encodeURIComponent(d.id) + '" onclick="event.stopPropagation();">🔧 Corregir</a>';
+                    break;
+                /* ANULADA: no workflow actions, but exports still available */
+            }
+
+            html += '<div class="doc-list-item' + (highlightDocId === d.id ? ' dli-highlight' : '') + '" id="dli-' + d.id + '" onclick="openDocPreview(\'factura\',\'' + d.id + '\')" style="cursor:pointer;' + (estado === 'ANULADA' ? 'opacity:0.7;' : '') + '">' +
+                '<div class="dli-header">' +
+                    '<div class="dli-left">' +
+                        '<strong class="dli-serie">' + serieNumero + '</strong>' +
+                        '<span class="badge ' + badgeCls + '">' + estadoLabel + '</span>' +
+                    '</div>' +
+                    '<div class="dli-right">' +
+                        '<span class="dli-total">' + monSym + (parseFloat(d.total)||0).toFixed(2) + '</span>' +
+                        '<span class="dli-date">' + ETIA.formatDate(d.fechaEmision||d.fechaCreacion) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                renderItemDetail(d.detalle) +
+                '<div class="dli-actions">' +
+                    '<div class="dli-actions-export">' + exports + '</div>' +
+                    (actions ? '<div class="dli-actions-workflow">' + actions + '</div>' : '') +
+                '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        document.getElementById('doc-content').innerHTML = html;
+        renderPagination(total, totalPages);
+        /* Scroll to highlighted doc if present */
+        if (highlightDocId) {
+            var hlEl = document.getElementById('dli-' + highlightDocId);
+            if (hlEl) { setTimeout(function() { hlEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
+            highlightDocId = null; /* clear after first render */
+        }
+    }
+
+    function goToPage(p) { currentPage = p; renderPage(); }
+
+    /* ─── Quick actions from the list ─── */
+    function quickEmit(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.emitirFacturaBorrador(facturaId).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Factura emitida exitosamente');
+            highlightDocId = facturaId;
+            sessionStorage.setItem('etia_fac_highlight_id', facturaId);
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '📤 Emitir'; }
+        });
+    }
+
+    function quickAnular(facturaId, serie, btn) {
+        if (!confirm('¿Anular la factura ' + serie + '? Esta acción no se puede deshacer.')) return;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.anularFactura(facturaId, { motivoAnulacion: 'Anulación solicitada por el usuario' })
+            .then(function() {
+                if (ETIA.showSuccess) ETIA.showSuccess('Factura ' + serie + ' anulada');
+                highlightDocId = facturaId;
+                sessionStorage.setItem('etia_fac_highlight_id', facturaId);
+                loadDocs();
+            }).catch(function() {
+                if (btn) { btn.disabled = false; btn.textContent = '🚫 Anular'; }
+            });
+    }
+
+    function quickDelete(facturaId, serie, btn) {
+        if (!confirm('¿Eliminar el borrador ' + serie + '? No se puede deshacer.')) return;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.eliminarFactura(facturaId).then(function() {
+            if (ETIA.showSuccess) ETIA.showSuccess('Borrador ' + serie + ' eliminado');
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        });
+    }
+
+    function quickValidar(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.validarFactura(facturaId).then(function(result) {
+            if (result && result.data) result = result.data;
+            if (result && result.valid) {
+                if (ETIA.showSuccess) ETIA.showSuccess('✅ Factura validada correctamente — Lista para emitir');
+            } else {
+                var errList = (result && result.errores) ? result.errores : [];
+                if (ETIA.showError) ETIA.showError({
+                    message: '⚠ Validación encontró ' + errList.length + ' error(es). Revisa el documento.',
+                    body: errList.join('\n')
+                });
+            }
+            highlightDocId = facturaId;
+            sessionStorage.setItem('etia_fac_highlight_id', facturaId);
+            loadDocs();
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '🔍 Validar'; }
+        });
+    }
+
+    function quickXml(facturaId, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+        ApiClient.descargarFacturaXml(facturaId).then(function(result) {
+            if (!result) {
+                if (ETIA.showError) ETIA.showError({ message: 'Esta factura aún no tiene XML generado.' });
+                if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(result.blob);
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        }).catch(function() {
+            if (btn) { btn.disabled = false; btn.textContent = '📥 XML'; }
+        });
+    }
+
+    function quickJson(facturaId) {
+        ApiClient.getFactura(facturaId).then(function(doc) {
+            if (!doc) return;
+            var json = JSON.stringify(doc, null, 2);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(json).then(function() {
+                    if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles');
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = json; ta.style.cssText = 'position:fixed;left:-9999px;';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); if (ETIA.showSuccess) ETIA.showSuccess('JSON copiado al portapapeles'); }
+                catch(e) { window.open(URL.createObjectURL(new Blob([json], { type: 'application/json' }))); }
+                document.body.removeChild(ta);
+            }
+        });
+    }
+
+    function quickPdf(facturaId) {
+        ApiClient.getFactura(facturaId).then(function(doc) {
+            if (!doc) return;
+            /* Reuse preview PDF via DocPreview (open preview then export) */
+            openDocPreview('factura', facturaId);
+            /* Wait for data load, then trigger PDF */
+            var tries = 0;
+            var interval = setInterval(function() {
+                tries++;
+                if (DocPreview.exportPdf && document.getElementById('dp-body').children.length > 1) {
+                    clearInterval(interval);
+                    setTimeout(function() { DocPreview.exportPdf(); }, 200);
+                }
+                if (tries > 20) clearInterval(interval);
+            }, 150);
+        });
+    }
+
+    function renderPagination(total, totalPages) {
+        var bar = document.getElementById('doc-pag');
+        bar.style.display = 'flex';
+        var s = currentPage * PAGE_SIZE + 1, e = Math.min((currentPage + 1) * PAGE_SIZE, total);
+        var html = '<div class="pag-info"><span class="badge badge-green">' + total + ' factura' + (total !== 1 ? 's' : '') + '</span> Mostrando ' + s + '–' + e + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) { if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>'; continue; }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
+</script>
+</body>
+</html>
+

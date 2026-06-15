@@ -1,0 +1,1625 @@
+[
+  {
+    "nombre": "Catálogo No. 01: Código de tipo de documento",
+    "campo": "cbc:InvoiceTypeCode",
+    "description": "Código de tipo de documento autorizado para efectos tributarios",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "FACTURA"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "BOLETA DE VENTA"
+      },
+      {
+        "codigo": "06",
+        "descripcion": "CARTA DE PORTE AÉREO"
+      },
+      {
+        "codigo": "07",
+        "descripcion": "NOTA DE CRÉDITO"
+      },
+      {
+        "codigo": "08",
+        "descripcion": "NOTA DE DÉBITO"
+      },
+      {
+        "codigo": "09",
+        "descripcion": "GUIA DE REMISIÓN REMITENTE"
+      },
+      {
+        "codigo": "12",
+        "descripcion": "TICKET DE MAQUINA REGISTRADORA"
+      },
+      {
+        "codigo": "13",
+        "descripcion": "DOCUMENTO EMITIDO POR BANCOS, INSTITUCIONES FINANCIERAS, CREDITICIAS Y DE SEGUROS QUE SE ENCUENTREN BAJO EL CONTROL DE LA SUPERINTENDENCIA DE BANCA Y SEGUROS"
+      },
+      {
+        "codigo": "14",
+        "descripcion": "RECIBO DE SERVICIOS PÚBLICOS"
+      },
+      {
+        "codigo": "15",
+        "descripcion": "BOLETOS EMITIDOS POR EL SERVICIO DE TRANSPORTE TERRESTRE REGULAR URBANO DE PASAJEROS Y EL FERROVIARIO PÚBLICO DE PASAJEROS PRESTADO EN VÍA FÉRREA LOCAL."
+      },
+      {
+        "codigo": "16",
+        "descripcion": "BOLETO DE VIAJE EMITIDO POR LAS EMPRESAS DE TRANSPORTE PÚBLICO INTERPROVINCIAL DE PASAJEROS"
+      },
+      {
+        "codigo": "18",
+        "descripcion": "DOCUMENTOS EMITIDOS POR LAS AFP"
+      },
+      {
+        "codigo": "20",
+        "descripcion": "COMPROBANTE DE RETENCION"
+      },
+      {
+        "codigo": "21",
+        "descripcion": "CONOCIMIENTO DE EMBARQUE POR EL SERVICIO DE TRANSPORTE DE CARGA MARÍTIMA"
+      },
+      {
+        "codigo": "24",
+        "descripcion": "CERTIFICADO DE PAGO DE REGALÍAS EMITIDAS POR PERUPETRO S.A."
+      },
+      {
+        "codigo": "31",
+        "descripcion": "GUÍA DE REMISIÓN TRANSPORTISTA"
+      },
+      {
+        "codigo": "37",
+        "descripcion": "DOCUMENTOS QUE EMITAN LOS CONCESIONARIOS DEL SERVICIO DE REVISIONES TÉCNICAS"
+      },
+      {
+        "codigo": "40",
+        "descripcion": "COMPROBANTE DE PERCEPCIÓN"
+      },
+      {
+        "codigo": "41",
+        "descripcion": "COMPROBANTE DE PERCEPCIÓN – VENTA INTERNA (FÍSICO - FORMATO IMPRESO)"
+      },
+      {
+        "codigo": "43",
+        "descripcion": "BOLETO DE COMPAÑIAS DE AVIACIÓN TRANSPORTE AÉREO NO REGULAR"
+      },
+      {
+        "codigo": "45",
+        "descripcion": "DOCUMENTOS EMITIDOS POR CENTROS EDUCATIVOS Y CULTURALES, UNIVERSIDADES, ASOCIACIONES Y FUNDACIONES."
+      },
+      {
+        "codigo": "56",
+        "descripcion": "COMPROBANTE DE PAGO SEAE"
+      },
+      {
+        "codigo": "71",
+        "descripcion": "GUIA DE REMISIÓN REMITENTE COMPLEMENTARIA"
+      },
+      {
+        "codigo": "72",
+        "descripcion": "GUIA DE REMISIÓN TRANSPORTISTA COMPLEMENTARIA"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 02: Códigos de tipo de monedas",
+    "campo": "cbc:DocumentCurrencyCode",
+    "description": "Tipo de moneda",
+    "catalogo": "ISO 4217 Alpha Version 2001 – Codes for the representation of currencies",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 03: Códigos de tipo de unidad de medida comercial",
+    "campo": "@UnitCode",
+    "description": "Código del Tipo de unidad",
+    "catalogo": "UN/ECE Recommendation 20 Revision 4 – Codes for Units of Measure",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 04: Códigos de Países",
+    "campo": "cac:Country/cbc:IdentificationCode",
+    "description": "Código de País",
+    "catalogo": "ISO 3166-1: 2006 – Codes for the representation of names of countries and their subdivisions Part. 1: country codes",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 05: Códigos de tipos de tributos",
+    "campo": "cbc:TaxTypeCode",
+    "description": "Código de tipo de tributo",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1000",
+        "descripcion": "IGV IMPUESTO GENERAL A",
+        "un_ece_5153_duty_or_tax": "VAT",
+        "un_ece_5305_duty_or_tax": "S"
+      },
+      {
+        "codigo": "1016",
+        "descripcion": "IMPUESTO A LA VENTA ARROZ PILADO",
+        "un_ece_5153_duty_or_tax": "VAT",
+        "un_ece_5305_duty_or_tax": "S"
+      },
+      {
+        "codigo": "2000",
+        "descripcion": "ISC IMPUESTO SELECTIVO AL CONSUMO",
+        "un_ece_5153_duty_or_tax": "EXC",
+        "un_ece_5305_duty_or_tax": "S"
+      },
+      {
+        "codigo": "9995",
+        "descripcion": "EXPORTACIÓN",
+        "un_ece_5153_duty_or_tax": "FRE",
+        "un_ece_5305_duty_or_tax": "G"
+      },
+      {
+        "codigo": "9996",
+        "descripcion": "GRATUITO",
+        "un_ece_5153_duty_or_tax": "FRE",
+        "un_ece_5305_duty_or_tax": "Z"
+      },
+      {
+        "codigo": "9997",
+        "descripcion": "EXONERADO",
+        "un_ece_5153_duty_or_tax": "VAT",
+        "un_ece_5305_duty_or_tax": "E"
+      },
+      {
+        "codigo": "9998",
+        "descripcion": "INAFECTO",
+        "un_ece_5153_duty_or_tax": "FRE",
+        "un_ece_5305_duty_or_tax": "O"
+      },
+      {
+        "codigo": "9999",
+        "descripcion": "OTROS CONCEPTOS DE PAGO",
+        "un_ece_5153_duty_or_tax": "OTH",
+        "un_ece_5305_duty_or_tax": "S"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 06: Códigos de tipos de documentos de identidad",
+    "campo": "cbc:AdditionalAccountID",
+    "description": "Tipo de Documento de Identificación",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "0",
+        "descripcion": "DOC.TRIB.NO.DOM.SIN.RUC"
+      },
+      {
+        "codigo": "1",
+        "descripcion": "DOC. NACIONAL DE IDENTIDAD"
+      },
+      {
+        "codigo": "4",
+        "descripcion": "CARNET DE EXTRANJERIA"
+      },
+      {
+        "codigo": "6",
+        "descripcion": "REG. UNICO DE CONTRIBUYENTES"
+      },
+      {
+        "codigo": "7",
+        "descripcion": "PASAPORTE"
+      },
+      {
+        "codigo": "A",
+        "descripcion": "CED. DIPLOMATICA DE IDENTIDAD"
+      },
+      {
+        "codigo": "B",
+        "descripcion": "DOC.IDENT.PAIS.RESIDENCIA-NO.D"
+      },
+      {
+        "codigo": "C",
+        "descripcion": "Tax Identification Number - TIN – Doc Trib PP.NN"
+      },
+      {
+        "codigo": "D",
+        "descripcion": "Identification Number - IN – Doc Trib PP. JJ"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 07: Códigos de tipo de afectación del IGV",
+    "campo": "cbc:TaxExemptionReasonCode",
+    "description": "Tipo de Afectación al IGV",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "10",
+        "descripcion": "Gravado - Operación Onerosa"
+      },
+      {
+        "codigo": "11",
+        "descripcion": "Gravado – Retiro por premio"
+      },
+      {
+        "codigo": "12",
+        "descripcion": "Gravado – Retiro por donación"
+      },
+      {
+        "codigo": "13",
+        "descripcion": "Gravado – Retiro"
+      },
+      {
+        "codigo": "14",
+        "descripcion": "Gravado – Retiro por publicidad"
+      },
+      {
+        "codigo": "15",
+        "descripcion": "Gravado – Bonificaciones"
+      },
+      {
+        "codigo": "16",
+        "descripcion": "Gravado – Retiro por entrega a trabajadores"
+      },
+      {
+        "codigo": "17",
+        "descripcion": "Gravado – IVAP"
+      },
+      {
+        "codigo": "20",
+        "descripcion": "Exonerado - Operación Onerosa"
+      },
+      {
+        "codigo": "21",
+        "descripcion": "Exonerado – Transferencia Gratuita"
+      },
+      {
+        "codigo": "30",
+        "descripcion": "Inafecto - Operación Onerosa"
+      },
+      {
+        "codigo": "31",
+        "descripcion": "Inafecto – Retiro por Bonificación"
+      },
+      {
+        "codigo": "32",
+        "descripcion": "Inafecto – Retiro"
+      },
+      {
+        "codigo": "33",
+        "descripcion": "Inafecto – Retiro por Muestras Médicas"
+      },
+      {
+        "codigo": "34",
+        "descripcion": "Inafecto - Retiro por Convenio Colectivo"
+      },
+      {
+        "codigo": "35",
+        "descripcion": "Inafecto – Retiro por premio"
+      },
+      {
+        "codigo": "36",
+        "descripcion": "Inafecto - Retiro por publicidad"
+      },
+      {
+        "codigo": "40",
+        "descripcion": "Exportación"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 08: Códigos de tipos de sistema de cálculo del ISC",
+    "campo": "cbc: TierRange",
+    "description": "Tipo de Sistema de Cálculo del ISC",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Sistema al valor (Apéndice IV, lit. A – T.U.O IGV e ISC)"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Aplicación del Monto Fijo (Apéndice IV, lit. B – T.U.O IGV e ISC)"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "Sistema de Precios de Venta al Público (Apéndice IV, lit. C – T.U.O IGV e ISC)"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 09: Códigos de tipo de nota de crédito electrónica",
+    "campo": "cbc:ResponseCode",
+    "description": "Tipo de nota de crédito electrónica según motivo",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Anulación de la operación"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Anulación por error en el RUC"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "Corrección por error en la descripción"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "Descuento global"
+      },
+      {
+        "codigo": "05",
+        "descripcion": "Descuento por ítem"
+      },
+      {
+        "codigo": "06",
+        "descripcion": "Devolución total"
+      },
+      {
+        "codigo": "07",
+        "descripcion": "Devolución por ítem"
+      },
+      {
+        "codigo": "08",
+        "descripcion": "Bonificación"
+      },
+      {
+        "codigo": "09",
+        "descripcion": "Disminución en el valor"
+      },
+      {
+        "codigo": "10",
+        "descripcion": "Otros Conceptos"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 10: Códigos de Tipo de nota de débito electrónica",
+    "campo": "cbc:ResponseCode",
+    "description": "Tipo de nota de débito según motivo",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Intereses por mora"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Aumento en el valor"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "Penalidades/ otros conceptos"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 11: Resumen diario de boletas de venta y notas electrónicas - Código de tipo de valor de venta",
+    "campo": "cbc:InstructionID",
+    "description": "Tipo de importe de valor de venta registrado en el Resumen diario",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Gravado"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Exonerado"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "Inafecto"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "Exportación"
+      },
+      {
+        "codigo": "05",
+        "descripcion": "Gratuitas"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 12: Códigos - Documentos relacionados tributarios",
+    "campo": "cbc:DocumentTypeCode// cac:PrepaidPayment/cbc:ID",
+    "description": "Código del tipo de documentos tributarios de referencia",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Factura – emitida para corregir error en el RUC"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Factura – emitida por anticipos"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "Boleta de Venta – emitida por anticipos"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "Ticket de Salida - ENAPU"
+      },
+      {
+        "codigo": "05",
+        "descripcion": "Código SCOP"
+      },
+      {
+        "codigo": "99",
+        "descripcion": "Otros"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 13: Ubicación geográfica (UBIGEO)",
+    "campo": "./cac:RegistrationAddress/cbc:ID",
+    "description": "Código de Ubicación Geográfica (UBIGEO)",
+    "catalogo": "Utilizar el catálogo de ubigeos del INEI",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 14: Códigos - Otros conceptos tributarios",
+    "campo": "ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sac:",
+    "description": "Códigos de otros conceptos tributarios",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1000",
+        "descripcion": "Total valor de venta – operaciones exportadas"
+      },
+      {
+        "codigo": "1001",
+        "descripcion": "Total valor de venta - operaciones gravadas"
+      },
+      {
+        "codigo": "1002",
+        "descripcion": "Total valor de venta - operaciones inafectas"
+      },
+      {
+        "codigo": "1003",
+        "descripcion": "Total valor de venta - operaciones exoneradas"
+      },
+      {
+        "codigo": "1004",
+        "descripcion": "Total valor de venta – Operaciones gratuitas"
+      },
+      {
+        "codigo": "1005",
+        "descripcion": "Sub total de venta"
+      },
+      {
+        "codigo": "2001",
+        "descripcion": "Percepciones"
+      },
+      {
+        "codigo": "2002",
+        "descripcion": "Retenciones"
+      },
+      {
+        "codigo": "2003",
+        "descripcion": "Detracciones"
+      },
+      {
+        "codigo": "2004",
+        "descripcion": "Bonificaciones"
+      },
+      {
+        "codigo": "2005",
+        "descripcion": "Total descuentos"
+      },
+      {
+        "codigo": "3001",
+        "descripcion": "FISE (Ley 29852) Fondo Inclusión Social Energético"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 15: Códigos - Elementos adicionales en la Factura Electrónica y/o Boleta de Venta Electrónica",
+    "campo": "",
+    "description": "Códigos de elementos adicionales a la factura y/o boleta de venta",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1000",
+        "descripcion": "Monto en Letras"
+      },
+      {
+        "codigo": "1002",
+        "descripcion": "Leyenda \"TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE\""
+      },
+      {
+        "codigo": "2000",
+        "descripcion": "Leyenda “COMPROBANTE DE PERCEPCIÓN”"
+      },
+      {
+        "codigo": "2001",
+        "descripcion": "Leyenda “BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA\""
+      },
+      {
+        "codigo": "2002",
+        "descripcion": "Leyenda “SERVICIOS PRESTADOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA”"
+      },
+      {
+        "codigo": "2003",
+        "descripcion": "Leyenda “CONTRATOS DE CONSTRUCCIÓN EJECUTADOS EN LA AMAZONÍA REGIÓN SELVA”"
+      },
+      {
+        "codigo": "2004",
+        "descripcion": "Leyenda “Agencia de Viaje - Paquete turístico”"
+      },
+      {
+        "codigo": "2005",
+        "descripcion": "Leyenda “Venta realizada por emisor itinerante”"
+      },
+      {
+        "codigo": "2006",
+        "descripcion": "Leyenda: Operación sujeta a detracción"
+      },
+      {
+        "codigo": "2007",
+        "descripcion": "Leyenda: Operación sujeta a IVAP"
+      },
+      {
+        "codigo": "2008",
+        "descripcion": "Leyenda: Este documento sustenta el traslado de bienes"
+      },
+      {
+        "codigo": "3000",
+        "descripcion": "Detracciones: CÓDIGO DE BB Y SS SUJETOS A DETRACCION"
+      },
+      {
+        "codigo": "3001",
+        "descripcion": "Detracciones: NÚMERO DE CTA EN EL BN"
+      },
+      {
+        "codigo": "3002",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos-Nombre y matrícula de la embarcación"
+      },
+      {
+        "codigo": "3003",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos-Tipo y cantidad de especie vendida"
+      },
+      {
+        "codigo": "3004",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos -Lugar de descarga"
+      },
+      {
+        "codigo": "3005",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos -Fecha de descarga"
+      },
+      {
+        "codigo": "3006",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Número Registro MTC"
+      },
+      {
+        "codigo": "3007",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – configuración vehicular"
+      },
+      {
+        "codigo": "3008",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – punto de origen"
+      },
+      {
+        "codigo": "3009",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – punto destino"
+      },
+      {
+        "codigo": "3010",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – valor referencial preliminar"
+      },
+      {
+        "codigo": "4000",
+        "descripcion": "Beneficio hospedajes: Código País de emisión del pasaporte"
+      },
+      {
+        "codigo": "4001",
+        "descripcion": "Beneficio hospedajes: Código País de residencia del sujeto no domiciliado"
+      },
+      {
+        "codigo": "4002",
+        "descripcion": "Beneficio Hospedajes: Fecha de ingreso al país"
+      },
+      {
+        "codigo": "4003",
+        "descripcion": "Beneficio Hospedajes: Fecha de ingreso al establecimiento"
+      },
+      {
+        "codigo": "4004",
+        "descripcion": "Beneficio Hospedajes: Fecha de salida del establecimiento"
+      },
+      {
+        "codigo": "4005",
+        "descripcion": "Beneficio Hospedajes: Número de días de permanencia"
+      },
+      {
+        "codigo": "4006",
+        "descripcion": "Beneficio Hospedajes: Fecha de consumo"
+      },
+      {
+        "codigo": "4007",
+        "descripcion": "Beneficio Hospedajes: Paquete turístico - Nombres y Apellidos del Huésped"
+      },
+      {
+        "codigo": "4008",
+        "descripcion": "Beneficio Hospedajes: Paquete turístico – Tipo documento identidad del huésped"
+      },
+      {
+        "codigo": "4009",
+        "descripcion": "Beneficio Hospedajes: Paquete turístico – Número de documento identidad de huésped"
+      },
+      {
+        "codigo": "5000",
+        "descripcion": "Proveedores Estado: Número de Expediente"
+      },
+      {
+        "codigo": "5001",
+        "descripcion": "Proveedores Estado: Código de unidad ejecutora"
+      },
+      {
+        "codigo": "5002",
+        "descripcion": "Proveedores Estado: N° de proceso de selección"
+      },
+      {
+        "codigo": "5003",
+        "descripcion": "Proveedores Estado: N° de contrato"
+      },
+      {
+        "codigo": "6000",
+        "descripcion": "Comercialización de Oro: Código Unico Concesión Minera"
+      },
+      {
+        "codigo": "6001",
+        "descripcion": "Comercialización de Oro: N° declaración compromiso"
+      },
+      {
+        "codigo": "6002",
+        "descripcion": "Comercialización de Oro: N° Reg. Especial .Comerci. Oro"
+      },
+      {
+        "codigo": "6003",
+        "descripcion": "Comercialización de Oro: N° Resolución que autoriza Planta de Beneficio"
+      },
+      {
+        "codigo": "6004",
+        "descripcion": "Comercialización de Oro: Ley Mineral (% concent. oro)"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 16: Códigos – Tipo de precio de venta unitario",
+    "campo": "cac:AlternativeConditionPrice/cbc:PriceTypeCode",
+    "description": "Tipo de precio de venta",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Precio unitario (incluye el IGV)"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Valor referencial unitario en operaciones no onerosas"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 17: Códigos – Tipo de operación",
+    "campo": "ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sac:AdditionalInformation/sac:SUNATTransa ction/cbc:ID",
+    "description": "",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Venta Interna"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Exportación"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "No Domiciliados"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "Venta Interna – Anticipos"
+      },
+      {
+        "codigo": "05",
+        "descripcion": "Venta Itinerante"
+      },
+      {
+        "codigo": "06",
+        "descripcion": "Factura Guía"
+      },
+      {
+        "codigo": "07",
+        "descripcion": "Venta Arroz Pilado"
+      },
+      {
+        "codigo": "08",
+        "descripcion": "Factura - Comprobante de Percepción"
+      },
+      {
+        "codigo": "10",
+        "descripcion": "Factura - Guía remitente"
+      },
+      {
+        "codigo": "11",
+        "descripcion": "Factura - Guía transportista"
+      },
+      {
+        "codigo": "12",
+        "descripcion": "Boleta de venta – Comprobante de Percepción."
+      },
+      {
+        "codigo": "13",
+        "descripcion": "Gasto Deducible Persona Natural"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 18: Códigos – Modalidad de traslado",
+    "campo": "/Invoice/ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sac:AdditionalInformation/sac:S UNATEmbededDespatchAdvice/cbc:TransportModeCode",
+    "description": "Modalidad de traslado",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "Transporte público"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "Transporte privado"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 19: Resumen Diario de boletas de venta y notas electrónicas - Códigos de estado de ítem",
+    "campo": "/SummaryDocuments/sac:SummaryDocumentsLine/cac:Status/cbc:ConditionCode",
+    "description": "Código de estado del ítem",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1",
+        "descripcion": "Adicionar"
+      },
+      {
+        "codigo": "2",
+        "descripcion": "Modificar"
+      },
+      {
+        "codigo": "3",
+        "descripcion": "Anulado"
+      },
+      {
+        "codigo": "4",
+        "descripcion": "Anulado en el día (anulado antes de informar comprobante)"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 20: Códigos – Motivos de traslado",
+    "campo": "ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sac:AdditionalInformation/sac:SUNAT EmbededDespatchAdvice/cac:Shipment/cbc:ShippingPriorityLevelCode",
+    "description": "Motivos de Traslado",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "VENTA"
+      },
+      {
+        "codigo": "14",
+        "descripcion": "VENTA SUJETA A CONFIRMACION DEL COMPRADOR"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "COMPRA"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "TRASLADO ENTRE ESTABLECIMIENTOS DE LA MISMA EMPRESA"
+      },
+      {
+        "codigo": "18",
+        "descripcion": "TRASLADO EMISOR ITINERANTE CP"
+      },
+      {
+        "codigo": "08",
+        "descripcion": "IMPORTACION"
+      },
+      {
+        "codigo": "09",
+        "descripcion": "EXPORTACION"
+      },
+      {
+        "codigo": "19",
+        "descripcion": "TRASLADO A ZONA PRIMARIA"
+      },
+      {
+        "codigo": "13",
+        "descripcion": "OTROS"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 21: Documentos relacionados - aplicable solo para la Guía de remisión electrónica",
+    "campo": "cac:AdditionalDocumentReference/ cbc:DocumentTypeCode",
+    "description": "",
+    "catalogo": "ISO 4217 Alpha Version 2001 – Codes for the representation of currencies and funds",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "NUMERACION DAM"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "NÚMERO DE ORDEN DE ENTREGA"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "NÚMERO SCOP"
+      },
+      {
+        "codigo": "04",
+        "descripcion": "NÚMERO DE MANIFIESTO DE CARGA"
+      },
+      {
+        "codigo": "05",
+        "descripcion": "NÚMERO DE CONSTANCIA DE DETRACCION"
+      },
+      {
+        "codigo": "06",
+        "descripcion": "OTROS"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 22: Regímenes de Percepción",
+    "campo": "/Perception/sac:SUNATPerceptionSystemCode",
+    "description": "Régimen de Percepción",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "PERCEPCION VENTA INTERNA TASA 2%"
+      },
+      {
+        "codigo": "02",
+        "descripcion": "PERCEPCION A LA ADQUISICION DE COMBUSTIBLE TASA 1%"
+      },
+      {
+        "codigo": "03",
+        "descripcion": "PERCEPCION REALIZADA AL AGENTE DE PERCEPCION CON TASA ESPECIAL TASA 0.5%"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 23: Regímenes de Retención",
+    "campo": "/Retention/sac:SUNATRetentionSystemCode",
+    "description": "Régimen de Retención",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "01",
+        "descripcion": "TASA 3%"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 24: Recibo electrónico por servicios públicos",
+    "campo": "",
+    "description": "Código de tarifas de Servicios Públicos",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "AT",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L001"
+      },
+      {
+        "codigo": "MT2",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L002"
+      },
+      {
+        "codigo": "MT3",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L003"
+      },
+      {
+        "codigo": "MT4",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L004"
+      },
+      {
+        "codigo": "BT2",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L005"
+      },
+      {
+        "codigo": "BT3",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L006"
+      },
+      {
+        "codigo": "BT5B NO RESIDENCIAL",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L009"
+      },
+      {
+        "codigo": "BT6",
+        "descripcion": "LUZ",
+        "codigo_tarifa": "L010"
+      },
+      {
+        "codigo": "COMERCIAL",
+        "descripcion": "AGUA",
+        "codigo_tarifa": "A011"
+      },
+      {
+        "codigo": "INDUSTRIAL",
+        "descripcion": "AGUA",
+        "codigo_tarifa": "A012"
+      },
+      {
+        "codigo": "DOMESTICO",
+        "descripcion": "AGUA",
+        "codigo_tarifa": "A014"
+      },
+      {
+        "codigo": "SOCIAL",
+        "descripcion": "AGUA",
+        "codigo_tarifa": "A015"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 25: Código producto SUNAT",
+    "campo": "",
+    "description": "Código Producto SUNAT",
+    "catalogo": "United Nations Standard Products and Services Code - Código de productos y servicios estándar de las Naciones Unidas - UNSPSC v14_0801",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 26: Tipo de préstamo",
+    "campo": "",
+    "description": "Tipo de préstamo (créditos hipotecarios)",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "0",
+        "descripcion": "Sin información"
+      },
+      {
+        "codigo": "1",
+        "descripcion": "Si es construcción /adquisición"
+      },
+      {
+        "codigo": "2",
+        "descripcion": "Si es para refacción, remodelación, ampliación, mejoramiento o subdivisión de vivienda propia."
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 27: Indicador de primera vivienda",
+    "campo": "",
+    "description": "Indicador de primera vivienda",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "0",
+        "descripcion": "Sin indicador"
+      },
+      {
+        "codigo": "1",
+        "descripcion": "Calificado para crédito Mi Vivienda / Techo Propio"
+      },
+      {
+        "codigo": "2",
+        "descripcion": "Libre disposición de la AFP"
+      },
+      {
+        "codigo": "3",
+        "descripcion": "Calificado como primera vivienda de acuerdo a la información proporcionada por el cliente (para créditos otorgados a partir del 01.01.2013)"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 51: Código de tipo de factura",
+    "campo": "",
+    "description": "Código de tipo de factura",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "0101",
+        "descripcion": "Venta interna"
+      },
+      {
+        "codigo": "0102",
+        "descripcion": "Exportación"
+      },
+      {
+        "codigo": "0103",
+        "descripcion": "No Domiciliados"
+      },
+      {
+        "codigo": "0104",
+        "descripcion": "Venta Interna – Anticipos"
+      },
+      {
+        "codigo": "0105",
+        "descripcion": "Venta Itinerante"
+      },
+      {
+        "codigo": "0106",
+        "descripcion": "Factura Guía"
+      },
+      {
+        "codigo": "0107",
+        "descripcion": "Venta Arroz Pilado"
+      },
+      {
+        "codigo": "0108",
+        "descripcion": "Factura - Comprobante de Percepción"
+      },
+      {
+        "codigo": "0110",
+        "descripcion": "Factura - Guía remitente"
+      },
+      {
+        "codigo": "0111",
+        "descripcion": "Factura - Guía transportista"
+      },
+      {
+        "codigo": "0113",
+        "descripcion": "Factura - Gasto Deducible Persona Natural"
+      },
+      {
+        "codigo": "0114",
+        "descripcion": "Factura - Carta de porte aéreo (emitidas en el ámbito nacional)"
+      },
+      {
+        "codigo": "0117",
+        "descripcion": "Factura - BVME para transporte ferroviario de pasajeros"
+      },
+      {
+        "codigo": "0118",
+        "descripcion": "Factura - Pago de regalía petrolera"
+      },
+      {
+        "codigo": "0314",
+        "descripcion": "Boleta - Carta de porte aéreo (emitidas en el ámbito nacional)"
+      },
+      {
+        "codigo": "0317",
+        "descripcion": "Boleta - BVME para transporte ferroviario de pasajeros"
+      },
+      {
+        "codigo": "0318",
+        "descripcion": "Boleta – Pago de regalía petrolera"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 52: Código de leyendas",
+    "campo": "",
+    "description": "Códigos de leyendas",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1000",
+        "descripcion": "Monto en Letras"
+      },
+      {
+        "codigo": "1002",
+        "descripcion": "Leyenda \"TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE\""
+      },
+      {
+        "codigo": "2000",
+        "descripcion": "Leyenda “COMPROBANTE DE PERCEPCIÓN”"
+      },
+      {
+        "codigo": "2001",
+        "descripcion": "Leyenda “BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA\""
+      },
+      {
+        "codigo": "2002",
+        "descripcion": "Leyenda “SERVICIOS PRESTADOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA”"
+      },
+      {
+        "codigo": "2003",
+        "descripcion": "Leyenda “CONTRATOS DE CONSTRUCCIÓN EJECUTADOS EN LA AMAZONÍA REGIÓN SELVA”"
+      },
+      {
+        "codigo": "2004",
+        "descripcion": "Leyenda “Agencia de Viaje - Paquete turístico”"
+      },
+      {
+        "codigo": "2005",
+        "descripcion": "Leyenda “Venta realizada por emisor itinerante”"
+      },
+      {
+        "codigo": "2006",
+        "descripcion": "Leyenda \"Operación sujeta a detracción\""
+      },
+      {
+        "codigo": "3000",
+        "descripcion": "Código interno generado por el software de Facturación"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 53: Códigos de cargos o descuentos",
+    "campo": "",
+    "description": "Códigos de cargos o descuentos",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "00",
+        "descripcion": "OTROS DESCUENTOS"
+      },
+      {
+        "codigo": "50",
+        "descripcion": "OTROS CARGOS"
+      },
+      {
+        "codigo": "51",
+        "descripcion": "PERCEPCION VENTA INTERNA"
+      },
+      {
+        "codigo": "52",
+        "descripcion": "PERCEPCION A LA ADQUISICION DE COMBUSTIBLE"
+      },
+      {
+        "codigo": "53",
+        "descripcion": "PERCEPCION REALIZADA AL AGENTE DE PERCEPCION CON TASA ESPECIAL"
+      },
+      {
+        "codigo": "54",
+        "descripcion": "OTROS CARGOS RELACIONADOS AL SERVICIO"
+      },
+      {
+        "codigo": "55",
+        "descripcion": "OTROS CARGOS NO RELACIONADOS AL SERVICIO"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 54: Códigos de bienes y servicios sujetos a detracción",
+    "campo": "",
+    "description": "Códigos de bienes y servicios sujetos a detracciones",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "001",
+        "descripcion": "Azúcar"
+      },
+      {
+        "codigo": "003",
+        "descripcion": "Alcohol etílico"
+      },
+      {
+        "codigo": "004",
+        "descripcion": "Recursos hidrobiológicos"
+      },
+      {
+        "codigo": "005",
+        "descripcion": "Maíz amarillo duro"
+      },
+      {
+        "codigo": "006",
+        "descripcion": "Algodón"
+      },
+      {
+        "codigo": "007",
+        "descripcion": "Caña de azúcar"
+      },
+      {
+        "codigo": "008",
+        "descripcion": "Madera"
+      },
+      {
+        "codigo": "010",
+        "descripcion": "Residuos, subproductos, desechos, recortes y desperdicios"
+      },
+      {
+        "codigo": "011",
+        "descripcion": "Bienes del inciso A) del Apéndice I de la Ley del IGV"
+      },
+      {
+        "codigo": "012",
+        "descripcion": "Intermediación laboral y tercerización"
+      },
+      {
+        "codigo": "013",
+        "descripcion": "Animales vivos"
+      },
+      {
+        "codigo": "014",
+        "descripcion": "Carnes y despojos comestibles"
+      },
+      {
+        "codigo": "015",
+        "descripcion": "Abonos, cueros y pieles de origen animal"
+      },
+      {
+        "codigo": "016",
+        "descripcion": "Aceite de pescado"
+      },
+      {
+        "codigo": "017",
+        "descripcion": "Harina, polvo y “pellets” de pescado, crustáceos, moluscos y demás invertebrados acuáticos"
+      },
+      {
+        "codigo": "018",
+        "descripcion": "Embarcaciones pesqueras"
+      },
+      {
+        "codigo": "019",
+        "descripcion": "Arrendamiento de bienes muebles"
+      },
+      {
+        "codigo": "020",
+        "descripcion": "Mantenimiento y reparación de bienes muebles"
+      },
+      {
+        "codigo": "021",
+        "descripcion": "Movimiento de carga"
+      },
+      {
+        "codigo": "022",
+        "descripcion": "Otros servicios empresariales"
+      },
+      {
+        "codigo": "023",
+        "descripcion": "Leche"
+      },
+      {
+        "codigo": "024",
+        "descripcion": "Comisión mercantil"
+      },
+      {
+        "codigo": "025",
+        "descripcion": "Fabricación de bienes por encargo"
+      },
+      {
+        "codigo": "026",
+        "descripcion": "Servicio de transporte de personas"
+      },
+      {
+        "codigo": "029",
+        "descripcion": "Algodón en rama sin desmontar"
+      },
+      {
+        "codigo": "030",
+        "descripcion": "Contratos de construcción"
+      },
+      {
+        "codigo": "031",
+        "descripcion": "Oro gravado con el IGV"
+      },
+      {
+        "codigo": "032",
+        "descripcion": "Páprika y otros frutos de los géneros capsicum o pimienta"
+      },
+      {
+        "codigo": "033",
+        "descripcion": "Espárragos"
+      },
+      {
+        "codigo": "034",
+        "descripcion": "Minerales metálicos no auríferos"
+      },
+      {
+        "codigo": "035",
+        "descripcion": "Bienes exonerados del IGV"
+      },
+      {
+        "codigo": "036",
+        "descripcion": "Oro y demás minerales metálicos exonerados del IGV"
+      },
+      {
+        "codigo": "037",
+        "descripcion": "Demás servicios gravados con el IGV"
+      },
+      {
+        "codigo": "039",
+        "descripcion": "Minerales no metálicos"
+      },
+      {
+        "codigo": "040",
+        "descripcion": "Bien inmueble gravado con IGV"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 55: Código de identificación del ítem",
+    "campo": "",
+    "description": "Código de identificación del concepto tributario",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "3002",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos - Nombre y Matrícula de la Embarcación"
+      },
+      {
+        "codigo": "3003",
+        "descripcion": "Detracciones: Cantidad de Especies Marinas"
+      },
+      {
+        "codigo": "3004",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos - Lugar de descarga"
+      },
+      {
+        "codigo": "3005",
+        "descripcion": "Detracciones: Recursos Hidrobiológicos - Fecha de descarga"
+      },
+      {
+        "codigo": "3006",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Número Registro MTC"
+      },
+      {
+        "codigo": "3007",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Configuración Vehicular"
+      },
+      {
+        "codigo": "3008",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Punto de Origen"
+      },
+      {
+        "codigo": "3009",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Punto Destino"
+      },
+      {
+        "codigo": "3010",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Valor Referencial Preliminar por Viaje"
+      },
+      {
+        "codigo": "3011",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Valor Referencial Preliminar por Vehículo"
+      },
+      {
+        "codigo": "3012",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Valor Referencial Preliminar por TM en Viaje"
+      },
+      {
+        "codigo": "3014",
+        "descripcion": "Detracciones: Transporte Bienes vía terrestre – Carga Útil en TM del Vehículo en Viaje"
+      },
+      {
+        "codigo": "4002",
+        "descripcion": "Beneficio Hospedajes: Número de Días de Permanencia"
+      },
+      {
+        "codigo": "4003",
+        "descripcion": "Beneficio Hospedajes: Fecha de Ingreso al Establecimiento"
+      },
+      {
+        "codigo": "4004",
+        "descripcion": "Beneficio Hospedajes: Fecha de Salida del Establecimiento"
+      },
+      {
+        "codigo": "4005",
+        "descripcion": "Beneficio Hospedajes: Número de Días de Permanencia"
+      },
+      {
+        "codigo": "4006",
+        "descripcion": "Beneficio Hospedajes: Fecha de Consumo"
+      },
+      {
+        "codigo": "5000",
+        "descripcion": "Proveedores Estado: Número de Expediente"
+      },
+      {
+        "codigo": "5001",
+        "descripcion": "Proveedores Estado: Código de Unidad Ejecutora"
+      },
+      {
+        "codigo": "5002",
+        "descripcion": "Proveedores Estado: N° de Proceso de Selección"
+      },
+      {
+        "codigo": "5003",
+        "descripcion": "Proveedores Estado: N° de Contrato"
+      },
+      {
+        "codigo": "6000",
+        "descripcion": "Comercialización de Oro: Código Unico Concesión Minera"
+      },
+      {
+        "codigo": "6001",
+        "descripcion": "Comercialización de Oro: N° declaración compromiso"
+      },
+      {
+        "codigo": "6002",
+        "descripcion": "Comercialización de Oro: N° Reg. Especial .Comerci. Oro"
+      },
+      {
+        "codigo": "6003",
+        "descripcion": "Comercialización de Oro: N° Resolución que autoriza Planta de Beneficio"
+      },
+      {
+        "codigo": "6004",
+        "descripcion": "Comercialización de Oro: Ley Mineral (% concent. oro)"
+      },
+      {
+        "codigo": "7000",
+        "descripcion": "Gastos Art. 37 Renta: Número de Placa"
+      },
+      {
+        "codigo": "7001",
+        "descripcion": "Créditos Hipotecarios: Tipo de préstamo"
+      },
+      {
+        "codigo": "7002",
+        "descripcion": "Créditos Hipotecarios: Indicador de Primera Vivienda"
+      },
+      {
+        "codigo": "7003",
+        "descripcion": "Créditos Hipotecarios: Partida Registral"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 56: Código de tipo de servicio público",
+    "campo": "",
+    "description": "Código de tipo de servicio público",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1",
+        "descripcion": "Energía eléctrica"
+      },
+      {
+        "codigo": "2",
+        "descripcion": "Agua"
+      },
+      {
+        "codigo": "3",
+        "descripcion": "Cable"
+      },
+      {
+        "codigo": "4",
+        "descripcion": "Internet"
+      },
+      {
+        "codigo": "5",
+        "descripcion": "Otros servicios regulados por OSIPTEL"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 57: Código de tipo de servicios públicos - telecomunicaciones",
+    "campo": "",
+    "description": "Código de tipo de servicio públicos - telecomunicaciones",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "1",
+        "descripcion": "Servicios Portadores"
+      },
+      {
+        "codigo": "2",
+        "descripcion": "Teleservicios o Servicios Finales"
+      },
+      {
+        "codigo": "3",
+        "descripcion": "Servicios de Difusión"
+      },
+      {
+        "codigo": "4",
+        "descripcion": "Servicios de valor añadido"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 58: Código de tipo de medidor – recibo de luz",
+    "campo": "",
+    "description": "",
+    "catalogo": "Código de tipo de medidor (recibo de luz)",
+    "data": [
+      {
+        "codigo": "1",
+        "descripcion": "Trifásico"
+      }
+    ]
+  },
+  {
+    "nombre": "Catálogo No. 59: Medios de pago",
+    "campo": "",
+    "description": "Medios de Pago",
+    "catalogo": "SUNAT",
+    "data": [
+      {
+        "codigo": "001",
+        "descripcion": "DEPÓSITO EN CUENTA"
+      },
+      {
+        "codigo": "002",
+        "descripcion": "GIRO"
+      },
+      {
+        "codigo": "003",
+        "descripcion": "TRANSFERENCIA DE FONDOS"
+      },
+      {
+        "codigo": "004",
+        "descripcion": "ORDEN DE PAGO"
+      },
+      {
+        "codigo": "005",
+        "descripcion": "TARJETA DE DÉBITO"
+      },
+      {
+        "codigo": "006",
+        "descripcion": "TARJETA DE CRÉDITO EMITIDA EN EL PAÍS POR UNA EMPRESA DEL SISTEMA FINANCIERO"
+      },
+      {
+        "codigo": "007",
+        "descripcion": "CHEQUES CON LA CLÁUSULA DE \"NO NEGOCIABLE\", \"INTRANSFERIBLES\", \"NO A LA ORDEN\" U OTRA EQUIVALENTE, A QUE SE REFIERE EL INCISO G) DEL ARTICULO 5° DE LA LEY"
+      },
+      {
+        "codigo": "008",
+        "descripcion": "EFECTIVO, POR OPERACIONES EN LAS QUE NO EXISTE OBLIGACIÓN DE UTILIZAR MEDIO DE PAGO"
+      },
+      {
+        "codigo": "009",
+        "descripcion": "EFECTIVO, EN LOS DEMÁS CASOS"
+      },
+      {
+        "codigo": "010",
+        "descripcion": "MEDIOS DE PAGO USADOS EN COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "011",
+        "descripcion": "DOCUMENTOS EMITIDOS POR LAS EDPYMES Y LAS COOPERATIVAS DE AHORRO Y CRÉDITO NO AUTORIZADAS A CAPTAR DEPÓSITOS DEL PÚBLICO"
+      },
+      {
+        "codigo": "012",
+        "descripcion": "TARJETA DE CRÉDITO EMITIDA EN EL PAÍS O EN EL EXTERIOR POR UNA EMPRESA NO PERTENECIENTE AL SISTEMA FINANCIERO, CUYO OBJETO PRINCIPAL SEA LA EMISIÓN Y ADMINISTRACIÓN DE TARJETAS DE CRÉDITO"
+      },
+      {
+        "codigo": "013",
+        "descripcion": "TARJETAS DE CRÉDITO EMITIDAS EN EL EXTERIOR POR EMPRESAS BANCARIAS O FINANCIERAS NO DOMICILIADAS"
+      },
+      {
+        "codigo": "101",
+        "descripcion": "TRANSFERENCIAS - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "102",
+        "descripcion": "CHEQUES BANCARIOS - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "103",
+        "descripcion": "ORDEN DE PAGO SIMPLE - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "104",
+        "descripcion": "ORDEN DE PAGO DOCUMENTARIO - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "105",
+        "descripcion": "REMESA SIMPLE - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "106",
+        "descripcion": "REMESA DOCUMENTARIA - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "107",
+        "descripcion": "CARTA DE CRÉDITO SIMPLE - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "108",
+        "descripcion": "CARTA DE CRÉDITO DOCUMENTARIO - COMERCIO EXTERIOR"
+      },
+      {
+        "codigo": "999",
+        "descripcion": "OTROS MEDIOS DE PAGO"
+      }
+    ]
+  }
+]

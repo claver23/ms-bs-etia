@@ -1,4 +1,4 @@
-openapi: 3.0.3
+﻿openapi: 3.0.3
 info:
   title: ETIA - Facturación Electrónica Perú
   version: 1.1.0
@@ -21,6 +21,34 @@ tags:
     description: Notas de débito electrónicas
   - name: libro_electronico
     description: Libros electrónicos (ventas, compras, anexos)
+  - name: product
+    description: Catálogo de productos y servicios
+  - name: employee
+    description: Empleados y operadores del sistema
+  - name: ubigeo
+    description: Catálogo de ubigeos SUNAT
+  - name: unidad_medida
+    description: Catálogo de unidades de medida SUNAT
+  - name: serie_config
+    description: Configuración de series por tipo de documento
+  - name: sede
+    description: Sedes y sucursales de la empresa
+  - name: user_preference
+    description: Preferencias de usuario por empresa
+  - name: tipo_cambio
+    description: Tipos de cambio (SBS / SUNAT)
+  - name: notification
+    description: Notificaciones de transmisión de documentos
+  - name: reniec
+    description: Consulta de documentos RENIEC / SUNAT
+  - name: tabla_sunat
+    description: Catálogo de tablas parametrizadas SUNAT
+  - name: catalogo_sunat
+    description: Catálogos oficiales SUNAT para comprobantes electrónicos (CPE)
+  - name: resumen_diario
+    description: Resúmenes diarios de boletas para envío masivo a SUNAT
+  - name: onboarding
+    description: Registro de empresa con configuración inicial (onboarding)
 
 paths:
   # ==================== COMPANY ====================
@@ -36,19 +64,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompanyRegisterRequest'
+              $ref: '#/components/schemas/CompanyRegisterDto'
       responses:
         "200":
           description: Empresa registrada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompanyData'
+                $ref: '#/components/schemas/CompanyResponseDto'
         "400":
           description: Bad Request
           content:
@@ -93,19 +116,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/CompanyData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/CompanyListResponseDto'
         "401":
           description: Unauthorized
         "500":
@@ -128,19 +139,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompanyUpdateRequest'
+              $ref: '#/components/schemas/CompanyUpdateDto'
       responses:
         "200":
           description: Empresa actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompanyData'
+                $ref: '#/components/schemas/CompanyResponseDto'
         "400":
           description: Bad Request
         "404":
@@ -177,6 +183,145 @@ paths:
         "500":
           description: Internal Server Error
 
+  /company/certificado:
+    post:
+      summary: Subir certificado digital (.p12/.pfx)
+      operationId: subirCertificado
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID de la empresa
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - archivo
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                  description: "Archivo de certificado digital (.p12 o .pfx)"
+      responses:
+        "200":
+          description: Certificado subido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponseDto'
+        "400":
+          description: Archivo inválido (no es .p12/.pfx o excede 10MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+  /company/probar-conexion:
+    post:
+      summary: Probar conexión con SUNAT (web service beta)
+      operationId: probarConexionSunat
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID de la empresa
+      responses:
+        "200":
+          description: Resultado de la prueba de conexión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConexionSunatResultDto'
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+
+  /company/logo:
+    post:
+      summary: Subir logo de empresa (PNG, JPG, SVG)
+      operationId: subirLogo
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - archivo
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                  description: "Archivo de logo (PNG, JPG o SVG, max 10MB)"
+      responses:
+        "200":
+          description: Logo subido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponseDto'
+        "400":
+          description: Archivo inválido
+        "404":
+          description: Empresa no encontrada
+        "500":
+          description: Internal Server Error
+    get:
+      summary: Obtener logo de empresa
+      operationId: obtenerLogo
+      tags:
+        - company
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Imagen del logo
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La empresa no tiene logo configurado
+        "404":
+          description: Empresa no encontrada
+
   # ==================== CLIENT ====================
   /client:
     post:
@@ -189,19 +334,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientRegisterRequest'
+              $ref: '#/components/schemas/ClientRegisterDto'
       responses:
         "200":
           description: Cliente registrado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ClientData'
+                $ref: '#/components/schemas/ClientResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -247,19 +387,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/ClientData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/ClientListResponseDto'
         "401":
           description: Unauthorized
 
@@ -279,19 +407,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientUpdateRequest'
+              $ref: '#/components/schemas/ClientUpdateDto'
       responses:
         "200":
           description: Cliente actualizado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ClientData'
+                $ref: '#/components/schemas/ClientResponseDto'
         "404":
           description: Cliente no encontrado
 
@@ -328,19 +451,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FacturaEmitirRequest'
+              $ref: '#/components/schemas/FacturaEmitirDto'
       responses:
         "200":
           description: Factura emitida exitosamente (incluye CDR y resumen)
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FacturaData'
+                $ref: '#/components/schemas/FacturaResponseDto'
         "400":
           description: Error de validación SUNAT
         "500":
@@ -396,19 +514,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/FacturaData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/FacturaListResponseDto'
 
     put:
       summary: Anular factura (nota de crédito automática)
@@ -426,30 +532,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - motivoAnulacion
-              properties:
-                motivoAnulacion:
-                  type: string
-                  description: Motivo de la anulación
-                  example: "Error en el monto total"
-                generarNotaCredito:
-                  type: boolean
-                  default: true
-                  description: Si genera automáticamente nota de crédito
+              $ref: '#/components/schemas/AnularFacturaDto'
       responses:
         "200":
           description: Factura anulada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FacturaData'
+                $ref: '#/components/schemas/FacturaResponseDto'
         "400":
           description: No se puede anular la factura
         "404":
@@ -478,6 +568,187 @@ paths:
         "404":
           description: Factura no encontrada
 
+  /factura/{facturaId}:
+    get:
+      tags:
+        - factura
+      summary: Obtener factura por ID
+      operationId: obtenerFactura
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Factura encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacturaResponseDto'
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/xml:
+    get:
+      tags:
+        - factura
+      summary: Descargar XML UBL 2.1 de una factura
+      description: |
+        Retorna el XML UBL 2.1 generado para la factura indicada.
+        El nombre del archivo sigue el formato SUNAT: {serie}-{numero}.xml
+      operationId: descargarFacturaXml
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura
+      responses:
+        "200":
+          description: XML UBL 2.1 de la factura
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La factura existe pero aún no tiene XML generado
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/emitir:
+    put:
+      tags:
+        - factura
+      summary: Emitir una factura en estado BORRADOR
+      description: |
+        Toma una factura existente con estado BORRADOR, genera el XML UBL 2.1,
+        lo persiste en disco y BD, y publica la notificación de emisión.
+        Solo facturas con estado=BORRADOR pueden ser promovidas.
+      operationId: emitirFacturaBorrador
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura borrador a emitir
+      responses:
+        "200":
+          description: Factura emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacturaResponseDto'
+        "400":
+          description: La factura no está en estado BORRADOR
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/actualizar:
+    put:
+      tags:
+        - factura
+      summary: Actualizar datos de una factura en estado BORRADOR
+      description: |
+        Actualiza todos los campos mutables de una factura existente en estado BORRADOR
+        o RECHAZADA sin emitirla. Reemplaza cuotas y cargos/descuentos.
+        No modifica serie, número, estado, fecha de emisión ni fecha de creación.
+      operationId: actualizarFacturaBorrador
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura borrador a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacturaEmitirDto'
+      responses:
+        "200":
+          description: Borrador actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacturaResponseDto'
+        "400":
+          description: La factura no está en estado BORRADOR o RECHAZADA
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/validar:
+    post:
+      tags:
+        - factura
+      summary: Validar una factura internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una factura existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre facturas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarFactura
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Factura no encontrada
+
+  /factura/{facturaId}/pdf:
+    get:
+      tags:
+        - factura
+      summary: Descargar representación impresa PDF de la factura
+      description: |
+        Genera y descarga el PDF con representación impresa de la factura electrónica.
+        Incluye logo, datos emisor/receptor, detalle, totales, QR con formato SUNAT y hash CDR.
+      operationId: descargarFacturaPdf
+      parameters:
+        - name: facturaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la factura
+      responses:
+        "200":
+          description: PDF generado exitosamente
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "inline; filename=\"{serie}-{numero}.pdf\""
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: Factura no tiene datos suficientes para generar PDF
+        "404":
+          description: Factura no encontrada
+
   # ==================== BOLETA ====================
   /boleta:
     post:
@@ -490,19 +761,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BoletaEmitirRequest'
+              $ref: '#/components/schemas/BoletaEmitirDto'
       responses:
         "200":
           description: Boleta emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BoletaData'
+                $ref: '#/components/schemas/BoletaResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -553,19 +819,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/BoletaData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/BoletaListResponseDto'
 
     put:
       tags:
@@ -583,22 +837,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                motivoAnulacion:
-                  type: string
+              $ref: '#/components/schemas/AnularBoletaDto'
       responses:
         "200":
           description: Boleta anulada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BoletaData'
+                $ref: '#/components/schemas/BoletaResponseDto'
 
     delete:
       tags:
@@ -621,6 +867,260 @@ paths:
         "400":
           description: Solo se pueden eliminar borradores no enviados
 
+  /boleta/{boletaId}:
+    get:
+      tags:
+        - boleta
+      summary: Obtener boleta por ID
+      operationId: obtenerBoleta
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Boleta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoletaResponseDto'
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/validar:
+    post:
+      tags:
+        - boleta
+      summary: Validar una boleta internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una boleta existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre boletas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarBoleta
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/actualizar:
+    put:
+      tags:
+        - boleta
+      summary: Actualizar datos de una boleta en estado BORRADOR o CON_ERROR
+      description: |
+        Actualiza todos los campos mutables de una boleta existente.
+        Reemplaza cuotas y cargos/descuentos. Re-ejecuta validación interna.
+        No modifica serie, número, fecha de emisión ni fecha de creación.
+      operationId: actualizarBoletaBorrador
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta borrador a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoletaEmitirDto'
+      responses:
+        "200":
+          description: Borrador actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoletaResponseDto'
+        "400":
+          description: La boleta no está en estado editable
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/xml:
+    get:
+      tags:
+        - boleta
+      summary: Descargar XML UBL 2.1 de una boleta
+      description: |
+        Descarga el XML UBL 2.1 tipo "03" generado para la boleta.
+        Si la boleta aún no tiene XML generado (BORRADOR), retorna 204.
+      operationId: descargarBoletaXml
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: XML UBL 2.1 de la boleta
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: "attachment; filename=\"20601234567-03-B001-00000001.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La boleta aún no tiene XML generado
+        "404":
+          description: Boleta no encontrada
+
+  /boleta/{boletaId}/pdf:
+    get:
+      tags:
+        - boleta
+      summary: Descargar representación impresa PDF de la boleta
+      description: |
+        Genera y descarga el PDF con representación impresa de la boleta de venta electrónica.
+        Incluye logo, datos emisor/receptor, detalle, totales, QR con formato SUNAT y hash CDR.
+      operationId: descargarBoletaPdf
+      parameters:
+        - name: boletaId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la boleta
+      responses:
+        "200":
+          description: PDF generado exitosamente
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "inline; filename=\"{serie}-{numero}.pdf\""
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: Boleta no tiene datos suficientes para generar PDF
+        "404":
+          description: Boleta no encontrada
+
+  # ==================== RESUMEN DIARIO ====================
+  /resumen-diario:
+    post:
+      tags:
+        - resumen_diario
+      summary: Crear resumen diario de boletas
+      description: |
+        Agrupa boletas VALIDADAS de la fecha indicada y crea un resumen diario
+        con identificador RC-{YYYYMMDD}-{NNN}. Cambia estado de boletas a ENVIADA.
+        Envía a SUNAT y almacena el ticket recibido.
+      operationId: crearResumenDiario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResumenDiarioCrearDto'
+      responses:
+        "200":
+          description: Resumen diario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioResponseDto'
+        "400":
+          description: No hay boletas VALIDADAS para incluir
+
+    get:
+      tags:
+        - resumen_diario
+      summary: Listar resúmenes diarios
+      operationId: listarResumenesDiarios
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de resúmenes diarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioListResponseDto'
+
+  /resumen-diario/{resumenId}:
+    get:
+      tags:
+        - resumen_diario
+      summary: Obtener resumen diario por ID
+      operationId: obtenerResumenDiario
+      parameters:
+        - name: resumenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resumen diario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioResponseDto'
+        "404":
+          description: Resumen diario no encontrado
+
+  /resumen-diario/{resumenId}/consultar-estado:
+    post:
+      tags:
+        - resumen_diario
+      summary: Consultar estado del resumen diario en SUNAT
+      description: |
+        Consulta el ticket en SUNAT. Si ACEPTADO, actualiza estado del resumen
+        y de las boletas asociadas a ACEPTADA.
+      operationId: consultarEstadoResumen
+      parameters:
+        - name: resumenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultado de la consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaEstadoResultDto'
+        "404":
+          description: Resumen no encontrado
+
   # ==================== NOTA CRÉDITO ====================
   /nota_credito:
     post:
@@ -633,19 +1133,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaCreditoEmitirRequest'
+              $ref: '#/components/schemas/NotaCreditoEmitirDto'
       responses:
         "200":
           description: Nota de crédito emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaCreditoData'
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -676,6 +1171,17 @@ paths:
           schema:
             type: string
             format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+          description: Filtrar por serie
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          description: Filtrar por estado
         - name: page
           in: query
           schema:
@@ -692,19 +1198,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/NotaCreditoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/NotaCreditoListResponseDto'
 
     put:
       tags:
@@ -722,19 +1216,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaCreditoUpdateRequest'
+              $ref: '#/components/schemas/NotaCreditoUpdateDto'
       responses:
         "200":
           description: Nota de crédito actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaCreditoData'
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
         "400":
           description: Solo se pueden actualizar notas no enviadas a SUNAT
         "404":
@@ -759,6 +1248,117 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
+  /nota_credito/{notaCreditoId}:
+    get:
+      tags:
+        - nota_credito
+      summary: Obtener nota de crédito por ID
+      operationId: obtenerNotaCredito
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nota de crédito encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
+        "404":
+          description: Nota de crédito no encontrada
+
+  /nota_credito/{notaCreditoId}/validar:
+    post:
+      tags:
+        - nota_credito
+      summary: Validar una nota de crédito internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una nota de crédito existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre notas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarNotaCredito
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Nota de crédito no encontrada
+
+  /nota_credito/{notaCreditoId}/emitir:
+    put:
+      tags:
+        - nota_credito
+      summary: Emitir una nota de crédito en estado BORRADOR
+      description: |
+        Toma una nota de crédito existente con estado BORRADOR o VALIDADO, genera el XML UBL 2.1
+        tipo CreditNote (07), lo persiste en disco y BD, y publica la notificación de emisión.
+      operationId: emitirNotaCreditoBorrador
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito borrador a emitir
+      responses:
+        "200":
+          description: Nota de crédito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaCreditoResponseDto'
+        "400":
+          description: La nota de crédito no está en estado BORRADOR o VALIDADO
+        "404":
+          description: Nota de crédito no encontrada
+
+  /nota_credito/{notaCreditoId}/xml:
+    get:
+      tags:
+        - nota_credito
+      summary: Descargar XML UBL 2.1 de una nota de crédito
+      description: |
+        Retorna el XML UBL 2.1 tipo CreditNote (07) generado para la nota de crédito indicada.
+        El nombre del archivo sigue el formato SUNAT: {RUC}-07-{serie}-{numero}.xml
+      operationId: descargarNotaCreditoXml
+      parameters:
+        - name: notaCreditoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de crédito
+      responses:
+        "200":
+          description: XML UBL 2.1 de la nota de crédito
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{RUC}-07-{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La nota de crédito existe pero aún no tiene XML generado
+        "404":
+          description: Nota de crédito no encontrada
+
   # ==================== NOTA DÉBITO ====================
   /nota_debito:
     post:
@@ -771,19 +1371,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaDebitoEmitirRequest'
+              $ref: '#/components/schemas/NotaDebitoEmitirDto'
       responses:
         "200":
           description: Nota de débito emitida exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaDebitoData'
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
         "400":
           description: Error de validación
         "500":
@@ -814,6 +1409,17 @@ paths:
           schema:
             type: string
             format: date
+        - name: serie
+          in: query
+          schema:
+            type: string
+          description: Filtrar por serie
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          description: Filtrar por estado
         - name: page
           in: query
           schema:
@@ -830,19 +1436,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/NotaDebitoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/NotaDebitoListResponseDto'
 
     put:
       tags:
@@ -860,19 +1454,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotaDebitoUpdateRequest'
+              $ref: '#/components/schemas/NotaDebitoUpdateDto'
       responses:
         "200":
           description: Nota de débito actualizada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotaDebitoData'
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
 
     delete:
       tags:
@@ -893,6 +1482,117 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
+  /nota_debito/{notaDebitoId}:
+    get:
+      tags:
+        - nota_debito
+      summary: Obtener nota de débito por ID
+      operationId: obtenerNotaDebito
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nota de débito encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/validar:
+    post:
+      tags:
+        - nota_debito
+      summary: Validar una nota de débito internamente (sin emitir a SUNAT)
+      description: |
+        Ejecuta todas las reglas de validación SUNAT sobre una nota de débito existente
+        y actualiza su estado a VALIDADO o CON_ERROR. No emite ni genera XML.
+        Puede ejecutarse sobre notas en estado BORRADOR, CON_ERROR o VALIDADO.
+      operationId: validarNotaDebito
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito a validar
+      responses:
+        "200":
+          description: Resultado de la validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentValidationResultDto'
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/emitir:
+    put:
+      tags:
+        - nota_debito
+      summary: Emitir una nota de débito en estado BORRADOR
+      description: |
+        Toma una nota de débito existente con estado BORRADOR o VALIDADO, genera el XML UBL 2.1
+        tipo DebitNote (08), lo persiste en disco y BD, y publica la notificación de emisión.
+      operationId: emitirNotaDebitoBorrador
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito borrador a emitir
+      responses:
+        "200":
+          description: Nota de débito emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaDebitoResponseDto'
+        "400":
+          description: La nota de débito no está en estado BORRADOR o VALIDADO
+        "404":
+          description: Nota de débito no encontrada
+
+  /nota_debito/{notaDebitoId}/xml:
+    get:
+      tags:
+        - nota_debito
+      summary: Descargar XML UBL 2.1 de una nota de débito
+      description: |
+        Retorna el XML UBL 2.1 tipo DebitNote (08) generado para la nota de débito indicada.
+        El nombre del archivo sigue el formato SUNAT: {RUC}-08-{serie}-{numero}.xml
+      operationId: descargarNotaDebitoXml
+      parameters:
+        - name: notaDebitoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la nota de débito
+      responses:
+        "200":
+          description: XML UBL 2.1 de la nota de débito
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: "attachment; filename=\"{RUC}-08-{serie}-{numero}.xml\""
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: La nota de débito existe pero aún no tiene XML generado
+        "404":
+          description: Nota de débito no encontrada
+
   # ==================== LIBRO ELECTRÓNICO ====================
   /libro_electronico:
     post:
@@ -905,19 +1605,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LibroGenerarRequest'
+              $ref: '#/components/schemas/LibroGenerarDto'
       responses:
         "200":
           description: Archivo TXT/XML generado exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/LibroElectronicoData'
+                $ref: '#/components/schemas/LibroElectronicoResponseDto'
         "400":
           description: Error en la generación
         "500":
@@ -961,19 +1656,844 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          content:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/LibroElectronicoData'
-                          pagination:
-                            $ref: '#/components/schemas/PaginationMeta'
+                $ref: '#/components/schemas/LibroElectronicoListResponseDto'
+
+  # ==================== PRODUCT ====================
+  /product:
+    get:
+      tags:
+        - product
+      summary: Buscar productos por empresa
+      operationId: buscarProductos
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: term
+          in: query
+          schema:
+            type: string
+            default: ""
+          description: Término de búsqueda (por descripción o código)
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponseDto'
+
+    post:
+      tags:
+        - product
+      summary: Crear producto o servicio
+      operationId: crearProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateDto'
+      responses:
+        "200":
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponseDto'
+        "400":
+          description: Error de validación
+        "500":
+          description: Error interno
+
+    put:
+      tags:
+        - product
+      summary: Actualizar producto
+      operationId: actualizarProducto
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateDto'
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponseDto'
+        "404":
+          description: Producto no encontrado
+
+    delete:
+      tags:
+        - product
+      summary: Eliminar producto (soft delete)
+      operationId: eliminarProducto
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Producto eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Producto no encontrado
+
+  /product/{productId}:
+    get:
+      tags:
+        - product
+      summary: Obtener producto por ID
+      operationId: obtenerProducto
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponseDto'
+        "404":
+          description: Producto no encontrado
+
+  # ==================== EMPLOYEE ====================
+  /employee:
+    get:
+      tags:
+        - employee
+      summary: Listar empleados por empresa
+      operationId: listarEmpleados
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado
+      responses:
+        "200":
+          description: Lista de empleados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeListResponseDto'
+
+    post:
+      tags:
+        - employee
+      summary: Registrar empleado
+      operationId: registrarEmpleado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreateDto'
+      responses:
+        "200":
+          description: Empleado registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResponseDto'
+
+    put:
+      tags:
+        - employee
+      summary: Actualizar empleado
+      operationId: actualizarEmpleado
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdateDto'
+      responses:
+        "200":
+          description: Empleado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResponseDto'
+        "404":
+          description: Empleado no encontrado
+
+    delete:
+      tags:
+        - employee
+      summary: Eliminar empleado (soft delete)
+      operationId: eliminarEmpleado
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Empleado eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Empleado no encontrado
+
+  /employee/{employeeId}:
+    get:
+      tags:
+        - employee
+      summary: Obtener empleado por ID
+      operationId: obtenerEmpleado
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Empleado encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResponseDto'
+        "404":
+          description: Empleado no encontrado
+
+  # ==================== UBIGEO ====================
+  /ubigeo:
+    get:
+      tags:
+        - ubigeo
+      summary: Listar ubigeos (catálogo SUNAT)
+      operationId: listarUbigeos
+      responses:
+        "200":
+          description: Lista de ubigeos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UbigeoData'
+
+  # ==================== UNIDAD MEDIDA ====================
+  /unidad_medida:
+    get:
+      tags:
+        - unidad_medida
+      summary: Listar unidades de medida (catálogo SUNAT)
+      operationId: listarUnidadesMedida
+      responses:
+        "200":
+          description: Lista de unidades de medida
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadMedidaData'
+
+  # ==================== SERIE CONFIG ====================
+  /serie_config:
+    get:
+      tags:
+        - serie_config
+      summary: Listar configuración de series por empresa
+      operationId: listarSeriesConfig
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tipoDocumento
+          in: query
+          schema:
+            type: string
+            enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          description: Filtrar por tipo de documento
+      responses:
+        "200":
+          description: Lista de series configuradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SerieConfigData'
+
+  # ==================== SEDE ====================
+  /sede:
+    get:
+      tags:
+        - sede
+      summary: Listar sedes por empresa
+      operationId: listarSedes
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+      responses:
+        "200":
+          description: Lista de sedes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeListResponseDto'
+
+    post:
+      tags:
+        - sede
+      summary: Crear nueva sede
+      operationId: crearSede
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SedeCreateDto'
+      responses:
+        "200":
+          description: Sede creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "400":
+          description: Error de validación
+
+    put:
+      tags:
+        - sede
+      summary: Actualizar sede
+      operationId: actualizarSede
+      parameters:
+        - name: sedeId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SedeUpdateDto'
+      responses:
+        "200":
+          description: Sede actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "404":
+          description: Sede no encontrada
+
+    delete:
+      tags:
+        - sede
+      summary: Eliminar sede (soft delete)
+      operationId: eliminarSede
+      parameters:
+        - name: sedeId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sede eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "404":
+          description: Sede no encontrada
+
+  /sede/{sedeId}:
+    get:
+      tags:
+        - sede
+      summary: Obtener sede por ID
+      operationId: obtenerSede
+      parameters:
+        - name: sedeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sede encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeResponseDto'
+        "404":
+          description: Sede no encontrada
+
+  /sede/{sedeId}/generar_series:
+    post:
+      tags:
+        - sede
+      summary: Generar series automáticas para una sede (F, B, FC, FD)
+      operationId: generarSeriesSede
+      parameters:
+        - name: sedeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Series generadas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SedeSeriesResponseDto'
+        "400":
+          description: La sede ya tiene series asignadas
+        "404":
+          description: Sede no encontrada
+
+  # ==================== USER PREFERENCE ====================
+  /user_preference:
+    get:
+      tags:
+        - user_preference
+      summary: Listar preferencias por empresa
+      operationId: listarPreferencias
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de preferencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserPreferenceData'
+
+    put:
+      tags:
+        - user_preference
+      summary: Guardar o actualizar preferencia
+      operationId: guardarPreferencia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceSaveDto'
+      responses:
+        "200":
+          description: Preferencia guardada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceData'
+
+  # ==================== TIPO DE CAMBIO ====================
+  /tipo_cambio:
+    get:
+      summary: Obtener tipo de cambio por fecha y moneda
+      operationId: obtenerTipoCambio
+      tags:
+        - tipo_cambio
+      parameters:
+        - name: fecha
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha del tipo de cambio (YYYY-MM-DD)
+        - name: moneda
+          in: query
+          schema:
+            type: string
+            default: USD
+          description: Moneda origen (ej. USD)
+        - name: fuente
+          in: query
+          schema:
+            type: string
+          description: Fuente del tipo de cambio (SBS o SUNAT)
+      responses:
+        "200":
+          description: Tipo de cambio encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioResponseDto'
+
+    post:
+      summary: Registrar tipo de cambio
+      operationId: registrarTipoCambio
+      tags:
+        - tipo_cambio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoCambioCreateDto'
+      responses:
+        "200":
+          description: Tipo de cambio registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioResponseDto'
+
+  /tipo_cambio/list:
+    get:
+      summary: Listar todos los tipos de cambio
+      operationId: listarTiposCambio
+      tags:
+        - tipo_cambio
+      parameters:
+        - name: fuente
+          in: query
+          schema:
+            type: string
+          description: Filtrar por fuente (SBS o SUNAT)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Lista de tipos de cambio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoCambioListResponseDto'
+
+  # ==================== NOTIFICATION ====================
+  /notification:
+    get:
+      tags:
+        - notification
+      summary: Listar notificaciones de transmisión por empresa
+      operationId: listarNotificaciones
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de notificaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponseDto'
+
+    post:
+      tags:
+        - notification
+      summary: Publicar una notificación de transmisión
+      operationId: publicarNotificacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPublishDto'
+      responses:
+        "200":
+          description: Notificación publicada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - notification
+      summary: Limpiar notificaciones por empresa
+      operationId: limpiarNotificaciones
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notificaciones limpiadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /notification/read-all:
+    put:
+      tags:
+        - notification
+      summary: Marcar todas las notificaciones como leídas
+      operationId: marcarTodasLeidas
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Todas marcadas como leídas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /notification/{notificationId}/read:
+    put:
+      tags:
+        - notification
+      summary: Marcar una notificación como leída
+      operationId: marcarNotificacionLeida
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notificación marcada como leída
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== RENIEC ====================
+  /reniec:
+    get:
+      tags:
+        - reniec
+      summary: Consultar documento RENIEC / SUNAT
+      operationId: consultarDocumento
+      parameters:
+        - name: tipo
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [DNI, RUC, CE, PASAPORTE]
+          description: Tipo de documento a consultar
+        - name: numero
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Número de documento
+      responses:
+        "200":
+          description: Datos del documento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReniecResponseDto'
+        "400":
+          description: Error en la consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== TABLA SUNAT ====================
+  /tabla_sunat/menu:
+    get:
+      tags:
+        - tabla_sunat
+      summary: Listar menú de tablas SUNAT disponibles
+      operationId: listarMenuTablasSunat
+      responses:
+        "200":
+          description: Lista de nombres de tablas disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TablaSunatMenuItem'
+
+  /tabla_sunat:
+    get:
+      tags:
+        - tabla_sunat
+      summary: Obtener una tabla SUNAT por nombre
+      operationId: obtenerTablaSunat
+      parameters:
+        - name: nombreTabla
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nombre exacto de la tabla SUNAT (ej. TIPO DE MONEDA)
+      responses:
+        "200":
+          description: Datos de la tabla solicitada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TablaSunatResponseDto'
+        "404":
+          description: Tabla no encontrada
+
+  # ==================== CATÁLOGO SUNAT ====================
+  /catalogo_sunat/menu:
+    get:
+      tags:
+        - catalogo_sunat
+      summary: Listar menú de catálogos SUNAT disponibles
+      operationId: listarMenuCatalogosSunat
+      responses:
+        "200":
+          description: Lista de nombres de catálogos disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogoSunatMenuItem'
+
+  /catalogo_sunat:
+    get:
+      tags:
+        - catalogo_sunat
+      summary: Obtener un catálogo SUNAT por nombre
+      operationId: obtenerCatalogoSunat
+      parameters:
+        - name: nombreCatalogo
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nombre del catálogo SUNAT (ej. Catálogo No. 01)
+      responses:
+        "200":
+          description: Datos del catálogo solicitado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogoSunatResponseDto'
+        "404":
+          description: Catálogo no encontrado
+
+  # ==================== ONBOARDING ====================
+  /onboarding:
+    post:
+      tags:
+        - onboarding
+      summary: Registrar nueva empresa con configuración inicial completa
+      description: |
+        Crea empresa, sede principal, 4 series (F001, B001, FC01, FD01)
+        y 4 correlativos iniciales en una sola operación transaccional.
+      operationId: registrarOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequestDto'
+      responses:
+        "200":
+          description: Empresa registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResponseDto'
+        "400":
+          description: Error de validación en datos de onboarding
 
 components:
   schemas:
@@ -1016,7 +2536,7 @@ components:
           example: ["El campo ruc es requerido", "Formato de RUC inválido"]
 
     # ===== COMPANY =====
-    CompanyRegisterRequest:
+    CompanyRegisterDto:
       type: object
       required:
         - ruc
@@ -1101,8 +2621,15 @@ components:
           enum: [general, mype_tributario, renta_especial]
           default: general
           example: "general"
+        emisionEnEnvio:
+          type: boolean
+          description: |
+            Si true (default), al crear un documento se genera el XML UBL 2.1 automáticamente.
+            Si false, el documento se guarda como BORRADOR y debe emitirse manualmente.
+          default: true
+          example: true
 
-    CompanyUpdateRequest:
+    CompanyUpdateDto:
       type: object
       properties:
         nombreComercial:
@@ -1129,9 +2656,13 @@ components:
           type: string
           format: password
           example: "NuevoCertPass"
+        emisionEnEnvio:
+          type: boolean
+          description: "Activar/desactivar emisión automática al guardar documentos"
+          example: true
 
     # ===== CLIENT =====
-    ClientRegisterRequest:
+    ClientRegisterDto:
       type: object
       required:
         - companyId
@@ -1163,8 +2694,22 @@ components:
         telefono:
           type: string
           example: "51987654321"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        codigoPais:
+          type: string
+          description: "Catálogo 04 SUNAT: código ISO país"
+          default: "PE"
+          example: "PE"
 
-    ClientUpdateRequest:
+    ClientUpdateDto:
       type: object
       properties:
         denominacion:
@@ -1180,9 +2725,21 @@ components:
         telefono:
           type: string
           example: "51999999999"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        codigoPais:
+          type: string
+          example: "PE"
 
     # ===== FACTURA =====
-    FacturaEmitirRequest:
+    FacturaEmitirDto:
       type: object
       required:
         - companyId
@@ -1194,15 +2751,19 @@ components:
         - gravadas
         - igv
         - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
         clientId:
           type: string
+          minLength: 1
           example: "cli_123456"
         serie:
           type: string
+          pattern: "^[A-Za-z]\\d{3}$"
           example: "F001"
         numero:
           type: integer
@@ -1217,23 +2778,108 @@ components:
           example: "PEN"
         gravadas:
           type: number
+          minimum: 0
           example: 1000.00
         igv:
           type: number
+          minimum: 0
           example: 180.00
         total:
           type: number
+          minimum: 0
           example: 1180.00
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
         leyenda:
           type: string
           example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          minimum: 0
+          description: Tipo de cambio del día (solo si moneda != PEN)
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento. Si CONTADO = fechaEmision
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
+        tipoOperacion:
+          type: string
+          description: "Catálogo 51 SUNAT: 0101=Venta interna, 0200=Exportación, etc."
+          default: "0101"
+          example: "0101"
+        horaEmision:
+          type: string
+          description: "Hora de emisión HH:mm:ss"
+          example: "12:58:00"
+        exoneradas:
+          type: number
+          description: Subtotal operaciones exoneradas (Cat. 05 - 9997)
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          description: Subtotal operaciones inafectas (Cat. 05 - 9998)
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          description: Subtotal operaciones gratuitas (Cat. 05 - 9996)
+          minimum: 0
+          example: 0.00
+        totalCargos:
+          type: number
+          description: Total de cargos globales (ej. recargo al consumo)
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          description: Total de descuentos globales
+          minimum: 0
+          example: 0.00
+        subtotal:
+          type: number
+          description: Suma de LineExtensionAmount de todas las líneas
+          minimum: 0
+          example: 1000.00
+        totalConImpuestos:
+          type: number
+          description: TaxInclusiveAmount (subtotal + impuestos)
+          minimum: 0
+          example: 1180.00
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO). Suma de montos debe = total."
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
+        emitir:
+          type: boolean
+          description: |
+            Si true (default), genera XML UBL 2.1 y notifica la emisión.
+            Si false, guarda como BORRADOR sin generar XML.
+            Controlado por la preferencia "Emisión en Envío" del panel de configuración.
+          default: true
+          example: true
 
     # ===== BOLETA =====
-    BoletaEmitirRequest:
+    BoletaEmitirDto:
       type: object
       required:
         - companyId
@@ -1278,103 +2924,421 @@ components:
         leyenda:
           type: string
           example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          description: Tipo de cambio (solo si moneda != PEN)
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
+        tipoOperacion:
+          type: string
+          description: "Catálogo 51 SUNAT: 0101=Venta interna"
+          default: "0101"
+          example: "0101"
+        horaEmision:
+          type: string
+          description: "Hora de emisión HH:mm:ss"
+          example: "16:27:08"
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 500.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 590.00
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
 
     # ===== NOTA CRÉDITO =====
-    NotaCreditoEmitirRequest:
+    NotaCreditoEmitirDto:
       type: object
       required:
         - companyId
-        - facturaReferenciaId
+        - documentoReferenciaId
         - motivo
-        - montoDescuento
+        - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
           type: string
+          example: "cli_123456"
+        documentoReferenciaId:
+          type: string
+          description: "ID del documento de referencia (factura o boleta)"
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          default: "factura"
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
           example: "devolucion"
-        montoDescuento:
-          type: number
-          example: 180.00
-        tipoDocumento:
+        codigoMotivoSunat:
           type: string
-          enum: [factura, boleta]
-          default: "factura"
+          description: "Catálogo 09 SUNAT"
+          default: "01"
+          example: "01"
         descripcion:
           type: string
           example: "Devolución de productos defectuosos"
+        serie:
+          type: string
+          example: "FC01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          default: "PEN"
+        montoDescuento:
+          type: number
+          example: 180.00
+        gravadas:
+          type: number
+          minimum: 0
+          example: 1000.00
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        igv:
+          type: number
+          minimum: 0
+          example: 180.00
+        total:
+          type: number
+          minimum: 0
+          example: 1180.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 1000.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 1180.00
+        leyenda:
+          type: string
+          example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          minimum: 0
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          default: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
 
-    NotaCreditoUpdateRequest:
+    NotaCreditoUpdateDto:
       type: object
       properties:
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
-        montoDescuento:
-          type: number
+        codigoMotivoSunat:
+          type: string
         descripcion:
           type: string
+        montoDescuento:
+          type: number
+        gravadas:
+          type: number
+        exoneradas:
+          type: number
+        inafectas:
+          type: number
+        gratuitas:
+          type: number
+        igv:
+          type: number
+        total:
+          type: number
+        subtotal:
+          type: number
+        totalCargos:
+          type: number
+        totalDescuentos:
+          type: number
+        totalConImpuestos:
+          type: number
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
 
     # ===== NOTA DÉBITO =====
-    NotaDebitoEmitirRequest:
+    NotaDebitoEmitirDto:
       type: object
       required:
         - companyId
-        - facturaReferenciaId
+        - documentoReferenciaId
         - motivo
-        - montoIncremento
+        - total
+        - detalle
       properties:
         companyId:
           type: string
+          minLength: 1
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
           type: string
+          example: "cli_123456"
+        documentoReferenciaId:
+          type: string
+          description: "ID del documento de referencia (factura o boleta)"
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          default: "factura"
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
           example: "intereses"
-        montoIncremento:
-          type: number
-          example: 50.00
+        codigoMotivoSunat:
+          type: string
+          description: "Catálogo 10 SUNAT"
+          default: "01"
+          example: "01"
         descripcion:
           type: string
           example: "Intereses por mora en pago"
+        serie:
+          type: string
+          example: "FD01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          default: "PEN"
+        montoIncremento:
+          type: number
+          example: 50.00
+        gravadas:
+          type: number
+          minimum: 0
+          example: 50.00
+        exoneradas:
+          type: number
+          minimum: 0
+          example: 0.00
+        inafectas:
+          type: number
+          minimum: 0
+          example: 0.00
+        gratuitas:
+          type: number
+          minimum: 0
+          example: 0.00
+        igv:
+          type: number
+          minimum: 0
+          example: 9.00
+        total:
+          type: number
+          minimum: 0
+          example: 59.00
+        subtotal:
+          type: number
+          minimum: 0
+          example: 50.00
+        totalCargos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalDescuentos:
+          type: number
+          minimum: 0
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          minimum: 0
+          example: 59.00
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          default: "CONTADO"
+        tipoCambio:
+          type: number
+          minimum: 0
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          default: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
         detalle:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/DetalleItem'
 
-    NotaDebitoUpdateRequest:
+    NotaDebitoUpdateDto:
       type: object
       properties:
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
-        montoIncremento:
-          type: number
+        codigoMotivoSunat:
+          type: string
         descripcion:
           type: string
+        montoIncremento:
+          type: number
+        gravadas:
+          type: number
+        exoneradas:
+          type: number
+        inafectas:
+          type: number
+        gratuitas:
+          type: number
+        igv:
+          type: number
+        total:
+          type: number
+        subtotal:
+          type: number
+        totalCargos:
+          type: number
+        totalDescuentos:
+          type: number
+        totalConImpuestos:
+          type: number
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
 
     # ===== LIBRO ELECTRÓNICO =====
-    LibroGenerarRequest:
+    LibroGenerarDto:
       type: object
       required:
         - companyId
@@ -1405,32 +3369,146 @@ components:
     # ===== DETALLE REUSABLE =====
     DetalleItem:
       type: object
+      required:
+        - descripcion
+        - cantidad
+        - valorUnitario
+        - precioUnitario
       properties:
         codigo:
           type: string
           example: "PROD-001"
         descripcion:
           type: string
+          minLength: 1
           example: "LAPTOP HP 15"
+        unidadMedida:
+          type: string
+          description: Código SUNAT de unidad de medida
+          default: "NIU"
+          example: "NIU"
         cantidad:
           type: number
+          minimum: 0.01
           example: 2
+        valorUnitario:
+          type: number
+          minimum: 0
+          description: Valor unitario sin IGV
+          example: 423.73
         precioUnitario:
           type: number
+          minimum: 0
+          description: Valor unitario con IGV
           example: 500.00
         subtotal:
           type: number
+          minimum: 0
           example: 1000.00
         igv:
           type: number
+          minimum: 0
           example: 180.00
         icbper:
           type: number
+          minimum: 0
           example: 0.00
           description: Impuesto al consumo de bolsas plásticas (si aplica)
         descuento:
           type: number
+          minimum: 0
           example: 0.00
+        tipoAfectacionIgv:
+          type: string
+          description: "Catálogo 07 SUNAT: 10=Gravado, 20=Exonerado, 30=Inafecto"
+          default: "10"
+          example: "10"
+        codigoTributo:
+          type: string
+          description: "Catálogo 05 SUNAT: 1000=IGV, 9997=EXO, 9998=INA, 9996=GRA"
+          default: "1000"
+          example: "1000"
+        tipoPrecio:
+          type: string
+          description: "Catálogo 16 SUNAT: 01=Precio con IGV, 02=Valor referencial gratuita"
+          default: "01"
+          example: "01"
+        porcentajeIgv:
+          type: number
+          description: Porcentaje de IGV aplicado (18.00 estándar)
+          default: 18.00
+          example: 18.00
+        baseImponible:
+          type: number
+          description: Base imponible por línea (TaxableAmount)
+          minimum: 0
+          example: 847.46
+        montoImpuesto:
+          type: number
+          description: Monto de impuesto calculado por línea (TaxAmount)
+          minimum: 0
+          example: 152.54
+
+    # ===== CUOTA CRÉDITO =====
+    CuotaCredito:
+      type: object
+      required:
+        - numeroCuota
+        - monto
+        - fechaVencimiento
+      properties:
+        numeroCuota:
+          type: string
+          description: "Identificador de la cuota (Cuota001, Cuota002, ...)"
+          example: "Cuota001"
+        monto:
+          type: number
+          description: Monto de la cuota
+          minimum: 0.01
+          example: 3009.00
+        fechaVencimiento:
+          type: string
+          format: date
+          description: Fecha de vencimiento de la cuota
+          example: "2026-05-05"
+        moneda:
+          type: string
+          description: Moneda de la cuota (hereda del documento si no se indica)
+          example: "PEN"
+
+    # ===== ALLOWANCE / CHARGE (Cat. 53 SUNAT) =====
+    AllowanceChargeItem:
+      type: object
+      required:
+        - chargeIndicator
+        - amount
+      properties:
+        chargeIndicator:
+          type: boolean
+          description: "true = Cargo (surcharge), false = Descuento (allowance)"
+          example: true
+        reasonCode:
+          type: string
+          description: "Catálogo 53 SUNAT: 00=Desc. global, 02=Desc. ítem, 46=Recargo consumo, 47=Cargos, 50=Percepción"
+          example: "46"
+        reasonDescription:
+          type: string
+          description: Descripción del cargo o descuento
+          example: "Recargo al consumo"
+        multiplierFactor:
+          type: number
+          description: Factor multiplicador (ej. 0.10 para 10%)
+          example: 0.10
+        amount:
+          type: number
+          description: Monto del cargo o descuento
+          minimum: 0
+          example: 100.00
+        baseAmount:
+          type: number
+          description: Monto base sobre el que se calcula
+          minimum: 0
+          example: 1000.00
 
     # ===== PAGINACIÓN =====
     PaginationMeta:
@@ -1499,6 +3577,34 @@ components:
           type: string
           enum: [ACTIVO, INACTIVO]
           example: "ACTIVO"
+        emisionEnEnvio:
+          type: boolean
+          description: "Si true, los documentos se emiten automáticamente al crearlos. Si false, se guardan como BORRADOR."
+          example: true
+        logoPath:
+          type: string
+          description: "Ruta relativa del logo de la empresa (readonly, se actualiza via upload)"
+          example: "company_logos/20601234567/logo.png"
+        logoFormat:
+          type: string
+          description: "Formato del logo (png, jpg, jpeg, svg)"
+          example: "png"
+        tieneLogo:
+          type: boolean
+          description: "Indica si la empresa tiene logo configurado"
+          example: false
+        tieneUsuarioSol:
+          type: boolean
+          description: "Indica si el usuario SOL está configurado"
+          example: true
+        tieneClaveSol:
+          type: boolean
+          description: "Indica si la clave SOL está configurada"
+          example: true
+        tieneCertificado:
+          type: boolean
+          description: "Indica si el certificado digital está configurado"
+          example: false
         fechaCreacion:
           type: string
           format: date-time
@@ -1537,6 +3643,18 @@ components:
         telefono:
           type: string
           example: "51987654321"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        codigoPais:
+          type: string
+          example: "PE"
         fechaCreacion:
           type: string
           format: date-time
@@ -1579,8 +3697,15 @@ components:
           example: 1180.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
           example: "ACEPTADA"
+        erroresValidacion:
+          type: array
+          description: "Errores de validación interna (solo si estado=CON_ERROR)"
+          nullable: true
+          items:
+            type: string
+          example: []
         hashCdr:
           type: string
           description: Hash del CDR recibido de SUNAT
@@ -1596,10 +3721,62 @@ components:
         leyenda:
           type: string
           example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          description: Código ubigeo SUNAT de la sede emisora
+          example: "150101"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "12:58:00"
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        subtotal:
+          type: number
+          example: 1000.00
+        totalConImpuestos:
+          type: number
+          example: 1180.00
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
         fechaCreacion:
           type: string
           format: date-time
@@ -1642,15 +3819,82 @@ components:
           example: 590.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
           example: "ACEPTADA"
+        erroresValidacion:
+          type: array
+          description: "Errores de validación interna (solo si estado=CON_ERROR)"
+          nullable: true
+          items:
+            type: string
+          example: []
         leyenda:
           type: string
           example: "SON QUINIENTOS NOVENTA Y 00/100 SOLES"
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+          example: 3.7520
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-04-04"
+        codigoUbigeo:
+          type: string
+          example: "150101"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "16:27:08"
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        subtotal:
+          type: number
+          example: 500.00
+        totalConImpuestos:
+          type: number
+          example: 590.00
         detalle:
           type: array
           items:
             $ref: '#/components/schemas/DetalleItem'
+        cuotas:
+          type: array
+          description: "Cuotas de crédito (solo si formaPago=CREDITO)"
+          items:
+            $ref: '#/components/schemas/CuotaCredito'
+        cargosDescuentos:
+          type: array
+          description: "Cargos y/o descuentos globales (Cat. 53 SUNAT)"
+          items:
+            $ref: '#/components/schemas/AllowanceChargeItem'
+        xmlContent:
+          type: string
+          description: "XML UBL 2.1 generado (tipo 03)"
+        xmlPath:
+          type: string
+          description: "Ruta del XML en disco"
+        resumenDiarioId:
+          type: string
+          description: "ID del resumen diario que incluyó esta boleta"
         fechaCreacion:
           type: string
           format: date-time
@@ -1665,27 +3909,117 @@ components:
         companyId:
           type: string
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
+          type: string
+          example: "cli_123456"
+        documentoReferenciaId:
           type: string
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          example: "factura"
         motivo:
           type: string
           enum: [anulacion, devolucion, descuento, otro]
           example: "devolucion"
+        codigoMotivoSunat:
+          type: string
+          example: "01"
         montoDescuento:
           type: number
           example: 180.00
-        tipoDocumento:
-          type: string
-          enum: [factura, boleta]
-          example: "factura"
         descripcion:
           type: string
           example: "Devolución de productos defectuosos"
+        serie:
+          type: string
+          example: "FC01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 1000.00
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        igv:
+          type: number
+          example: 180.00
+        total:
+          type: number
+          example: 1180.00
+        subtotal:
+          type: number
+          example: 1000.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          example: 1180.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
-          example: "ACEPTADA"
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "BORRADOR"
+        erroresValidacion:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: []
+        hashCdr:
+          type: string
+        codigoRespuestaSunat:
+          type: string
+        descripcionRespuestaSunat:
+          type: string
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
+        xmlPath:
+          type: string
         detalle:
           type: array
           items:
@@ -1704,23 +4038,117 @@ components:
         companyId:
           type: string
           example: "cmp_20601234567"
-        facturaReferenciaId:
+        clientId:
+          type: string
+          example: "cli_123456"
+        documentoReferenciaId:
           type: string
           example: "fac_123456"
+        serieDocRef:
+          type: string
+          example: "F001"
+        numeroDocRef:
+          type: integer
+          example: 1
+        tipoDocumentoReferencia:
+          type: string
+          enum: [factura, boleta]
+          example: "factura"
         motivo:
           type: string
           enum: [intereses, gastos_administrativos, penalidades, otros]
           example: "intereses"
+        codigoMotivoSunat:
+          type: string
+          example: "01"
         montoIncremento:
           type: number
           example: 50.00
         descripcion:
           type: string
           example: "Intereses por mora en pago"
+        serie:
+          type: string
+          example: "FD01"
+        numero:
+          type: integer
+          example: 1
+        fechaEmision:
+          type: string
+          format: date
+          example: "2026-04-09"
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: "PEN"
+        gravadas:
+          type: number
+          example: 50.00
+        exoneradas:
+          type: number
+          example: 0.00
+        inafectas:
+          type: number
+          example: 0.00
+        gratuitas:
+          type: number
+          example: 0.00
+        igv:
+          type: number
+          example: 9.00
+        total:
+          type: number
+          example: 59.00
+        subtotal:
+          type: number
+          example: 50.00
+        totalCargos:
+          type: number
+          example: 0.00
+        totalDescuentos:
+          type: number
+          example: 0.00
+        totalConImpuestos:
+          type: number
+          example: 59.00
         estado:
           type: string
-          enum: [BORRADOR, ENVIADA, ACEPTADA, RECHAZADA]
-          example: "ACEPTADA"
+          enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+          example: "BORRADOR"
+        erroresValidacion:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: []
+        hashCdr:
+          type: string
+        codigoRespuestaSunat:
+          type: string
+        descripcionRespuestaSunat:
+          type: string
+        leyenda:
+          type: string
+        formaPago:
+          type: string
+          enum: [CONTADO, CREDITO]
+          example: "CONTADO"
+        tipoCambio:
+          type: number
+        fechaVencimiento:
+          type: string
+          format: date
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        tipoOperacion:
+          type: string
+          example: "0101"
+        horaEmision:
+          type: string
+          example: "14:30:00"
+        xmlPath:
+          type: string
         detalle:
           type: array
           items:
@@ -1765,4 +4193,1164 @@ components:
           type: string
           format: date-time
           example: "2026-04-04T10:30:00Z"
+
+    # ===== PRODUCT =====
+    ProductCreateDto:
+      type: object
+      required:
+        - companyId
+        - descripcion
+        - valorUnitario
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        codigoProducto:
+          type: string
+          example: "SRV-001"
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT del producto/servicio"
+          example: "82101500"
+        descripcion:
+          type: string
+          example: "Servicio de Consultoría en TI"
+        unidadMedida:
+          type: string
+          description: Código SUNAT de unidad de medida
+          default: "ZZ"
+          example: "ZZ"
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
+          default: "10"
+          example: "10"
+        valorUnitario:
+          type: number
+          description: Valor unitario sin IGV
+          example: 2500.00
+
+    ProductUpdateDto:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        codigoProducto:
+          type: string
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT"
+        unidadMedida:
+          type: string
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
+        valorUnitario:
+          type: number
+
+    ProductData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "prd_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        codigoProducto:
+          type: string
+          example: "SRV-001"
+        codigoProductoSunat:
+          type: string
+          description: "Código UNSPSC de clasificación SUNAT del producto/servicio"
+          example: "82101500"
+        descripcion:
+          type: string
+          example: "Servicio de Consultoría en TI"
+        unidadMedida:
+          type: string
+          example: "ZZ"
+        tipoAfectacionIgv:
+          type: string
+          description: "Tipo afectación IGV por defecto (Cat. 07): 10=Gravado, 20=Exonerado, 30=Inafecto"
+          example: "10"
+        valorUnitario:
+          type: number
+          example: 2500.00
+        precioUnitario:
+          type: number
+          description: Valor unitario + IGV (calculado por backend)
+          example: 2950.00
+        igv:
+          type: number
+          description: IGV 18% (calculado por backend)
+          example: 450.00
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+
+    # ===== EMPLOYEE =====
+    EmployeeCreateDto:
+      type: object
+      required:
+        - companyId
+        - nombre
+        - cargo
+        - dni
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        nombre:
+          type: string
+          example: "Carlos Mendoza Rivera"
+        cargo:
+          type: string
+          example: "Contador Principal"
+        dni:
+          type: string
+          example: "45678901"
+        codigo:
+          type: string
+          example: "EMP-001"
+
+    EmployeeUpdateDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+        cargo:
+          type: string
+        dni:
+          type: string
+        codigo:
+          type: string
+
+    EmployeeData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "emp_123456"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        nombre:
+          type: string
+          example: "Carlos Mendoza Rivera"
+        cargo:
+          type: string
+          example: "Contador Principal"
+        dni:
+          type: string
+          example: "45678901"
+        codigo:
+          type: string
+          example: "EMP-001"
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ===== UBIGEO =====
+    UbigeoData:
+      type: object
+      properties:
+        id:
+          type: string
+        codigo:
+          type: string
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+
+    # ===== UNIDAD MEDIDA =====
+    UnidadMedidaData:
+      type: object
+      properties:
+        id:
+          type: string
+        codigo:
+          type: string
+          example: "ZZ"
+        descripcion:
+          type: string
+          example: "Servicio"
+
+    # ===== SERIE CONFIG =====
+    SerieConfigData:
+      type: object
+      properties:
+        id:
+          type: string
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        sedeId:
+          type: string
+          example: "sede-001"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        serie:
+          type: string
+          example: "F001"
+        descripcion:
+          type: string
+          example: "Serie principal Factura"
+        esDefault:
+          type: boolean
+          example: true
+        activa:
+          type: boolean
+          example: true
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ===== SEDE =====
+    SedeCreateDto:
+      type: object
+      required:
+        - companyId
+        - nombre
+        - direccion
+        - codigoUbigeo
+      properties:
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        nombre:
+          type: string
+          example: "Sede Principal San Isidro"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234, Piso 8"
+        codigoUbigeo:
+          type: string
+          pattern: "^[0-9]{6}$"
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        telefono:
+          type: string
+          example: "+51 999 888 777"
+        email:
+          type: string
+          format: email
+          example: "sede.principal@etlions.com"
+        generarSeries:
+          type: boolean
+          default: true
+          description: Si es true, genera automáticamente las 4 series (F, B, FC, FD)
+
+    SedeUpdateDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+          format: email
+
+    SedeData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sede-001"
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        codigo:
+          type: string
+          description: Código correlativo de 3 dígitos auto-generado
+          example: "001"
+        nombre:
+          type: string
+          example: "Sede Principal San Isidro"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234, Piso 8"
+        codigoUbigeo:
+          type: string
+          example: "150131"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        telefono:
+          type: string
+          example: "+51 999 888 777"
+        email:
+          type: string
+          format: email
+          example: "sede.principal@etlions.com"
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        esDefault:
+          type: boolean
+          example: true
+        series:
+          type: array
+          description: Series de documentos asignadas a esta sede
+          items:
+            $ref: '#/components/schemas/SerieConfigData'
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ===== USER PREFERENCE =====
+    UserPreferenceSaveDto:
+      type: object
+      required:
+        - companyId
+        - clave
+        - valor
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clave:
+          type: string
+          example: "moneda"
+        valor:
+          type: string
+          example: "PEN"
+
+    UserPreferenceData:
+      type: object
+      properties:
+        id:
+          type: string
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        clave:
+          type: string
+          example: "moneda"
+        valor:
+          type: string
+          example: "PEN"
+        fechaActualizacion:
+          type: string
+          format: date-time
+
+    # ===== TIPO DE CAMBIO =====
+    TipoCambioCreateDto:
+      type: object
+      required:
+        - fecha
+        - tasaCompra
+        - tasaVenta
+        - fuente
+      properties:
+        fecha:
+          type: string
+          format: date
+          example: "2026-04-06"
+        monedaOrigen:
+          type: string
+          default: USD
+          example: "USD"
+        monedaDestino:
+          type: string
+          default: PEN
+          example: "PEN"
+        tasaCompra:
+          type: number
+          format: double
+          example: 3.7100
+        tasaVenta:
+          type: number
+          format: double
+          example: 3.7520
+        fuente:
+          type: string
+          example: "SBS"
+          description: Fuente del tipo de cambio (SBS o SUNAT)
+
+    TipoCambioData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "tc-001"
+        fecha:
+          type: string
+          format: date
+          example: "2026-04-06"
+        monedaOrigen:
+          type: string
+          example: "USD"
+        monedaDestino:
+          type: string
+          example: "PEN"
+        tasaCompra:
+          type: number
+          format: double
+          example: 3.7100
+        tasaVenta:
+          type: number
+          format: double
+          example: 3.7520
+        fuente:
+          type: string
+          example: "SBS"
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    # ========== RESPONSE WRAPPER DTOs ==========
+
+    # --- Single Entity Response DTOs ---
+    CompanyResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CompanyData'
+
+    ConexionSunatResultDto:
+      type: object
+      properties:
+        exitoso:
+          type: boolean
+          description: "true si la conexión fue exitosa"
+          example: true
+        mensaje:
+          type: string
+          description: "Mensaje descriptivo del resultado"
+          example: "Conexión exitosa con SUNAT (modo beta)"
+        modo:
+          type: string
+          description: "Modo de conexión: beta o produccion"
+          example: "beta"
+        tieneUsuarioSol:
+          type: boolean
+          example: true
+        tieneClaveSol:
+          type: boolean
+          example: true
+        tieneCertificado:
+          type: boolean
+          example: false
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-08T15:30:00Z"
+
+    ClientResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClientData'
+
+    FacturaResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FacturaData'
+
+    BoletaResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BoletaData'
+
+    NotaCreditoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotaCreditoData'
+
+    NotaDebitoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotaDebitoData'
+
+    LibroElectronicoResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LibroElectronicoData'
+
+    ProductResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductData'
+
+    EmployeeResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/EmployeeData'
+
+    SedeResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SedeData'
+
+    TipoCambioResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TipoCambioData'
+
+    # --- Paginated List Response DTOs ---
+    CompanyListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CompanyData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ClientListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ClientData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    FacturaListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FacturaData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    BoletaListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/BoletaData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    NotaCreditoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotaCreditoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    NotaDebitoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NotaDebitoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    LibroElectronicoListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LibroElectronicoData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ProductListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProductData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    TipoCambioListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TipoCambioData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    # --- Array List Response DTOs ---
+    EmployeeListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/EmployeeData'
+
+    SedeListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/SedeData'
+
+    SedeSeriesResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/SerieConfigData'
+
+    # --- Inline Request Body DTOs ---
+    AnularFacturaDto:
+      type: object
+      required:
+        - motivoAnulacion
+      properties:
+        motivoAnulacion:
+          type: string
+          description: Motivo de la anulación
+          example: "Error en el monto total"
+        generarNotaCredito:
+          type: boolean
+          default: true
+          description: Si genera automáticamente nota de crédito
+
+    AnularBoletaDto:
+      type: object
+      properties:
+        motivoAnulacion:
+          type: string
+
+    # ===== NOTIFICATION =====
+    NotificationPublishDto:
+      type: object
+      required:
+        - companyId
+        - accion
+        - tipoDocumento
+        - mensaje
+      properties:
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        accion:
+          type: string
+          enum: [EMITIDA, ANULADA, ELIMINADA]
+          example: "EMITIDA"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        documentoId:
+          type: string
+          example: "fac_123456"
+        serie:
+          type: string
+          example: "F001"
+        mensaje:
+          type: string
+          example: "Factura F001-1 emitida exitosamente"
+
+    NotificationData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "notif-001"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        accion:
+          type: string
+          enum: [EMITIDA, ANULADA, ELIMINADA]
+          example: "EMITIDA"
+        tipoDocumento:
+          type: string
+          enum: [FACTURA, BOLETA, NOTA_CREDITO, NOTA_DEBITO]
+          example: "FACTURA"
+        documentoId:
+          type: string
+          example: "fac_123456"
+        serie:
+          type: string
+          example: "F001"
+        mensaje:
+          type: string
+          example: "Factura F001-1 emitida exitosamente"
+        timestamp:
+          type: integer
+          format: int64
+          description: Timestamp en milisegundos
+          example: 1712345678000
+        leida:
+          type: boolean
+          example: false
+
+    NotificationListData:
+      type: object
+      properties:
+        unreadCount:
+          type: integer
+          format: int64
+          example: 5
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationData'
+
+    NotificationListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NotificationListData'
+
+    # ===== RENIEC =====
+    ReniecData:
+      type: object
+      properties:
+        tipoDocumento:
+          type: string
+          example: "DNI"
+        numeroDocumento:
+          type: string
+          example: "12345678"
+        denominacion:
+          type: string
+          example: "JUAN CARLOS GARCIA LOPEZ"
+        nombre:
+          type: string
+          example: "JUAN CARLOS"
+        apellidoPaterno:
+          type: string
+          example: "GARCIA"
+        apellidoMaterno:
+          type: string
+          example: "LOPEZ"
+        razonSocial:
+          type: string
+          example: "EMPRESA DEMO S.A.C."
+        direccion:
+          type: string
+          example: "AV. AREQUIPA 1234, LIMA"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "MIRAFLORES"
+        estado:
+          type: string
+          example: "ACTIVO"
+        condicion:
+          type: string
+          example: "HABIDO"
+        mensaje:
+          type: string
+          description: Mensaje informativo si la consulta no está disponible
+
+    ReniecResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ReniecData'
+
+    # ===== TABLA SUNAT =====
+    TablaSunatMenuItem:
+      type: object
+      properties:
+        nombreTabla:
+          type: string
+          example: "TIPO DE MONEDA"
+
+    TablaSunatRegistro:
+      type: object
+      properties:
+        cod:
+          type: string
+          example: "PEN"
+        descripcion:
+          type: string
+          example: "NUEVO SOL"
+
+    TablaSunatData:
+      type: object
+      properties:
+        nombreTabla:
+          type: string
+          example: "TIPO DE MONEDA"
+        registros:
+          type: integer
+          example: 28
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TablaSunatRegistro'
+
+    TablaSunatResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TablaSunatData'
+
+    # ===== CATÁLOGO SUNAT =====
+    CatalogoSunatMenuItem:
+      type: object
+      properties:
+        nombreCatalogo:
+          type: string
+          example: "Catálogo No. 01: Código de tipo de documento"
+        icono:
+          type: string
+          description: Emoji representativo del catálogo
+          example: "📄"
+
+    CatalogoSunatRegistro:
+      type: object
+      properties:
+        codigo:
+          type: string
+          example: "01"
+        descripcion:
+          type: string
+          example: "FACTURA"
+
+    CatalogoSunatData:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: "Catálogo No. 01: Código de tipo de documento"
+        campo:
+          type: string
+          description: Campo UBL donde se usa este catálogo
+          example: "cbc:InvoiceTypeCode"
+        description:
+          type: string
+          example: "Código de tipo de documento autorizado para efectos tributarios"
+        catalogo:
+          type: string
+          description: Fuente normativa del catálogo
+          example: "SUNAT"
+        registros:
+          type: integer
+          example: 25
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogoSunatRegistro'
+
+    CatalogoSunatResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CatalogoSunatData'
+
+    DocumentValidationResultDto:
+      type: object
+      description: "Resultado de validación interna de un documento electrónico"
+      properties:
+        valid:
+          type: boolean
+          description: "true si el documento pasó todas las validaciones"
+          example: true
+        errores:
+          type: array
+          description: "Lista de errores de validación (bloquean la emisión)"
+          items:
+            type: string
+          example: []
+        advertencias:
+          type: array
+          description: "Lista de advertencias (no bloquean, pero recomiendan corrección)"
+          items:
+            type: string
+          example: []
+
+    # ===== RESUMEN DIARIO =====
+    ResumenDiarioCrearDto:
+      type: object
+      required:
+        - companyId
+      properties:
+        companyId:
+          type: string
+          description: ID de la empresa
+          example: "cmp-demo-001"
+        fechaReferencia:
+          type: string
+          format: date
+          description: "Fecha de emisión de las boletas a incluir (default: hoy)"
+          example: "2026-04-08"
+        boletaIds:
+          type: array
+          description: "IDs específicos de boletas a incluir (si vacío, toma todas las VALIDADAS del día)"
+          items:
+            type: string
+          example: []
+
+    ResumenDiarioData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "rd-001"
+        companyId:
+          type: string
+          example: "cmp-demo-001"
+        identificador:
+          type: string
+          description: "RC-{YYYYMMDD}-{NNN}"
+          example: "RC-20260408-001"
+        fechaGeneracion:
+          type: string
+          format: date
+          example: "2026-04-08"
+        fechaReferencia:
+          type: string
+          format: date
+          example: "2026-04-08"
+        estado:
+          type: string
+          enum: [GENERADO, ENVIADO, ACEPTADO, RECHAZADO, CON_ERROR]
+          example: "ENVIADO"
+        ticketSunat:
+          type: string
+          nullable: true
+          example: "mock-ticket-20260408-001"
+        codigoRespuesta:
+          type: string
+          nullable: true
+        descripcionRespuesta:
+          type: string
+          nullable: true
+        cantidadBoletas:
+          type: integer
+          example: 5
+        boletas:
+          type: array
+          description: "Boletas incluidas en este resumen"
+          items:
+            $ref: '#/components/schemas/BoletaData'
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    ResumenDiarioResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResumenDiarioData'
+
+    ResumenDiarioListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ResumenDiarioData'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    ConsultaEstadoResultDto:
+      type: object
+      properties:
+        exitoso:
+          type: boolean
+          example: true
+        estado:
+          type: string
+          example: "ACEPTADO"
+        codigoRespuesta:
+          type: string
+          example: "0"
+        descripcionRespuesta:
+          type: string
+          example: "La Comunicación de baja RA-20260408-1, ha sido aceptada"
+        ticket:
+          type: string
+          example: "mock-ticket-20260408-001"
+
+    # ===== ONBOARDING =====
+    OnboardingRequestDto:
+      type: object
+      required: [ruc, razonSocial]
+      properties:
+        ruc:
+          type: string
+          example: "20601234567"
+          description: RUC de la empresa (11 dígitos)
+        razonSocial:
+          type: string
+          example: "ETLIONS SAC"
+        direccion:
+          type: string
+          example: "Av. Javier Prado Este 1234"
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        codigoUbigeo:
+          type: string
+          example: "150131"
+
+    OnboardingResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                companyId:
+                  type: string
+                  example: "uuid-company-001"
+                sedeId:
+                  type: string
+                  example: "uuid-sede-001"
+                seriesCreadas:
+                  type: array
+                  items:
+                    type: string
+                  example: ["F001", "B001", "FC01", "FD01"]
 

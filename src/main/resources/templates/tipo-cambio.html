@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Tipo de Cambio')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Tipo de Cambio')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>💱 Tipo de Cambio</h2>
+            <p>Tasas de cambio registradas desde SBS y SUNAT</p>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <select id="tc-filter-fuente" class="vt-search" style="max-width:200px;" onchange="loadTiposCambio()">
+                    <option value="">Todas las fuentes</option>
+                    <option value="SBS">SBS</option>
+                    <option value="SUNAT">SUNAT</option>
+                </select>
+            </div>
+            <div class="vt-actions">
+                <span style="font-size:0.75rem;color:var(--text-muted);">
+                    Fuente por defecto:
+                    <strong id="tc-fuente-default" style="color:var(--accent);">—</strong>
+                    · <a href="#" onclick="event.preventDefault();openConfigOverlay();switchConfigTab('tipo-cambio');" style="color:var(--info);text-decoration:none;">⚙️ Cambiar</a>
+                </span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="panel active" id="tc-panel">
+            <div id="tc-content">
+                <p class="pm-empty">⏳ Cargando tipos de cambio...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<!-- JS -->
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            var defEl = document.getElementById('tc-fuente-default');
+            if (defEl) defEl.textContent = ETIA.config.tipoCambioFuente || 'SBS';
+            loadTiposCambio();
+        });
+    });
+
+    function loadTiposCambio() {
+        var filterFuente = document.getElementById('tc-filter-fuente').value;
+        var container = document.getElementById('tc-content');
+        container.innerHTML = '<p class="pm-empty">⏳ Cargando...</p>';
+
+        ApiClient.listTiposCambio().then(function(items) {
+            if (filterFuente) {
+                items = items.filter(function(tc) { return tc.fuente === filterFuente; });
+            }
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p class="pm-empty">No se encontraron tipos de cambio registrados.</p>';
+                return;
+            }
+
+            var html = '<div class="tbl-wrap"><table class="tbl">';
+            html += '<thead><tr>';
+            html += '<th>Fecha</th><th>Moneda</th><th>Compra</th><th>Venta</th><th>Fuente</th><th>Registrado</th>';
+            html += '</tr></thead><tbody>';
+
+            items.forEach(function(tc) {
+                var fuenteBadge = tc.fuente === 'SBS'
+                    ? '<span class="badge badge-green">' + tc.fuente + '</span>'
+                    : '<span class="badge badge-blue">' + tc.fuente + '</span>';
+                var creado = tc.fechaCreacion ? ETIA.formatDateTime(tc.fechaCreacion) : '—';
+
+                html += '<tr>';
+                html += '<td><strong>' + ETIA.formatDate(tc.fecha) + '</strong></td>';
+                html += '<td>' + tc.monedaOrigen + ' → ' + tc.monedaDestino + '</td>';
+                html += '<td style="font-family:var(--font-mono);font-weight:600;">' + parseFloat(tc.tasaCompra).toFixed(4) + '</td>';
+                html += '<td style="font-family:var(--font-mono);font-weight:600;">' + parseFloat(tc.tasaVenta).toFixed(4) + '</td>';
+                html += '<td>' + fuenteBadge + '</td>';
+                html += '<td style="font-size:0.72rem;color:var(--text-muted);">' + creado + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }).catch(function(err) {
+            container.innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando tipos de cambio</p>';
+            console.error(err);
+        });
+    }
+</script>
+</body>
+</html>
+

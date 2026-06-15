@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Onboarding')}"></head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     WIZARD ONBOARDING — 3 PASOS
+     ═══════════════════════════════════════════════════ -->
+
+<!-- STEP INDICATOR -->
+<div class="onb-wizard-wrapper">
+    <div class="onb-wizard-steps">
+        <div class="onb-step active" id="step-ind-1"><span class="onb-step-num">1</span> Datos de Empresa</div>
+        <div class="onb-step-line"></div>
+        <div class="onb-step" id="step-ind-2"><span class="onb-step-num">2</span> Certificado Digital</div>
+        <div class="onb-step-line"></div>
+        <div class="onb-step" id="step-ind-3"><span class="onb-step-num">3</span> ¡Listo!</div>
+    </div>
+
+    <!-- ═══ PASO 1: Datos de Empresa ═══ -->
+    <div class="onb-panel active" id="panel-1">
+        <div class="welcome-card" style="max-width:600px;margin:0 auto;">
+            <div class="welcome-icon">🏢</div>
+            <h2>Registra tu Empresa</h2>
+            <p class="subtitle">Ingresa los datos de tu empresa para configurar ETIA</p>
+
+            <div class="f-row" style="margin-top:1.5rem;">
+                <div class="f-group">
+                    <label>🏢 RUC <span style="color:var(--danger);">*</span></label>
+                    <input type="text" id="onb-ruc" placeholder="20XXXXXXXXX" maxlength="11" required/>
+                </div>
+                <div class="f-group">
+                    <label>📝 Razón Social <span style="color:var(--danger);">*</span></label>
+                    <input type="text" id="onb-razon" placeholder="MI EMPRESA SAC" required/>
+                </div>
+            </div>
+            <div class="f-row">
+                <div class="f-group" style="flex:2;">
+                    <label>📍 Dirección</label>
+                    <input type="text" id="onb-direccion" placeholder="Av. Javier Prado Este 1234"/>
+                </div>
+            </div>
+            <div class="f-row">
+                <div class="f-group">
+                    <label>🗺️ Departamento</label>
+                    <input type="text" id="onb-depto" placeholder="LIMA"/>
+                </div>
+                <div class="f-group">
+                    <label>🗺️ Provincia</label>
+                    <input type="text" id="onb-provincia" placeholder="LIMA"/>
+                </div>
+                <div class="f-group">
+                    <label>🗺️ Distrito</label>
+                    <input type="text" id="onb-distrito" placeholder="SAN ISIDRO"/>
+                </div>
+            </div>
+            <div class="f-row">
+                <div class="f-group">
+                    <label>📮 Código Ubigeo</label>
+                    <input type="text" id="onb-ubigeo" placeholder="150131" maxlength="6"/>
+                </div>
+            </div>
+
+            <button class="btn btn-accent btn-block" style="margin-top:1.5rem;" onclick="onbNextStep(2)">
+                Siguiente → Certificado Digital
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══ PASO 2: Certificado Digital ═══ -->
+    <div class="onb-panel" id="panel-2">
+        <div class="welcome-card" style="max-width:600px;margin:0 auto;">
+            <div class="welcome-icon">🔐</div>
+            <h2>Certificado Digital</h2>
+            <p class="subtitle">Para emitir comprobantes electrónicos válidos ante SUNAT</p>
+
+            <div class="onb-cert-options" style="margin-top:1.5rem;">
+                <!-- Opción DEMO -->
+                <div class="onb-cert-option active" id="cert-opt-demo" onclick="onbSelectCert('demo')">
+                    <div class="onb-cert-icon">🧪</div>
+                    <div>
+                        <strong>Modo Demo (SUNAT Beta)</strong>
+                        <p style="font-size:.78rem;color:var(--text-secondary);margin:0.2rem 0 0;">
+                            Usa credenciales de prueba MODDATOS. Perfecto para comenzar y probar la plataforma.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Opción Certificado real -->
+                <div class="onb-cert-option" id="cert-opt-real" onclick="onbSelectCert('real')">
+                    <div class="onb-cert-icon">📄</div>
+                    <div>
+                        <strong>Subir certificado .p12 / .pfx</strong>
+                        <p style="font-size:.78rem;color:var(--text-secondary);margin:0.2rem 0 0;">
+                            Para emisión real a SUNAT. Puedes configurarlo más tarde desde Configuración.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload form (hidden by default) -->
+            <div id="cert-upload-form" style="display:none;margin-top:1rem;">
+                <div class="f-group">
+                    <label>📎 Archivo .p12 / .pfx</label>
+                    <input type="file" id="onb-cert-file" accept=".p12,.pfx"/>
+                </div>
+                <div class="f-group">
+                    <label>🔑 Clave del certificado</label>
+                    <input type="password" id="onb-cert-pass" placeholder="••••••••"/>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="onbNextStep(1)" style="flex:1;">← Volver</button>
+                <button class="btn btn-accent" onclick="onbSubmitOnboarding()" style="flex:2;" id="onb-submit-btn">
+                    🚀 Registrar Empresa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PASO 3: ¡Listo! ═══ -->
+    <div class="onb-panel" id="panel-3">
+        <div class="welcome-card" style="max-width:600px;margin:0 auto;text-align:center;">
+            <div class="welcome-icon" style="font-size:4rem;">🎉</div>
+            <h2>¡Tu empresa está configurada!</h2>
+            <p class="subtitle" id="onb-result-msg">Series creadas: F001, B001, FC01, FD01</p>
+
+            <div class="onb-result-details" style="margin:1.5rem 0;text-align:left;background:var(--bg-secondary);border-radius:var(--radius-sm);padding:1.2rem;">
+                <div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border);">
+                    <span style="font-size:.82rem;color:var(--text-secondary);">Company ID:</span>
+                    <span style="font-size:.82rem;font-family:var(--font-mono);" id="onb-res-company">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border);">
+                    <span style="font-size:.82rem;color:var(--text-secondary);">Sede ID:</span>
+                    <span style="font-size:.82rem;font-family:var(--font-mono);" id="onb-res-sede">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.3rem 0;">
+                    <span style="font-size:.82rem;color:var(--text-secondary);">Series:</span>
+                    <span style="font-size:.82rem;font-family:var(--font-mono);" id="onb-res-series">F001, B001, FC01, FD01</span>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:1rem;justify-content:center;">
+                <a href="/wizard?type=FACTURA" class="btn btn-accent" style="text-decoration:none;">
+                    🧾 Emitir mi primera factura
+                </a>
+                <a href="/menu" class="btn btn-secondary" style="text-decoration:none;">
+                    📋 Ir al menú
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Styles ═══ -->
+<style>
+.onb-wizard-wrapper {
+    max-width: 800px; margin: 2rem auto; padding: 0 1.5rem;
+}
+.onb-wizard-steps {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-bottom: 2rem;
+}
+.onb-step {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+    padding: 0.5rem 1rem; border-radius: 24px;
+    transition: all 0.3s;
+}
+.onb-step.active {
+    color: var(--accent); background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+}
+.onb-step.done {
+    color: var(--text-secondary); background: rgba(0,255,136,0.04);
+}
+.onb-step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    font-size: 0.72rem; font-weight: 700;
+}
+.onb-step.active .onb-step-num {
+    background: var(--accent); color: var(--bg-primary); border-color: var(--accent);
+}
+.onb-step-line {
+    width: 40px; height: 2px; background: var(--border); margin: 0 0.3rem;
+}
+.onb-panel {
+    display: none;
+    animation: onbFadeIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.onb-panel.active { display: block; }
+@keyframes onbFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Cert options */
+.onb-cert-options { display: flex; flex-direction: column; gap: 0.8rem; }
+.onb-cert-option {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: 1rem 1.2rem; border: 2px solid var(--border);
+    border-radius: var(--radius-sm); cursor: pointer;
+    transition: all 0.25s;
+}
+.onb-cert-option:hover { border-color: var(--accent-dim); }
+.onb-cert-option.active { border-color: var(--accent); background: rgba(0,255,136,0.04); }
+.onb-cert-icon { font-size: 1.8rem; flex-shrink: 0; }
+
+/* Responsive */
+@media(max-width:600px) {
+    .onb-wizard-steps { flex-wrap: wrap; gap: 0.3rem; }
+    .onb-step-line { display: none; }
+}
+</style>
+
+<!-- ═══ JS ═══ -->
+<script th:src="@{/js/api-client.js}"></script>
+<script>
+/* Entry guard for onboarding route */
+(function() {
+    var next = ApiClient.resolveInitialRoute();
+    if (next === '/login' || next === '/menu') {
+        window.location.href = next;
+    }
+})();
+
+var currentStep = 1;
+var certMode = 'demo';
+
+function onbNextStep(step) {
+    // Validación paso 1
+    if (step === 2 && currentStep === 1) {
+        var ruc = document.getElementById('onb-ruc').value.trim();
+        var razon = document.getElementById('onb-razon').value.trim();
+        if (!ruc || ruc.length !== 11) {
+            alert('⚠️ Ingresa un RUC válido de 11 dígitos');
+            return;
+        }
+        if (!razon) {
+            alert('⚠️ Ingresa la Razón Social');
+            return;
+        }
+    }
+
+    document.querySelectorAll('.onb-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.onb-step').forEach(function(s) { s.classList.remove('active'); });
+
+    var panel = document.getElementById('panel-' + step);
+    var stepInd = document.getElementById('step-ind-' + step);
+    if (panel) panel.classList.add('active');
+    if (stepInd) stepInd.classList.add('active');
+
+    // Mark previous steps as done
+    for (var i = 1; i < step; i++) {
+        var prev = document.getElementById('step-ind-' + i);
+        if (prev) prev.classList.add('done');
+    }
+
+    currentStep = step;
+}
+
+function onbSelectCert(mode) {
+    certMode = mode;
+    document.getElementById('cert-opt-demo').classList.toggle('active', mode === 'demo');
+    document.getElementById('cert-opt-real').classList.toggle('active', mode === 'real');
+    document.getElementById('cert-upload-form').style.display = mode === 'real' ? 'block' : 'none';
+}
+
+function onbSubmitOnboarding() {
+    var btn = document.getElementById('onb-submit-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Registrando...';
+
+    var payload = {
+        ruc: document.getElementById('onb-ruc').value.trim(),
+        razonSocial: document.getElementById('onb-razon').value.trim(),
+        direccion: (document.getElementById('onb-direccion').value || '').trim(),
+        departamento: (document.getElementById('onb-depto').value || '').trim(),
+        provincia: (document.getElementById('onb-provincia').value || '').trim(),
+        distrito: (document.getElementById('onb-distrito').value || '').trim(),
+        codigoUbigeo: (document.getElementById('onb-ubigeo').value || '').trim()
+    };
+
+    var headers = { 'Content-Type': 'application/json' };
+    var token = localStorage.getItem('etia_token');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch('/api/v1/onboarding', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    })
+    .then(function(res) {
+        // Capture new token from header before parsing body
+        var newToken = res.headers.get('X-New-Token');
+        return res.json().then(function(data) {
+            return { data: data, newToken: newToken };
+        });
+    })
+    .then(function(result) {
+        var data = result.data;
+        if (data.isSuccess && data.data) {
+            document.getElementById('onb-res-company').textContent = data.data.companyId || '—';
+            document.getElementById('onb-res-sede').textContent = data.data.sedeId || '—';
+            if (data.data.seriesCreadas) {
+                document.getElementById('onb-res-series').textContent = data.data.seriesCreadas.join(', ');
+            }
+            document.getElementById('onb-result-msg').textContent = data.message || 'Empresa registrada exitosamente';
+
+            // Update token with fresh one containing companyId
+            if (result.newToken) {
+                localStorage.setItem('etia_token', result.newToken);
+            }
+
+            // Store companyId for session
+            if (data.data.companyId) {
+                sessionStorage.setItem('etia_company_id', data.data.companyId);
+            }
+        }
+        onbNextStep(3);
+    })
+    .catch(function(err) {
+        alert('❌ Error al registrar empresa: ' + (err.message || 'Error desconocido'));
+        btn.disabled = false;
+        btn.textContent = '🚀 Registrar Empresa';
+    });
+}
+</script>
+</body>
+</html>
+

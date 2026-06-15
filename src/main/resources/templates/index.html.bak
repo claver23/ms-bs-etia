@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ETIA — Facturación Electrónica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        /* ═══════════════════════════════════════════════
+           🎨  ETIA DARK PREMIUM — Onboarding + Emisión
+           ═══════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #06090f;
+            --bg-secondary: #0d1117;
+            --bg-card: #151b25;
+            --bg-card-hover: #1a2233;
+            --bg-input: #0b0f16;
+            --border: #21262d;
+            --border-focus: #00ff88;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --accent-glow: rgba(0, 255, 136, 0.12);
+            --accent-glow-strong: rgba(0, 255, 136, 0.25);
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --danger: #f85149;
+            --warning: #d29922;
+            --warning-bg: rgba(210, 153, 34, 0.1);
+            --info: #58a6ff;
+            --success: #00ff88;
+            --purple: #bc8cff;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --shadow-glow: 0 0 30px rgba(0,255,136,0.08);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ─── Global Header ─── */
+        .g-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky; top: 0; z-index: 50;
+            backdrop-filter: blur(12px);
+        }
+        .g-header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .g-logo { font-size: 1.6rem; }
+        .g-brand h1 {
+            font-size: 1.15rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--info));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .g-brand sub { font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-mono); }
+        .g-header-right { display: flex; align-items: center; gap: 1rem; }
+        .g-chip {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 0.3rem 0.8rem;
+            font-size: 0.7rem; color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+        .g-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        .g-back {
+            background: none; border: 1px solid var(--border); color: var(--text-secondary);
+            border-radius: var(--radius-sm); padding: 0.35rem 0.8rem; font-size: 0.75rem;
+            cursor: pointer; transition: var(--transition); font-family: var(--font-sans);
+            display: none;
+        }
+        .g-back:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ─── Screens ─── */
+        .screen { display: none; animation: screenIn 0.4s ease; }
+        .screen.active { display: block; }
+        @keyframes screenIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .screen-center {
+            display: none; min-height: calc(100vh - 56px);
+            align-items: center; justify-content: center; padding: 2rem;
+        }
+        .screen-center.active { display: flex; }
+
+        /* ─── Welcome Screen ─── */
+        .welcome-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 3rem; max-width: 520px; width: 100%;
+            box-shadow: var(--shadow); text-align: center; position: relative; overflow: hidden;
+        }
+        .welcome-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--info), var(--purple));
+        }
+        .welcome-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+        .welcome-card h2 {
+            font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem;
+            background: linear-gradient(135deg, var(--accent), #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .welcome-card .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+
+        /* ─── Forms ─── */
+        .f-group { display: flex; flex-direction: column; gap: 0.3rem; text-align: left; margin-bottom: 1rem; }
+        .f-group label {
+            font-size: 0.7rem; color: var(--accent); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.6px; font-family: var(--font-mono);
+        }
+        .f-group input, .f-group select, .f-group textarea {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 0.65rem 0.9rem;
+            color: var(--text-primary); font-size: 0.9rem; font-family: var(--font-sans);
+            transition: var(--transition); width: 100%;
+        }
+        .f-group input:focus, .f-group select:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .f-group input:read-only { opacity: 0.6; cursor: not-allowed; }
+        .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        .f-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+        .f-full { grid-column: 1 / -1; }
+
+        /* ─── Buttons ─── */
+        .btn {
+            padding: 0.7rem 1.6rem; border: none; border-radius: var(--radius-sm);
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: var(--transition); font-family: var(--font-sans);
+            display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+        }
+        .btn-accent {
+            background: var(--accent); color: var(--bg-primary);
+        }
+        .btn-accent:hover { background: var(--accent-dim); box-shadow: 0 0 24px var(--accent-glow-strong); }
+        .btn-ghost {
+            background: none; color: var(--text-secondary); border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-danger-sm {
+            background: none; color: var(--danger); border: 1px solid var(--danger);
+            padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 6px;
+        }
+        .btn-danger-sm:hover { background: rgba(248,81,73,0.12); }
+        .btn-dashed {
+            background: none; color: var(--accent); border: 1px dashed var(--accent-dim);
+            width: 100%; justify-content: center; padding: 0.6rem;
+        }
+        .btn-dashed:hover { background: var(--accent-glow); }
+        .btn-block { width: 100%; }
+        .btn-row { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; }
+
+        /* ─── Menu Cards ─── */
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .menu-title {
+            text-align: center; margin-bottom: 2.5rem;
+        }
+        .menu-title h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.3rem; }
+        .menu-title p { color: var(--text-secondary); font-size: 0.9rem; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 700px; margin: 0 auto; }
+        .menu-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center;
+            cursor: pointer; transition: var(--transition); position: relative; overflow: hidden;
+        }
+        .menu-card:hover:not(.disabled) {
+            border-color: var(--accent); transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+        .menu-card.disabled {
+            opacity: 0.5; cursor: not-allowed;
+        }
+        .menu-card .mc-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        .menu-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .menu-card p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.65rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: var(--font-mono);
+        }
+        .badge-green { background: rgba(0,255,136,0.12); color: var(--accent); border: 1px solid rgba(0,255,136,0.25); }
+        .badge-gray { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
+        .badge-blue { background: rgba(88,166,255,0.12); color: var(--info); border: 1px solid rgba(88,166,255,0.25); }
+        .badge-yellow { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(210,153,34,0.3); }
+        .badge-purple { background: rgba(188,140,255,0.12); color: var(--purple); border: 1px solid rgba(188,140,255,0.25); }
+
+        /* ─── Employee Cards ─── */
+        .emp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 750px; margin: 0 auto; }
+        .emp-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.5rem; text-align: center;
+            cursor: pointer; transition: var(--transition);
+        }
+        .emp-card:hover { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+        .emp-card .emp-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-glow-strong), var(--bg-secondary));
+            border: 2px solid var(--accent-dim); display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 0.8rem; font-size: 1.3rem;
+        }
+        .emp-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; }
+        .emp-card span { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* ─── Warning Banner ─── */
+        .warn-banner {
+            background: var(--warning-bg); border: 1px solid rgba(210,153,34,0.3);
+            border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem;
+            color: var(--warning); max-width: 750px; margin-left: auto; margin-right: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ─── Document Cards ─── */
+        .doc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; max-width: 750px; margin: 0 auto; }
+        .doc-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.8rem; cursor: pointer;
+            transition: var(--transition); position: relative;
+        }
+        .doc-card:hover:not(.disabled) {
+            border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-glow);
+        }
+        .doc-card.disabled { opacity: 0.45; cursor: not-allowed; }
+        .doc-card .dc-icon { font-size: 2.2rem; margin-bottom: 0.8rem; display: block; }
+        .doc-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .doc-card p { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.8rem; }
+        .doc-card .badge { position: absolute; top: 1rem; right: 1rem; }
+
+        /* ─── Wizard Steps ─── */
+        .wiz-steps {
+            display: flex; justify-content: center; gap: 0; margin-bottom: 2rem;
+        }
+        .wiz-step {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1.4rem; cursor: pointer; position: relative;
+            transition: var(--transition); border: 1px solid var(--border);
+            background: var(--bg-secondary); font-size: 0.8rem; color: var(--text-muted);
+        }
+        .wiz-step:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+        .wiz-step:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+        .wiz-step .wn {
+            width: 22px; height: 22px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 0.7rem;
+            font-weight: 700; border: 2px solid var(--text-muted); transition: var(--transition);
+        }
+        .wiz-step.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+        .wiz-step.active .wn { border-color: var(--accent); background: var(--accent); color: var(--bg-primary); }
+        .wiz-step.done { color: var(--accent-dim); }
+        .wiz-step.done .wn { border-color: var(--accent-dim); background: var(--accent-dim); color: var(--bg-primary); }
+
+        /* ─── Panel ─── */
+        .panel { display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; animation: screenIn 0.3s ease; }
+        .panel.active { display: block; }
+        .panel-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .panel-head .ph-icon { font-size: 1.4rem; }
+        .panel-head h2 { font-size: 1.15rem; color: var(--accent); font-weight: 600; }
+        .panel-head p { font-size: 0.78rem; color: var(--text-secondary); }
+
+        /* ─── Items Table ─── */
+        .tbl-wrap { overflow-x: auto; margin: 1rem 0; }
+        .tbl { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .tbl thead th {
+            background: var(--bg-secondary); color: var(--accent); padding: 0.55rem 0.7rem;
+            text-align: left; font-family: var(--font-mono); font-size: 0.68rem;
+            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent);
+        }
+        .tbl tbody td { padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+        .tbl tbody tr:hover { background: var(--accent-glow); }
+        .tbl input, .tbl select {
+            background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px;
+            padding: 0.35rem 0.45rem; color: var(--text-primary); font-size: 0.82rem;
+            width: 100%; min-width: 55px; font-family: var(--font-sans);
+        }
+        .tbl input:focus, .tbl select:focus { outline: none; border-color: var(--accent); }
+
+        /* ─── Summary ─── */
+        .sum-section { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+        .sum-block {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 1.2rem;
+        }
+        .sum-block h3 {
+            font-size: 0.75rem; color: var(--accent); font-family: var(--font-mono);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.7rem;
+            padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+        }
+        .sr { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.82rem; }
+        .sr .l { color: var(--text-secondary); } .sr .v { font-weight: 500; }
+        .sr.total { border-top: 2px solid var(--accent); margin-top: 0.4rem; padding-top: 0.4rem; font-size: 1.05rem; }
+        .sr.total .l, .sr.total .v { color: var(--accent); font-weight: 700; }
+
+        /* ─── Product Search Modal ─── */
+        .pm-search {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 0.75rem 1rem;
+            color: var(--text-primary); font-size: 0.95rem; font-family: var(--font-sans);
+            width: 100%; transition: var(--transition); margin-bottom: 1rem;
+        }
+        .pm-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .pm-list { max-height: 45vh; overflow-y: auto; }
+        .pm-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.85rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border);
+            transition: var(--transition); border-radius: var(--radius-sm); margin-bottom: 2px;
+        }
+        .pm-item:hover { background: var(--accent-glow); border-color: var(--accent); }
+        .pm-item-info h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.15rem; }
+        .pm-item-info span { font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono); }
+        .pm-item-price { text-align: right; }
+        .pm-item-price .price { font-size: 1rem; font-weight: 700; color: var(--accent); font-family: var(--font-mono); }
+        .pm-item-price .unit { font-size: 0.65rem; color: var(--text-muted); }
+        .pm-empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
+        .pm-spinner { text-align: center; padding: 1.5rem; color: var(--accent); }
+        .selected-product-chip {
+            display: flex; align-items: center; gap: 0.75rem; justify-content: space-between;
+            background: var(--accent-glow); border: 1px solid var(--accent-dim);
+            border-radius: var(--radius-sm); padding: 0.5rem 0.85rem; font-size: 0.85rem;
+            flex: 1; min-width: 0;
+        }
+        .selected-product-chip .sp-info { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+        .selected-product-chip .sp-name {
+            font-weight: 600; color: var(--accent);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+        }
+        .selected-product-chip .sp-meta { font-size: 0.7rem; color: var(--text-secondary); font-family: var(--font-mono); white-space: nowrap; }
+        .selected-product-chip .sp-remove {
+            background: none; border: none; color: var(--danger); cursor: pointer;
+            font-size: 0.85rem; padding: 0.2rem 0.4rem; border-radius: 4px; transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .selected-product-chip .sp-remove:hover { background: rgba(248,81,73,0.15); }
+
+        /* ─── Add-product inline bar ─── */
+        .add-bar {
+            display: flex; align-items: center; gap: 0.6rem;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 0.6rem 0.8rem; margin-bottom: 1rem;
+        }
+        .add-bar .ab-search {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 0.55rem 0.9rem;
+            color: var(--text-muted); font-size: 0.82rem; font-family: var(--font-sans);
+            cursor: pointer; transition: var(--transition); flex: 1; text-align: left;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .add-bar .ab-search:hover { border-color: var(--accent); color: var(--accent); }
+        .add-bar .ab-qty {
+            width: 60px; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 0.55rem 0.5rem;
+            color: var(--text-primary); font-size: 0.88rem; font-family: var(--font-mono);
+            text-align: center;
+        }
+        .add-bar .ab-qty:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .add-bar .ab-qty:disabled { opacity: 0.45; cursor: not-allowed; }
+        .add-bar .ab-add {
+            background: var(--accent); color: var(--bg-primary); border: none;
+            border-radius: var(--radius-sm); padding: 0.55rem 1rem;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            transition: var(--transition); font-family: var(--font-sans);
+            display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+        }
+        .add-bar .ab-add:hover { background: var(--accent-dim); box-shadow: 0 0 20px var(--accent-glow-strong); }
+
+        /* ─── Session bar ─── */
+        .g-session {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .g-logout {
+            background: none; border: 1px solid var(--border); color: var(--text-muted);
+            border-radius: var(--radius-sm); padding: 0.3rem 0.7rem; font-size: 0.7rem;
+            cursor: pointer; transition: var(--transition); font-family: var(--font-mono);
+        }
+        .g-logout:hover { border-color: var(--danger); color: var(--danger); }
+        .g-company-name {
+            font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;
+            max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 2rem; max-width: 650px;
+            width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-card.success { border-color: var(--accent); }
+        .modal-card.error { border-color: var(--danger); }
+        .modal-card h3 { margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .modal-card pre {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 1rem; font-size: 0.78rem;
+            font-family: var(--font-mono); color: var(--accent);
+            overflow-x: auto; white-space: pre-wrap; word-break: break-word;
+        }
+
+        .spinner { display: none; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+        /* ─── Responsive ─── */
+        @media(max-width:768px) {
+            .f-row, .f-row-3, .sum-section { grid-template-columns: 1fr; }
+            .menu-grid, .doc-grid { grid-template-columns: 1fr; }
+            .emp-grid { grid-template-columns: 1fr 1fr; }
+            .wiz-steps { flex-wrap: wrap; }
+            .wiz-step { font-size: 0.72rem; padding: 0.45rem 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     🔝  GLOBAL HEADER
+     ═══════════════════════════════════════════════ -->
+<header class="g-header">
+    <div class="g-header-left">
+        <span class="g-logo">🧾</span>
+        <div class="g-brand">
+            <h1>ETIA</h1>
+            <sub>Facturación Electrónica · v0.1.0</sub>
+        </div>
+    </div>
+    <div class="g-header-right">
+        <span class="g-chip"><span class="dot" style="background:var(--info);"></span> DEMO</span>
+        <span class="g-chip" th:if="${company != null}">
+            <span class="dot"></span>
+            <span th:text="${company.distrito + ' · ' + company.codigoUbigeo}">SAN ISIDRO · 150131</span>
+        </span>
+        <div class="g-session" id="session-bar" style="display:none;">
+            <span class="g-company-name" id="hdr-company" th:text="${company?.razonSocial}">EMPRESA</span>
+            <button class="g-logout" onclick="logout()">🔓 Cerrar sesión</button>
+        </div>
+        <button class="g-back" id="btn-back" onclick="goBack()">← Atrás</button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════
+     🏠  SCREEN 1 — WELCOME / ONBOARDING
+     ═══════════════════════════════════════════════ -->
+<div class="screen-center" id="scr-welcome">
+    <div class="welcome-card">
+        <div class="welcome-icon">🧾</div>
+        <h2>Bienvenido a ETIA</h2>
+        <p class="subtitle">Configura tu acceso para comenzar a facturar electrónicamente</p>
+
+        <div class="f-row">
+            <div class="f-group">
+                <label>👤 Usuario SOL</label>
+                <input type="text" id="onb-usersol" th:value="${company?.usuarioSol}" placeholder="MODDATOS"/>
+            </div>
+            <div class="f-group">
+                <label>🔑 Clave SOL</label>
+                <input type="password" id="onb-clavesol" th:value="${company?.claveSol}" placeholder="••••••••"/>
+            </div>
+        </div>
+        <div class="f-row">
+            <div class="f-group">
+                <label>📧 Correo electrónico</label>
+                <input type="email" id="onb-email" th:value="${company?.emailContacto}" placeholder="facturacion@empresa.com"/>
+            </div>
+            <div class="f-group">
+                <label>📱 Teléfono</label>
+                <input type="tel" id="onb-phone" th:value="${company?.telefono}" placeholder="+51 999 888 777"/>
+            </div>
+        </div>
+
+        <button class="btn btn-accent btn-block" style="margin-top:1.5rem;" onclick="completeOnboarding()">
+            🚀 Comenzar a Facturar
+        </button>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1rem;">
+            Tus datos se guardan localmente para esta sesión demo
+        </p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     📋  SCREEN 2 — MAIN MENU
+     ═══════════════════════════════════════════════ -->
+<div class="screen" id="scr-menu">
+    <div class="container">
+        <div class="menu-title">
+            <h2>¿Qué deseas hacer hoy?</h2>
+            <p>Selecciona una opción para continuar</p>
+        </div>
+        <div class="menu-grid">
+            <div class="menu-card disabled" onclick="return false;">
+                <span class="mc-icon">🛒</span>
+                <h3>Punto de Venta</h3>
+                <p>Terminal de venta rápida con asignación de cajero y ticket</p>
+                <div style="margin-top:1rem;"><span class="badge badge-gray">🔧 En construcción</span></div>
+            </div>
+            <div class="menu-card" onclick="goToScreen('scr-docs')">
+                <span class="mc-icon">🧾</span>
+                <h3>Emitir Documento</h3>
+                <p>Factura, boleta, nota de crédito o débito al instante</p>
+                <div style="margin-top:1rem;"><span class="badge badge-green">✓ Disponible</span></div>
+            </div>
+        </div>
+
+        <!-- Quick employee section hidden for now, visible only if PdV was selected -->
+        <div id="emp-section" style="display:none; margin-top:3rem;">
+            <div class="menu-title">
+                <h2>Selecciona el operador</h2>
+                <p>¿Quién va a operar el punto de venta?</p>
+            </div>
+            <div class="warn-banner">
+                ⚠️ En un escenario real, el empleado inicia sesión con su propia cuenta configurada por el administrador.
+            </div>
+            <div class="emp-grid">
+                <th:block th:each="emp : ${employees}">
+                    <div class="emp-card" th:data-nombre="${emp.nombre}" onclick="selectEmployee(this.dataset.nombre)">
+                        <div class="emp-avatar">👤</div>
+                        <h4 th:text="${emp.nombre}">Carlos Mendoza</h4>
+                        <span th:text="${emp.cargo}">Contador</span><br/>
+                        <span class="badge badge-blue" style="margin-top:0.5rem;" th:text="${emp.codigo}">EMP-001</span>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     📄  SCREEN 3 — DOCUMENT CATALOG
+     ═══════════════════════════════════════════════ -->
+<div class="screen" id="scr-docs">
+    <div class="container">
+        <div class="menu-title">
+            <h2>Selecciona el tipo de documento</h2>
+            <p>Elige el comprobante electrónico que deseas emitir</p>
+        </div>
+        <div class="doc-grid">
+            <div class="doc-card" onclick="selectDocType('FACTURA')">
+                <span class="badge badge-green">Activo</span>
+                <span class="dc-icon">🧾</span>
+                <h3>Factura Electrónica</h3>
+                <p>Comprobante para operaciones con empresas (RUC). Serie F001+</p>
+            </div>
+            <div class="doc-card disabled">
+                <span class="badge badge-gray">Próximamente</span>
+                <span class="dc-icon">🎫</span>
+                <h3>Boleta de Venta</h3>
+                <p>Comprobante para consumidores finales (DNI). Serie B001+</p>
+            </div>
+            <div class="doc-card disabled">
+                <span class="badge badge-gray">Próximamente</span>
+                <span class="dc-icon">📉</span>
+                <h3>Nota de Crédito</h3>
+                <p>Anulación parcial o total, descuentos sobre comprobante emitido</p>
+            </div>
+            <div class="doc-card disabled">
+                <span class="badge badge-gray">Próximamente</span>
+                <span class="dc-icon">📈</span>
+                <h3>Nota de Débito</h3>
+                <p>Penalidades, intereses o cargos adicionales sobre comprobante</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     ✏️  SCREEN 4 — EMISSION WIZARD
+     ═══════════════════════════════════════════════ -->
+<div class="screen" id="scr-wizard">
+    <div class="container">
+
+        <div class="wiz-steps">
+            <div class="wiz-step active" onclick="wizGo(1)"><span class="wn">1</span><span>🏢 Emisor</span></div>
+            <div class="wiz-step" onclick="wizGo(2)"><span class="wn">2</span><span>👤 Cliente</span></div>
+            <div class="wiz-step" onclick="wizGo(3)"><span class="wn">3</span><span>📦 Detalle</span></div>
+            <div class="wiz-step" onclick="wizGo(4)"><span class="wn">4</span><span>✅ Emitir</span></div>
+        </div>
+
+        <!-- WIZ STEP 1 — EMISOR -->
+        <div class="panel active" id="wiz-1">
+            <div class="panel-head">
+                <span class="ph-icon">🏢</span>
+                <div><h2>Datos del Emisor</h2><p>Empresa que emite el comprobante (datos de prueba precargados)</p></div>
+            </div>
+            <div class="f-row">
+                <div class="f-group"><label>RUC</label><input id="em-ruc" th:value="${company?.ruc}" readonly/></div>
+                <div class="f-group"><label>Razón Social</label><input id="em-razon" th:value="${company?.razonSocial}" readonly/></div>
+            </div>
+            <div class="f-row">
+                <div class="f-group"><label>Nombre Comercial</label><input id="em-nombre" th:value="${company?.nombreComercial}" readonly/></div>
+                <div class="f-group"><label>Régimen</label><input id="em-regimen" th:value="${company?.regimen}" readonly/></div>
+            </div>
+            <div class="f-group f-full"><label>Dirección Fiscal</label><input id="em-dir" th:value="${company?.direccion}" readonly/></div>
+            <div class="btn-row"><div></div><button class="btn btn-accent" onclick="wizGo(2)">Siguiente →</button></div>
+        </div>
+
+        <!-- WIZ STEP 2 — CLIENTE -->
+        <div class="panel" id="wiz-2">
+            <div class="panel-head">
+                <span class="ph-icon">👤</span>
+                <div><h2>Datos del Adquiriente</h2><p>Cliente al que se emitirá el comprobante</p></div>
+            </div>
+            <div class="f-row">
+                <div class="f-group">
+                    <label>Tipo Documento</label>
+                    <select id="cl-tipo">
+                        <option value="6" th:selected="${client?.tipoDocumento == '6'}">RUC</option>
+                        <option value="1" th:selected="${client?.tipoDocumento == '1'}">DNI</option>
+                        <option value="4">Carnet de Extranjería</option>
+                        <option value="7">Pasaporte</option>
+                        <option value="0">Otros</option>
+                    </select>
+                </div>
+                <div class="f-group"><label>Número Documento</label><input id="cl-numdoc" th:value="${client?.numeroDocumento}"/></div>
+            </div>
+            <div class="f-group f-full"><label>Denominación / Razón Social</label><input id="cl-denom" th:value="${client?.denominacion}"/></div>
+            <div class="f-group f-full"><label>Dirección</label><input id="cl-dir" th:value="${client?.direccion}"/></div>
+            <div class="f-row">
+                <div class="f-group"><label>Email</label><input type="email" id="cl-email" th:value="${client?.email}"/></div>
+                <div class="f-group"><label>Teléfono</label><input id="cl-tel" th:value="${client?.telefono}"/></div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-ghost" onclick="wizGo(1)">← Anterior</button>
+                <button class="btn btn-accent" onclick="wizGo(3)">Siguiente →</button>
+            </div>
+        </div>
+
+        <!-- WIZ STEP 3 — DETALLE -->
+        <div class="panel" id="wiz-3">
+            <div class="panel-head">
+                <span class="ph-icon">📦</span>
+                <div><h2 id="wiz-detail-title">Detalle de la Factura</h2><p>Agrega productos o servicios desde el catálogo</p></div>
+            </div>
+
+            <div class="f-row" style="margin-bottom:1rem;">
+                <div class="f-group"><label>Serie</label><input id="fac-serie" value="F001"/></div>
+                <div class="f-group"><label>Moneda</label>
+                    <select id="fac-moneda" onchange="recalcTotals()">
+                        <option value="PEN">PEN — Sol</option>
+                        <option value="USD">USD — Dólar</option>
+                    </select>
+                </div>
+                <div class="f-group"><label>Leyenda</label><input id="fac-leyenda" value=""/></div>
+            </div>
+
+            <!-- Add product: single inline bar -->
+            <div class="add-bar">
+                <!-- State A: search button (visible when no product selected) -->
+                <button class="ab-search" id="search-btn-wrap" onclick="openProductModal()">
+                    🔍 Buscar producto en catálogo...
+                </button>
+                <!-- State B: selected product chip (hidden until selected) -->
+                <div id="selected-product" style="display:none; flex:1; min-width:0;">
+                    <div class="selected-product-chip">
+                        <div class="sp-info">
+                            <span>📦</span>
+                            <span class="sp-name" id="sp-name"></span>
+                            <span class="sp-meta" id="sp-meta"></span>
+                        </div>
+                        <button class="sp-remove" onclick="clearSelectedProduct()">✕</button>
+                    </div>
+                </div>
+                <input type="number" class="ab-qty" id="add-qty" value="1" min="1" title="Cantidad"/>
+                <button class="ab-add" onclick="addProductToItems()">+ Agregar</button>
+            </div>
+
+            <div class="tbl-wrap">
+                <table class="tbl">
+                    <thead><tr>
+                        <th>#</th><th>Descripción</th><th>U.M.</th><th>Cant.</th>
+                        <th>V.Unit.</th><th>P.Unit.</th><th>IGV</th><th>Subtotal</th><th></th>
+                    </tr></thead>
+                    <tbody id="items-body"></tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
+                <div style="min-width:260px;">
+                    <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="t-grav">S/ 0.00</span></div>
+                    <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="t-igv">S/ 0.00</span></div>
+                    <div class="sr total"><span class="l">TOTAL:</span><span class="v" id="t-total">S/ 0.00</span></div>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-ghost" onclick="wizGo(2)">← Anterior</button>
+                <button class="btn btn-accent" onclick="wizGo(4)">Revisar y Emitir →</button>
+            </div>
+        </div>
+
+        <!-- WIZ STEP 4 — REVIEW & SUBMIT -->
+        <div class="panel" id="wiz-4">
+            <div class="panel-head">
+                <span class="ph-icon">✅</span>
+                <div><h2>Revisión y Emisión</h2><p>Verifica todo antes de emitir</p></div>
+            </div>
+            <div class="sum-section">
+                <div class="sum-block">
+                    <h3>🏢 Emisor</h3>
+                    <div class="sr"><span class="l">RUC:</span><span class="v" id="r-em-ruc"></span></div>
+                    <div class="sr"><span class="l">Razón Social:</span><span class="v" id="r-em-razon"></span></div>
+                    <div class="sr"><span class="l">Dirección:</span><span class="v" id="r-em-dir"></span></div>
+                </div>
+                <div class="sum-block">
+                    <h3>👤 Adquiriente</h3>
+                    <div class="sr"><span class="l">Documento:</span><span class="v" id="r-cl-doc"></span></div>
+                    <div class="sr"><span class="l">Denominación:</span><span class="v" id="r-cl-denom"></span></div>
+                    <div class="sr"><span class="l">Dirección:</span><span class="v" id="r-cl-dir"></span></div>
+                </div>
+            </div>
+            <div class="sum-block" style="margin-top:1.5rem;">
+                <h3>🧾 Comprobante</h3>
+                <div class="sr"><span class="l">Tipo:</span><span class="v" id="r-tipo"></span></div>
+                <div class="sr"><span class="l">Serie:</span><span class="v" id="r-serie"></span></div>
+                <div class="sr"><span class="l">Moneda:</span><span class="v" id="r-moneda"></span></div>
+                <div class="sr"><span class="l">Ítems:</span><span class="v" id="r-items"></span></div>
+                <div class="sr"><span class="l">Op. Gravadas:</span><span class="v" id="r-grav"></span></div>
+                <div class="sr"><span class="l">IGV (18%):</span><span class="v" id="r-igv"></span></div>
+                <div class="sr total"><span class="l">TOTAL A PAGAR:</span><span class="v" id="r-total"></span></div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-ghost" onclick="wizGo(3)">← Corregir</button>
+                <button class="btn btn-accent" id="btn-emit" onclick="emitDoc()">
+                    <span class="spinner" id="spinner"></span> 🚀 Emitir Comprobante
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ RESPONSE MODAL ═══════ -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="modal-card" id="modal-card">
+        <h3 id="modal-title"></h3>
+        <pre id="modal-body"></pre>
+        <div class="btn-row" style="justify-content:center;">
+            <button class="btn btn-ghost" onclick="document.getElementById('modal').classList.remove('show')">Cerrar</button>
+            <button class="btn btn-accent" onclick="resetAll()">🔄 Nuevo Documento</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ PRODUCT SEARCH MODAL ═══════ -->
+<div class="modal-overlay" id="product-modal" onclick="if(event.target===this)closeProductModal()">
+    <div class="modal-card" style="max-width:550px;">
+        <h3 style="margin-bottom:0.75rem;">🔍 <span style="color:var(--accent);">Buscar Producto</span></h3>
+        <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;">Escribe para filtrar del catálogo. Haz clic en un producto para seleccionarlo.</p>
+        <input class="pm-search" id="pm-search-input"
+               placeholder="Buscar por nombre, código..."
+               autocomplete="off"
+               oninput="onModalProductSearch(this.value)"/>
+        <div class="pm-list" id="pm-results">
+            <div class="pm-empty">Escribe al menos 1 carácter para buscar</div>
+        </div>
+        <div class="btn-row" style="justify-content:flex-end; margin-top:1rem;">
+            <button class="btn btn-ghost" onclick="closeProductModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     📜  JAVASCRIPT — Thymeleaf Data (bloque aislado)
+     ═══════════════════════════════════════════════ -->
+<script th:inline="javascript">
+    window.__ETIA = {
+        companyId:       /*[[${company?.id}]]*/ '',
+        clientId:        /*[[${client?.id}]]*/ ''
+    };
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     📜  JAVASCRIPT — Flow Orchestration (nunca se rompe)
+     ═══════════════════════════════════════════════ -->
+<script>
+/* ═══════ DATA (safe fallback si el bloque Thymeleaf falló) ═══════ */
+const companyId       = (window.__ETIA && window.__ETIA.companyId)       || '';
+const clientId        = (window.__ETIA && window.__ETIA.clientId)        || '';
+
+/* ═══════ STATE ═══════ */
+let currentScreen = 'scr-welcome';
+let screenHistory = [];
+let selectedDocType = 'FACTURA';
+let wizStep = 1;
+let items = [];
+let itemCounter = 0;
+let selectedProduct = null;       // producto seleccionado del modal
+let pmSearchTimeout = null;       // debounce timer
+
+/* ═══════ SCREEN NAVIGATION ═══════ */
+const screenLabels = {
+    'scr-welcome': 'Inicio',
+    'scr-menu':    'Menú',
+    'scr-docs':    'Documentos',
+    'scr-wizard':  'Emisión'
+};
+
+function goToScreen(id) {
+    try {
+        screenHistory.push(currentScreen);
+        document.querySelectorAll('.screen, .screen-center').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(id);
+        if (!target) { console.error('Screen not found:', id); return; }
+        target.classList.add('active');
+        currentScreen = id;
+        updateHeaderUI();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    } catch (err) {
+        console.error('Error en goToScreen:', err);
+        alert('Error al navegar: ' + err.message);
+    }
+}
+
+function goBack() {
+    if (screenHistory.length > 0) {
+        const prev = screenHistory.pop();
+        document.querySelectorAll('.screen, .screen-center').forEach(s => s.classList.remove('active'));
+        document.getElementById(prev).classList.add('active');
+        currentScreen = prev;
+        updateHeaderUI();
+    }
+}
+
+function updateHeaderUI() {
+    const isWelcome = (currentScreen === 'scr-welcome');
+    // Back button: visible en todas las pantallas excepto welcome
+    document.getElementById('btn-back').style.display = isWelcome ? 'none' : 'inline-flex';
+    // Session bar: visible cuando no estamos en welcome
+    document.getElementById('session-bar').style.display = isWelcome ? 'none' : 'flex';
+    // Update back button text
+    if (screenHistory.length > 0) {
+        const prevLabel = screenLabels[screenHistory[screenHistory.length - 1]] || 'Atrás';
+        document.getElementById('btn-back').textContent = '← ' + prevLabel;
+    }
+}
+
+/* ═══════ LOGOUT ═══════ */
+function logout() {
+    if (!confirm('¿Cerrar sesión? Volverás a la pantalla de configuración inicial.')) return;
+    localStorage.removeItem('etia_onboarding');  // limpieza legacy
+    items = [];
+    itemCounter = 0;
+    screenHistory = [];
+    wizStep = 1;
+    selectedProduct = null;
+    document.querySelectorAll('.screen, .screen-center').forEach(s => s.classList.remove('active'));
+    document.getElementById('scr-welcome').classList.add('active');
+    currentScreen = 'scr-welcome';
+    updateHeaderUI();
+}
+
+/* ═══════ ONBOARDING ═══════ */
+function completeOnboarding() {
+    try {
+        goToScreen('scr-menu');
+    } catch (err) {
+        console.error('Error en completeOnboarding:', err);
+        alert('Error al completar onboarding: ' + err.message);
+    }
+}
+
+/* ═══════ DOCUMENT TYPE ═══════ */
+function selectDocType(type) {
+    selectedDocType = type;
+    const labels = {FACTURA:'Factura Electrónica',BOLETA:'Boleta de Venta',NOTA_CREDITO:'Nota de Crédito',NOTA_DEBITO:'Nota de Débito'};
+    document.getElementById('wiz-detail-title').textContent = 'Detalle — ' + (labels[type] || type);
+    if (type === 'FACTURA') document.getElementById('fac-serie').value = 'F001';
+    else if (type === 'BOLETA') document.getElementById('fac-serie').value = 'B001';
+
+    items = [];
+    itemCounter = 0;
+    renderItems();
+    clearSelectedProduct();
+    goToScreen('scr-wizard');
+
+    // Cargar productos demo vía API (robusto, sin depender de Thymeleaf inline)
+    if (companyId) {
+        fetch('/api/demo/products/search?companyId=' + encodeURIComponent(companyId) + '&term=')
+            .then(r => r.json())
+            .then(products => {
+                products.forEach(p => {
+                    const valor = parseFloat(p.valorUnitario) || 0;
+                    const sub = valor;
+                    items.push({
+                        id: ++itemCounter,
+                        descripcion: p.descripcion || '',
+                        unidadMedida: p.unidadMedida || 'ZZ',
+                        cantidad: 1,
+                        valorUnitario: valor,
+                        precioUnitario: parseFloat(p.precioUnitario) || (valor * 1.18),
+                        igv: sub * 0.18,
+                        subtotal: sub
+                    });
+                });
+                renderItems();
+            })
+            .catch(err => console.error('Error cargando productos demo:', err));
+    }
+}
+
+function selectEmployee(name) {
+    /* Placeholder for PdV flow */
+}
+
+/* ═══════ WIZARD NAV ═══════ */
+function wizGo(step) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.wiz-step').forEach((s, i) => {
+        s.classList.remove('active');
+        s.classList.toggle('done', i + 1 < step);
+    });
+    document.getElementById('wiz-' + step).classList.add('active');
+    document.querySelectorAll('.wiz-step')[step - 1].classList.add('active');
+    wizStep = step;
+    if (step === 4) populateReview();
+}
+
+/* ═══════ PRODUCT SEARCH MODAL ═══════ */
+function openProductModal() {
+    document.getElementById('product-modal').classList.add('show');
+    const input = document.getElementById('pm-search-input');
+    input.value = '';
+    document.getElementById('pm-results').innerHTML = '<div class="pm-empty">Escribe al menos 1 carácter para buscar</div>';
+    setTimeout(() => input.focus(), 100);
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').classList.remove('show');
+}
+
+function onModalProductSearch(term) {
+    clearTimeout(pmSearchTimeout);
+    const container = document.getElementById('pm-results');
+    if (!term || term.length < 1) {
+        container.innerHTML = '<div class="pm-empty">Escribe al menos 1 carácter para buscar</div>';
+        return;
+    }
+    container.innerHTML = '<div class="pm-spinner">⏳ Buscando...</div>';
+    pmSearchTimeout = setTimeout(() => {
+        fetch('/api/demo/products/search?companyId=' + encodeURIComponent(companyId) + '&term=' + encodeURIComponent(term))
+            .then(r => r.json())
+            .then(products => {
+                if (!products || products.length === 0) {
+                    container.innerHTML = '<div class="pm-empty">No se encontraron productos para "' + term + '"</div>';
+                    return;
+                }
+                container.innerHTML = products.map(p => `
+                    <div class="pm-item" onclick="selectProductFromModal('${p.id}','${(p.descripcion||'').replace(/'/g,"\\'")}','${p.unidadMedida||'ZZ'}',${p.valorUnitario||0},${p.precioUnitario||0})">
+                        <div class="pm-item-info">
+                            <h4>${p.descripcion}</h4>
+                            <span>${p.codigoProducto || ''} · ${p.unidadMedida || 'ZZ'}</span>
+                        </div>
+                        <div class="pm-item-price">
+                            <div class="price">S/ ${parseFloat(p.valorUnitario||0).toFixed(2)}</div>
+                            <div class="unit">+ IGV</div>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => {
+                container.innerHTML = '<div class="pm-empty" style="color:var(--danger);">Error al buscar: ' + err.message + '</div>';
+            });
+    }, 300);
+}
+
+function selectProductFromModal(id, desc, um, valor, precio) {
+    selectedProduct = { id, descripcion: desc, unidadMedida: um, valorUnitario: valor, precioUnitario: precio };
+    // Show chip, hide search button
+    document.getElementById('sp-name').textContent = desc;
+    document.getElementById('sp-meta').textContent = um + ' · S/ ' + parseFloat(valor).toFixed(2) + ' + IGV';
+    document.getElementById('selected-product').style.display = 'block';
+    document.getElementById('search-btn-wrap').style.display = 'none';
+    // ZZ = Servicio → cantidad fija 1
+    const qtyInput = document.getElementById('add-qty');
+    if (um === 'ZZ') {
+        qtyInput.value = 1;
+        qtyInput.disabled = true;
+    } else {
+        qtyInput.disabled = false;
+    }
+    closeProductModal();
+    if (um !== 'ZZ') qtyInput.focus();
+}
+
+function clearSelectedProduct() {
+    selectedProduct = null;
+    document.getElementById('selected-product').style.display = 'none';
+    document.getElementById('search-btn-wrap').style.display = 'flex';
+    const qtyInput = document.getElementById('add-qty');
+    qtyInput.value = 1;
+    qtyInput.disabled = false;
+}
+
+function addProductToItems() {
+    if (!selectedProduct) {
+        alert('Primero selecciona un producto del catálogo.');
+        openProductModal();
+        return;
+    }
+    const qty = parseInt(document.getElementById('add-qty').value) || 1;
+    const valor = parseFloat(selectedProduct.valorUnitario) || 0;
+    const subtotal = qty * valor;
+    const igv = subtotal * 0.18;
+    const precioUnit = valor * 1.18;
+    items.push({
+        id: ++itemCounter,
+        descripcion: selectedProduct.descripcion,
+        unidadMedida: selectedProduct.unidadMedida,
+        cantidad: qty,
+        valorUnitario: valor,
+        precioUnitario: precioUnit,
+        igv: igv,
+        subtotal: subtotal
+    });
+    renderItems();
+    clearSelectedProduct();
+    document.getElementById('add-qty').value = '1';
+}
+
+/* ═══════ ITEMS TABLE ═══════ */
+function renderItems() {
+    const tbody = document.getElementById('items-body');
+    tbody.innerHTML = '';
+    items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td style="min-width:180px;">${item.descripcion}</td>
+            <td><span class="badge badge-blue">${item.unidadMedida}</span></td>
+            <td><input type="number" value="${item.cantidad}" min="1" style="width:55px;"
+                onchange="updItem(${item.id},'cantidad',this.value)"/></td>
+            <td><input type="number" step="0.01" value="${item.valorUnitario.toFixed(2)}" style="width:85px;"
+                onchange="updItem(${item.id},'valorUnitario',this.value)"/></td>
+            <td style="font-family:var(--font-mono);color:var(--text-secondary);">${item.precioUnitario.toFixed(2)}</td>
+            <td style="font-family:var(--font-mono);color:var(--warning);">${item.igv.toFixed(2)}</td>
+            <td style="font-family:var(--font-mono);color:var(--accent);font-weight:600;">${item.subtotal.toFixed(2)}</td>
+            <td><button class="btn btn-danger-sm" onclick="rmItem(${item.id})">✕</button></td>`;
+        tbody.appendChild(tr);
+    });
+    recalcTotals();
+}
+
+function updItem(id, field, val) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item[field] = parseFloat(val) || 0;
+    item.subtotal = item.cantidad * item.valorUnitario;
+    item.igv = item.subtotal * 0.18;
+    item.precioUnitario = item.valorUnitario * 1.18;
+    renderItems();
+}
+
+function rmItem(id) { items = items.filter(i => i.id !== id); renderItems(); }
+
+function recalcTotals() {
+    const g = items.reduce((s, i) => s + i.subtotal, 0);
+    const i = items.reduce((s, i) => s + i.igv, 0);
+    const t = g + i;
+    const sym = document.getElementById('fac-moneda').value === 'USD' ? 'US$ ' : 'S/ ';
+    document.getElementById('t-grav').textContent = sym + g.toFixed(2);
+    document.getElementById('t-igv').textContent = sym + i.toFixed(2);
+    document.getElementById('t-total').textContent = sym + t.toFixed(2);
+}
+
+/* ═══════ REVIEW ═══════ */
+function populateReview() {
+    document.getElementById('r-em-ruc').textContent = document.getElementById('em-ruc').value;
+    document.getElementById('r-em-razon').textContent = document.getElementById('em-razon').value;
+    document.getElementById('r-em-dir').textContent = document.getElementById('em-dir').value;
+    const tipoSel = document.getElementById('cl-tipo');
+    document.getElementById('r-cl-doc').textContent = tipoSel.options[tipoSel.selectedIndex].text + ' ' + document.getElementById('cl-numdoc').value;
+    document.getElementById('r-cl-denom').textContent = document.getElementById('cl-denom').value;
+    document.getElementById('r-cl-dir').textContent = document.getElementById('cl-dir').value;
+    const labels = {FACTURA:'Factura Electrónica',BOLETA:'Boleta de Venta',NOTA_CREDITO:'Nota de Crédito',NOTA_DEBITO:'Nota de Débito'};
+    document.getElementById('r-tipo').textContent = labels[selectedDocType] || selectedDocType;
+    document.getElementById('r-serie').textContent = document.getElementById('fac-serie').value;
+    document.getElementById('r-moneda').textContent = document.getElementById('fac-moneda').value;
+    document.getElementById('r-items').textContent = items.length + ' ítem(s)';
+    const g = items.reduce((s, i) => s + i.subtotal, 0);
+    const iv = items.reduce((s, i) => s + i.igv, 0);
+    const t = g + iv;
+    const sym = document.getElementById('fac-moneda').value === 'USD' ? 'US$ ' : 'S/ ';
+    document.getElementById('r-grav').textContent = sym + g.toFixed(2);
+    document.getElementById('r-igv').textContent = sym + iv.toFixed(2);
+    document.getElementById('r-total').textContent = sym + t.toFixed(2);
+}
+
+/* ═══════ EMIT DOCUMENT ═══════ */
+async function emitDoc() {
+    const spinner = document.getElementById('spinner');
+    const btn = document.getElementById('btn-emit');
+    spinner.style.display = 'inline-block'; btn.disabled = true;
+    const g = items.reduce((s, i) => s + i.subtotal, 0);
+    const iv = items.reduce((s, i) => s + i.igv, 0);
+    const t = g + iv;
+    const payload = {
+        companyId, clientId,
+        serie: document.getElementById('fac-serie').value,
+        moneda: document.getElementById('fac-moneda').value,
+        gravadas: parseFloat(g.toFixed(2)),
+        igv: parseFloat(iv.toFixed(2)),
+        total: parseFloat(t.toFixed(2)),
+        leyenda: document.getElementById('fac-leyenda').value || 'MONTO EN LETRAS',
+        detalle: items.map(i => ({
+            descripcion: i.descripcion, unidadMedida: i.unidadMedida,
+            cantidad: i.cantidad,
+            valorUnitario: parseFloat(i.valorUnitario.toFixed(2)),
+            precioUnitario: parseFloat(i.precioUnitario.toFixed(2)),
+            igv: parseFloat(i.igv.toFixed(2)),
+            subtotal: parseFloat(i.subtotal.toFixed(2))
+        }))
+    };
+    const endpoints = {FACTURA:'/api/v1/factura',BOLETA:'/api/v1/boleta',NOTA_CREDITO:'/api/v1/nota_credito',NOTA_DEBITO:'/api/v1/nota_debito'};
+    try {
+        const res = await fetch(endpoints[selectedDocType] || endpoints.FACTURA, {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const card = document.getElementById('modal-card');
+        const title = document.getElementById('modal-title');
+        if (data.isSuccess) {
+            card.className = 'modal-card success';
+            title.innerHTML = '✅ <span style="color:var(--accent);">Comprobante emitido exitosamente</span>';
+        } else {
+            card.className = 'modal-card error';
+            title.innerHTML = '❌ <span style="color:var(--danger);">Error al emitir</span>';
+        }
+        document.getElementById('modal-body').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('modal').classList.add('show');
+    } catch (err) {
+        document.getElementById('modal-title').innerHTML = '❌ <span style="color:var(--danger);">Error de conexión</span>';
+        document.getElementById('modal-body').textContent = err.toString();
+        document.getElementById('modal-card').className = 'modal-card error';
+        document.getElementById('modal').classList.add('show');
+    } finally { spinner.style.display = 'none'; btn.disabled = false; }
+}
+
+function resetAll() {
+    document.getElementById('modal').classList.remove('show');
+    items = []; itemCounter = 0; renderItems();
+    clearSelectedProduct();
+    goToScreen('scr-docs');
+}
+
+/* ═══════ INIT (sincrónico — siempre arranca en welcome) ═══════ */
+(function initApp() {
+    document.getElementById('scr-welcome').classList.add('active');
+    currentScreen = 'scr-welcome';
+    updateHeaderUI();
+    // Limpieza legacy por si quedó algo de antes
+    try { localStorage.removeItem('etia_onboarding'); } catch(e) {}
+})();
+</script>
+</body>
+</html>
+

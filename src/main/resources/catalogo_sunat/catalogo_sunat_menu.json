@@ -1,0 +1,146 @@
+[
+  {
+    "nombreCatalogo": "Catálogo No. 01: Código de tipo de documento",
+    "icono": "📄"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 02: Códigos de tipo de monedas",
+    "icono": "💱"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 03: Códigos de tipo de unidad de medida comercial",
+    "icono": "📐"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 04: Códigos de Países",
+    "icono": "🌎"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 05: Códigos de tipos de tributos",
+    "icono": "🏛️"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 06: Códigos de tipos de documentos de identidad",
+    "icono": "🪪"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 07: Códigos de tipo de afectación del IGV",
+    "icono": "📊"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 08: Códigos de tipos de sistema de cálculo del ISC",
+    "icono": "🧮"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 09: Códigos de tipo de nota de crédito electrónica",
+    "icono": "🔻"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 10: Códigos de Tipo de nota de débito electrónica",
+    "icono": "🔺"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 11: Resumen diario de boletas de venta y notas electrónicas - Código de tipo de valor de venta",
+    "icono": "📑"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 12: Códigos - Documentos relacionados tributarios",
+    "icono": "🔗"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 13: Ubicación geográfica (UBIGEO)",
+    "icono": "📍"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 14: Códigos - Otros conceptos tributarios",
+    "icono": "🏷️"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 15: Códigos - Elementos adicionales en la Factura Electrónica y/o Boleta de Venta Electrónica",
+    "icono": "🧩"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 16: Códigos – Tipo de precio de venta unitario",
+    "icono": "💲"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 17: Códigos – Tipo de operación",
+    "icono": "⚙️"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 18: Códigos – Modalidad de traslado",
+    "icono": "🚛"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 19: Resumen Diario de boletas de venta y notas electrónicas - Códigos de estado de ítem",
+    "icono": "📋"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 20: Códigos – Motivos de traslado",
+    "icono": "📦"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 21: Documentos relacionados - aplicable solo para la Guía de remisión electrónica",
+    "icono": "🚚"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 22: Regímenes de Percepción",
+    "icono": "🔎"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 23: Regímenes de Retención",
+    "icono": "🔒"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 24: Recibo electrónico por servicios públicos",
+    "icono": "💡"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 25: Código producto SUNAT",
+    "icono": "🏭"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 26: Tipo de préstamo",
+    "icono": "🏠"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 27: Indicador de primera vivienda",
+    "icono": "🏡"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 51: Código de tipo de factura",
+    "icono": "🧾"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 52: Código de leyendas",
+    "icono": "📜"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 53: Códigos de cargos o descuentos",
+    "icono": "💹"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 54: Códigos de bienes y servicios sujetos a detracción",
+    "icono": "⛏️"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 55: Código de identificación del ítem",
+    "icono": "🔖"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 56: Código de tipo de servicio público",
+    "icono": "⚡"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 57: Código de tipo de servicios públicos - telecomunicaciones",
+    "icono": "📡"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 58: Código de tipo de medidor – recibo de luz",
+    "icono": "🔌"
+  },
+  {
+    "nombreCatalogo": "Catálogo No. 59: Medios de pago",
+    "icono": "💳"
+  }
+]

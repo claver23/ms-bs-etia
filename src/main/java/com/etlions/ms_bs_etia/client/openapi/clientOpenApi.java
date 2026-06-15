@@ -1,6 +1,6 @@
 package com.etlions.ms_bs_etia.client.openapi;
 
-import com.etlions.ms_bs_etia.client.service.clientService;
+import com.etlions.ms_bs_etia.client.service.ClientService;
 import com.etlions.openapicodegen.api.v1.ClientApi;
 import com.etlions.openapicodegen.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-public class clientOpenApi implements ClientApi {
+public class ClientOpenApi implements ClientApi {
 
-    private final clientService clientService;
+    private final ClientService clientService;
 
     @Override
-    public ResponseEntity<ActualizarCliente200Response> registrarCliente(ClientRegisterRequest clientRegisterRequest) {
+    public ResponseEntity<ClientResponseDto> registrarCliente(ClientRegisterDto clientRegisterRequest) {
         return ResponseEntity.ok(clientService.registrarCliente(clientRegisterRequest));
     }
 
     @Override
-    public ResponseEntity<ActualizarCliente200Response> actualizarCliente(String clientId, ClientUpdateRequest clientUpdateRequest) {
+    public ResponseEntity<ClientResponseDto> actualizarCliente(String clientId, ClientUpdateDto clientUpdateRequest) {
         return ResponseEntity.ok(clientService.actualizarCliente(clientId, clientUpdateRequest));
     }
 
@@ -31,7 +31,8 @@ public class clientOpenApi implements ClientApi {
     }
 
     @Override
-    public ResponseEntity<ListarClientes200Response> listarClientes(String companyId, String tipoDocumento, String numeroDocumento, String denominacion, Integer page, Integer size) {
+    public ResponseEntity<ClientListResponseDto> listarClientes(String companyId, String tipoDocumento, String numeroDocumento, String denominacion, Integer page, Integer size) {
         return ResponseEntity.ok(clientService.listarClientes(companyId, tipoDocumento, numeroDocumento, denominacion, page, size));
     }
 }
+

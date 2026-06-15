@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: ms-bs-etia
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: never
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: false
+  thymeleaf:
+    cache: false
+
+# ── ETIA Config ──
+etia:
+  storage:
+    base-path: ./etia_storage
+  jwt:
+    secret: test-secret-key-minimum-32-characters-for-hmac-sha256-testing
+    expiration-hours: 24
+

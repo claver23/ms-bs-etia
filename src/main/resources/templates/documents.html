@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Documentos')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Documentos')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>Comprobantes Electrónicos</h2>
+            <p>Crea o consulta tus documentos tributarios</p>
+        </div>
+
+        <div class="dtc-grid">
+
+            <!-- FACTURA -->
+            <div class="dtc-card dtc-accent-green">
+                <div class="dtc-header">
+                    <div class="dtc-icon-wrap dtc-glow-green">🧾</div>
+                    <div class="dtc-info">
+                        <h3>Factura Electrónica</h3>
+                        <p>Operaciones con empresas · RUC · Serie F001+</p>
+                    </div>
+                </div>
+                <div class="dtc-actions">
+                    <a th:href="@{/wizard(type='FACTURA')}" class="dtc-btn dtc-btn-create dtc-btn-green">
+                        <span class="dtc-btn-icon">✨</span>
+                        <span class="dtc-btn-label">Crear Factura</span>
+                    </a>
+                    <a th:href="@{/facturas}" class="dtc-btn dtc-btn-list dtc-btn-list-green">
+                        <span class="dtc-btn-icon">📋</span>
+                        <span class="dtc-btn-label">Mis Facturas</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- BOLETA -->
+            <div class="dtc-card dtc-accent-blue">
+                <div class="dtc-header">
+                    <div class="dtc-icon-wrap dtc-glow-blue">🎫</div>
+                    <div class="dtc-info">
+                        <h3>Boleta de Venta</h3>
+                        <p>Consumidores finales · DNI · Serie B001+</p>
+                    </div>
+                </div>
+                <div class="dtc-actions">
+                    <a th:href="@{/wizard(type='BOLETA')}" class="dtc-btn dtc-btn-create dtc-btn-blue">
+                        <span class="dtc-btn-icon">✨</span>
+                        <span class="dtc-btn-label">Crear Boleta</span>
+                    </a>
+                    <a th:href="@{/boletas}" class="dtc-btn dtc-btn-list dtc-btn-list-blue">
+                        <span class="dtc-btn-icon">📋</span>
+                        <span class="dtc-btn-label">Mis Boletas</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- NOTA CRÉDITO -->
+            <div class="dtc-card dtc-accent-gold">
+                <div class="dtc-header">
+                    <div class="dtc-icon-wrap dtc-glow-gold">📉</div>
+                    <div class="dtc-info">
+                        <h3>Nota de Crédito</h3>
+                        <p>Anulaciones y descuentos sobre comprobantes</p>
+                    </div>
+                </div>
+                <div class="dtc-actions">
+                    <a th:href="@{/wizard-nota(type='NOTA_CREDITO')}" class="dtc-btn dtc-btn-create dtc-btn-gold">
+                        <span class="dtc-btn-icon">✨</span>
+                        <span class="dtc-btn-label">Crear Nota</span>
+                    </a>
+                    <a th:href="@{/notas-credito}" class="dtc-btn dtc-btn-list dtc-btn-list-gold">
+                        <span class="dtc-btn-icon">📋</span>
+                        <span class="dtc-btn-label">Mis Notas C.</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- NOTA DÉBITO -->
+            <div class="dtc-card dtc-accent-purple">
+                <div class="dtc-header">
+                    <div class="dtc-icon-wrap dtc-glow-purple">📈</div>
+                    <div class="dtc-info">
+                        <h3>Nota de Débito</h3>
+                        <p>Penalidades, intereses y cargos adicionales</p>
+                    </div>
+                </div>
+                <div class="dtc-actions">
+                    <a th:href="@{/wizard-nota(type='NOTA_DEBITO')}" class="dtc-btn dtc-btn-create dtc-btn-purple">
+                        <span class="dtc-btn-icon">✨</span>
+                        <span class="dtc-btn-label">Crear Nota</span>
+                    </a>
+                    <a th:href="@{/notas-debito}" class="dtc-btn dtc-btn-list dtc-btn-list-purple">
+                        <span class="dtc-btn-icon">📋</span>
+                        <span class="dtc-btn-label">Mis Notas D.</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() { ETIA.init(); });
+</script>
+</body>
+</html>

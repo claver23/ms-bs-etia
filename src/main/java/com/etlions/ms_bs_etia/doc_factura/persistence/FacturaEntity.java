@@ -16,6 +16,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "facturas")
@@ -45,11 +46,46 @@ public class FacturaEntity {
 
     private String moneda;
 
+    @Column(name = "forma_pago")
+    private String formaPago;
+
+    @Column(name = "tipo_cambio")
+    private BigDecimal tipoCambio;
+
+    @Column(name = "fecha_vencimiento")
+    private LocalDate fechaVencimiento;
+
+    @Column(name = "codigo_ubigeo", length = 6)
+    private String codigoUbigeo;
+
+    @Column(name = "tipo_operacion", length = 4)
+    private String tipoOperacion;
+
+    @Column(name = "hora_emision")
+    private LocalTime horaEmision;
+
     private BigDecimal gravadas;
+
+    private BigDecimal exoneradas;
+
+    private BigDecimal inafectas;
+
+    private BigDecimal gratuitas;
 
     private BigDecimal igv;
 
     private BigDecimal total;
+
+    @Column(name = "total_cargos")
+    private BigDecimal totalCargos;
+
+    @Column(name = "total_descuentos")
+    private BigDecimal totalDescuentos;
+
+    private BigDecimal subtotal;
+
+    @Column(name = "total_con_impuestos")
+    private BigDecimal totalConImpuestos;
 
     private String estado;
 
@@ -68,7 +104,20 @@ public class FacturaEntity {
     @Column(columnDefinition = "TEXT")
     private String detalleJson;
 
+    /** XML UBL 2.1 generado */
+    @Lob
+    @Column(name = "xml_content", columnDefinition = "TEXT")
+    private String xmlContent;
+
+    /** Ruta relativa donde se persistió el XML en disco */
+    @Column(name = "xml_path")
+    private String xmlPath;
+
+    /** Errores de validación interna (JSON array de strings). Solo si estado=CON_ERROR */
+    @Lob
+    @Column(name = "errores_validacion", columnDefinition = "TEXT")
+    private String erroresValidacion;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }
-

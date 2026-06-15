@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:conastec="urn:conastec:names:specification:ubl:schema:xsd:ConastecAggregateComponents-1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent><ds:Signature Id="COB002-2058-27263675"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>WO0p+mW2wTaHPM+I4r/O/RPQjGc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>H+MctBIeoV33kmsA3vUnM71RDDkZItfteIPke906lNmA4c3o20UUJzdOxOBG3DIqS4KG5FQIP9kR&#13;
+rJC+XQC/NGLPJ5oX0/SxF/0iMayUm9VGc8tpX7XN3JG8B9Y8cVUAVo9PqrgUSCQQtshZymgrOkMQ&#13;
+3CF+oJML6QIyGOk5yJjUPvtYFH+uizCRVKUu3aNgfEDegvR2o/BXiyX7a9Z9FmCKSU6gWQXRBAXJ&#13;
+qncvZa/5SV8WVlvMiuRo+dDrmUw5Kiz3k8NYScQ21b12MV94IbYpWkaxesDrsOMtFHZiPQJun4AP&#13;
+VKvPAdkqj7TljGwqluXrUlfj1MIe7X8BadkOuw==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509SubjectName>2.5.4.13=#0c2a436572746966696361646f207061726120466163747572616369c3b36e20456c65637472c3b36e696361,1.3.6.1.4.1.47286.30.2=#0c03525543,1.3.6.1.4.1.47286.30.3=#0c0b3230353038333136393835,1.3.6.1.4.1.47286.30.4=#0c03444e49,1.2.840.113549.1.9.1=#16174553454755524140434f4e41535445432e434f4d2e5045,CN=ELÍ RÓNAL SEGURA SALAS,2.5.4.5=#13083130323031343035,2.5.4.42=#0c0b454cc38d2052c3934e414c,2.5.4.4=#0c0c5345475552412053414c4153,2.5.4.12=#0c0f474552454e54452047454e4552414c,OU=GERENCIA,OU=20508316985,O=CONSULTORIA Y ASESORIA EN TECNOLOGIA CONASTEC S.R.L.,L=LIMA,C=PE</ds:X509SubjectName><ds:X509Certificate>MIIIhzCCBm+gAwIBAgIIfc6ekpq6DpswDQYJKoZIhvcNAQELBQAwgbgxCzAJBgNVBAYTAkVTMUQw&#13;
+QgYDVQQHDDtCYXJjZWxvbmEgKHNlZSBjdXJyZW50IGFkZHJlc3MgYXQgd3d3LnVhbmF0YWNhLmNv&#13;
+bS9hZGRyZXNzKTEWMBQGA1UECgwNVUFOQVRBQ0EgUy5BLjEVMBMGA1UECwwMVFNQLVVBTkFUQUNB&#13;
+MRowGAYDVQQDDBFVQU5BVEFDQSBDQTEgMjAxNjEYMBYGA1UEYQwPVkFURVMtQTY2NzIxNDk5MB4X&#13;
+DTI1MDUyNjE5MzkwMFoXDTI4MDUyNTE5MzkwMFowggGlMQswCQYDVQQGEwJQRTENMAsGA1UEBwwE&#13;
+TElNQTE9MDsGA1UECgw0Q09OU1VMVE9SSUEgWSBBU0VTT1JJQSBFTiBURUNOT0xPR0lBIENPTkFT&#13;
+VEVDIFMuUi5MLjEUMBIGA1UECwwLMjA1MDgzMTY5ODUxETAPBgNVBAsMCEdFUkVOQ0lBMRgwFgYD&#13;
+VQQMDA9HRVJFTlRFIEdFTkVSQUwxFTATBgNVBAQMDFNFR1VSQSBTQUxBUzEUMBIGA1UEKgwLRUzD&#13;
+jSBSw5NOQUwxETAPBgNVBAUTCDEwMjAxNDA1MSEwHwYDVQQDDBhFTMONIFLDk05BTCBTRUdVUkEg&#13;
+U0FMQVMxJjAkBgkqhkiG9w0BCQEWF0VTRUdVUkFAQ09OQVNURUMuQ09NLlBFMRMwEQYKKwYBBAGC&#13;
+8TYeBAwDRE5JMRswGQYKKwYBBAGC8TYeAwwLMjA1MDgzMTY5ODUxEzARBgorBgEEAYLxNh4CDANS&#13;
+VUMxMzAxBgNVBA0MKkNlcnRpZmljYWRvIHBhcmEgRmFjdHVyYWNpw7NuIEVsZWN0csOzbmljYTCC&#13;
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMtmTHmBgrDXJqWNufB3881DdqRY2+PLryK&#13;
+c31/Ny3c5XXwMOSp4pu2FQXyBzGsUj4FOHWiwN3svUbxOuGFIMkbvrXBEUIqCIMcp9A5XlblAPG4&#13;
+yu8l2PvZFZ7+Vgt6+ScT4ueJw+uxNAY2AfYMycPq1RyOCoGyMG/PZV3m9Hd9DA+Dtr1uVnAQQC9x&#13;
+Wjc/rRHrVnwBe/qZrDn6PUlrupQEviEg7DFkp23aLTxZdDCgk4bguXrrP1Roj4NuMOHcP4T329lc&#13;
+hZWeBk4QCXQyYX5BfmDZyuTeo28cicFGKgsEQ6AGX3QHEfAtcLXs0m58vVR/eF0IaH7xJkQQvd++&#13;
+GmUCAwEAAaOCAqMwggKfMIHWBggrBgEFBQcBAQSByTCBxjBUBggrBgEFBQcwAoZIaHR0cDovL3d3&#13;
+dy51YW5hdGFjYS5jb20vcHVibGljL2Rvd25sb2FkL3RzcF9jZXJ0aWZpY2F0ZXMvdHJ1c3RlZFJv&#13;
+b3QucDdjMDYGCCsGAQUFBzABhipodHRwOi8vb2NzcDEudWFuYXRhY2EuY29tL3B1YmxpYy9wa2kv&#13;
+b2NzcC8wNgYIKwYBBQUHMAGGKmh0dHA6Ly9vY3NwMi51YW5hdGFjYS5jb20vcHVibGljL3BraS9v&#13;
+Y3NwLzAdBgNVHQ4EFgQUfGWdgj9+w45ltch5+TQZvqFlcKowDAYDVR0TAQH/BAIwADAfBgNVHSME&#13;
+GDAWgBQtce+wY3/1/eCDIkR/RBAwgU9N5TCBkAYDVR0gBIGIMIGFMIGCBgwrBgEEAYLxNgICAgIw&#13;
+cjA2BggrBgEFBQcCARYqaHR0cDovL3d3dy51YW5hdGFjYS5jb20vcHVibGljL3BraS9kcGMtcGUv&#13;
+MDgGCCsGAQUFBwICMCwMKkNlcnRpZmljYWRvIHBhcmEgRmFjdHVyYWNpw7NuIEVsZWN0csOzbmlj&#13;
+YTCBjwYDVR0fBIGHMIGEMECgPqA8hjpodHRwOi8vY3JsMS51YW5hdGFjYS5jb20vcHVibGljL3Br&#13;
+aS9jcmwvQ0Exc3Vib3JkaW5hZGEuY3JsMECgPqA8hjpodHRwOi8vY3JsMi51YW5hdGFjYS5jb20v&#13;
+cHVibGljL3BraS9jcmwvQ0Exc3Vib3JkaW5hZGEuY3JsMA4GA1UdDwEB/wQEAwIGwDAdBgNVHSUE&#13;
+FjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwIgYDVR0RBBswGYEXRVNFR1VSQUBDT05BU1RFQy5DT00u&#13;
+UEUwDQYJKoZIhvcNAQELBQADggIBAGu9JLrYm+kCdoe5MW4CU4YxFBLC30nkBeEjLZP4LSpz9dMY&#13;
+z3c4yhwVMo7vaj4Oid3m0Z1C+oyXFQC8OvZN38+ix6jvYiALKd8e0jnJPyKQdHaERoHIfc+GzaYL&#13;
+gyBjMnYH3Ihuz1W65jxOr9ZzIgZfw5r4WRV8ZjGeClBK6rVmE0H32JWFsHYm75yvh+r7AT03JK8h&#13;
+0vGzYQMGHokpfo1BCdISThggRyPPYZKt0F8o1baseMptJy+dY0P4nylk/swQkrwDZ/JlONFbqJh0&#13;
+O1j3YCq/SNstQoB5q6mFDwmNpSjmNlEhS1jqSv8FoAOzwHLMKqXLfx2y4vfchs3YXCYDntHZedou&#13;
+ale95GiDkaPNDVvVfzmrsigL+tgB1DKjXagZxmg64TkLTgElqWTIcjyJKKF1DknirlPTh3alLGHu&#13;
+PlYVihTM9rfKOYqZsrFOMozegbnUneZv2Eo7jNsgSOKHMUYvSj/szjg9OGXxSO6rPq4U1tJIGwoY&#13;
+/7wyykqj5S5jOZnmdkv0wDVphQR9ygc9Z/TNzXJCMEUK6WVsrYe6E6iXrIMZ8Bbq6StHcFeTmpoE&#13;
+Oxzy6Q5B5t08x9laVfN2tQTO05JJ8+OxOD38n67LUzF0IU9HD49Ah/IxswsLVAuI0/VMWvJRCevG&#13;
+Emf/xWQlySNtbYhygspS4ieYX9Le</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></ext:ExtensionContent>
+        </ext:UBLExtension>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <conastec:CustomText>
+                    <conastec:Text name="PAID_OUT"/>
+                    <conastec:Text name="RECARGO_CONSUMO">2.97</conastec:Text>
+                    <conastec:Text name="PROPINA">0.00</conastec:Text>
+                    <conastec:Text name="REFERENCIA">DA SILVA SOUSA GUIMARAES DIANA SOFIA</conastec:Text>
+                    <conastec:Text name="HABITACION">606   /NURR    </conastec:Text>
+                    <conastec:Text name="RESERVA">47420</conastec:Text>
+                </conastec:CustomText>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+    <cbc:CustomizationID schemeAgencyName="PE:SUNAT">2.0</cbc:CustomizationID>
+    <cbc:ID>B002-2058</cbc:ID>
+    <cbc:IssueDate>2026-04-05</cbc:IssueDate>
+    <cbc:IssueTime>16:27:08</cbc:IssueTime>
+    <cbc:DueDate>2026-04-05</cbc:DueDate>
+    <cbc:InvoiceTypeCode listAgencyName="PE:SUNAT" listID="0101" listName="Tipo de Documento" listSchemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01" name="Tipo de Operacion">03</cbc:InvoiceTypeCode>
+    <cbc:Note languageLocaleID="1000">TREINTA Y OCHO CON 00/100 SOLES</cbc:Note>
+    <cbc:DocumentCurrencyCode listAgencyName="United Nations Economic Commission for Europe" listName="Currency">PEN</cbc:DocumentCurrencyCode>
+    <cbc:LineCountNumeric>1</cbc:LineCountNumeric>
+    <cac:AccountingSupplierParty>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeAgencyName="PE:SUNAT" schemeID="6" schemeName="Documento de Identidad" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20517863948</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>WANCHAK REAL STATE S.A.C.</cbc:RegistrationName>
+                <cac:RegistrationAddress>
+                    <cbc:ID schemeAgencyName="PE:INEI" schemeName="Ubigeos">150131</cbc:ID>
+                    <cbc:AddressTypeCode listAgencyName="PE:SUNAT">0000</cbc:AddressTypeCode>
+                    <cbc:CityName>LIMA</cbc:CityName>
+                    <cbc:CountrySubentity>LIMA</cbc:CountrySubentity>
+                    <cbc:District>SAN ISIDRO</cbc:District>
+                    <cac:AddressLine>
+                        <cbc:Line>CAL.CORONEL ODRIOZOLA NRO. 112</cbc:Line>
+                    </cac:AddressLine>
+                    <cac:Country>
+                        <cbc:IdentificationCode listAgencyName="United Nations Economic Commission for Europe">PE</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:RegistrationAddress>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingSupplierParty>
+    <cac:AccountingCustomerParty>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeAgencyName="PE:SUNAT" schemeID="7" schemeName="Documento de Identidad" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">CF939785</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>DA SILVA SOUSA GUIMARAES DIANA SOFIA</cbc:RegistrationName>
+                <cac:RegistrationAddress>
+                    <cac:AddressLine>
+                        <cbc:Line>PORTUGAL </cbc:Line>
+                    </cac:AddressLine>
+                    <cac:Country>
+                        <cbc:IdentificationCode listAgencyName="United Nations Economic Commission for Europe">PT</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:RegistrationAddress>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingCustomerParty>
+    <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
+        <cbc:AllowanceChargeReasonCode listAgencyName="PE:SUNAT" listName="Cargo/descuento" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo53">46</cbc:AllowanceChargeReasonCode>
+        <cbc:MultiplierFactorNumeric>0.10003</cbc:MultiplierFactorNumeric>
+        <cbc:Amount currencyID="PEN">2.97</cbc:Amount>
+        <cbc:BaseAmount currencyID="PEN">29.69</cbc:BaseAmount>
+    </cac:AllowanceCharge>
+    <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="PEN">5.34</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+            <cbc:TaxableAmount currencyID="PEN">29.69</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="PEN">5.34</cbc:TaxAmount>
+            <cac:TaxCategory>
+                <cac:TaxScheme>
+                    <cbc:ID schemeAgencyName="PE:SUNAT" schemeName="Codigo de tributos" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
+                    <cbc:Name>IGV</cbc:Name>
+                    <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+                </cac:TaxScheme>
+            </cac:TaxCategory>
+        </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:LegalMonetaryTotal>
+        <cbc:LineExtensionAmount currencyID="PEN">29.69</cbc:LineExtensionAmount>
+        <cbc:TaxInclusiveAmount currencyID="PEN">35.03</cbc:TaxInclusiveAmount>
+        <cbc:ChargeTotalAmount currencyID="PEN">2.97</cbc:ChargeTotalAmount>
+        <cbc:PayableAmount currencyID="PEN">38.00</cbc:PayableAmount>
+    </cac:LegalMonetaryTotal>
+    <cac:InvoiceLine>
+        <cbc:ID>1</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="NIU" unitCodeListAgencyName="United Nations Economic Commission for Europe" unitCodeListID="UN/ECE rec 20">1</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="PEN">29.69</cbc:LineExtensionAmount>
+        <cac:PricingReference>
+            <cac:AlternativeConditionPrice>
+                <cbc:PriceAmount currencyID="PEN">35.03</cbc:PriceAmount>
+                <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+            </cac:AlternativeConditionPrice>
+        </cac:PricingReference>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="PEN">5.34</cbc:TaxAmount>
+            <cac:TaxSubtotal>
+                <cbc:TaxableAmount currencyID="PEN">29.69</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="PEN">5.34</cbc:TaxAmount>
+                <cac:TaxCategory>
+                    <cbc:Percent>18.00</cbc:Percent>
+                    <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+                    <cac:TaxScheme>
+                        <cbc:ID schemeAgencyName="PE:SUNAT" schemeName="Codigo de tributos" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
+                        <cbc:Name>IGV</cbc:Name>
+                        <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+                    </cac:TaxScheme>
+                </cac:TaxCategory>
+            </cac:TaxSubtotal>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Description>ALIMENTOS</cbc:Description>
+            <cac:SellersItemIdentification>
+                <cbc:ID>3002</cbc:ID>
+            </cac:SellersItemIdentification>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="PEN">29.69</cbc:PriceAmount>
+        </cac:Price>
+    </cac:InvoiceLine>
+</Invoice>

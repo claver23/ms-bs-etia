@@ -70,10 +70,23 @@ public class CompanyEntity {
 
     private String estado;
 
+    @Column(name = "logo_path")
+    private String logoPath;
+
+    @Column(name = "logo_format")
+    private String logoFormat;
+
+    @Column(name = "emision_en_envio")
+    @Builder.Default
+    private Boolean emisionEnEnvio = true;
+
+    @Column(name = "es_demo")
+    @Builder.Default
+    private Boolean esDemo = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 }
-

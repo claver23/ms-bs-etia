@@ -1,0 +1,37 @@
+[
+  {
+    "nombre": "Catálogo No. 02: Códigos de tipo de monedas",
+    "campo": "cbc:DocumentCurrencyCode",
+    "description": "Tipo de moneda",
+    "catalogo": "ISO 4217 Alpha Version 2001 – Codes for the representation of currencies",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 03: Códigos de tipo de unidad de medida comercial",
+    "campo": "@UnitCode",
+    "description": "Código del Tipo de unidad",
+    "catalogo": "UN/ECE Recommendation 20 Revision 4 – Codes for Units of Measure",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 04: Códigos de Países",
+    "campo": "cac:Country/cbc:IdentificationCode",
+    "description": "Código de País",
+    "catalogo": "ISO 3166-1: 2006 – Codes for the representation of names of countries and their subdivisions Part. 1: country codes",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 13: Ubicación geográfica (UBIGEO)",
+    "campo": "./cac:RegistrationAddress/cbc:ID",
+    "description": "Código de Ubicación Geográfica (UBIGEO)",
+    "catalogo": "Utilizar el catálogo de ubigeos del INEI",
+    "data": []
+  },
+  {
+    "nombre": "Catálogo No. 25: Código producto SUNAT",
+    "campo": "",
+    "description": "Código Producto SUNAT",
+    "catalogo": "United Nations Standard Products and Services Code - Código de productos y servicios estándar de las Naciones Unidas - UNSPSC v14_0801",
+    "data": []
+  }
+]

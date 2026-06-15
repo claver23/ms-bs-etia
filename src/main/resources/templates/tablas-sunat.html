@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Tablas SUNAT')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Tablas SUNAT')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>📋 Tablas SUNAT</h2>
+            <p>Catálogo oficial de tablas parametrizadas de SUNAT</p>
+        </div>
+
+        <!-- Toolbar: selector de tabla -->
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <select id="ts-selector" class="vt-search" style="max-width:480px;" onchange="loadTablaSunat()">
+                    <option value="">— Selecciona una tabla —</option>
+                </select>
+            </div>
+            <div class="vt-actions">
+                <span id="ts-badge" style="font-size:0.75rem;color:var(--text-muted);"></span>
+            </div>
+        </div>
+
+        <!-- Table content -->
+        <div class="panel active" id="ts-panel">
+            <!-- Buscador dentro del panel (oculto hasta seleccionar tabla) -->
+            <div id="ts-search-bar" style="display:none; padding:0.75rem 1rem 0.5rem;">
+                <input type="text" id="ts-search" class="vt-search" style="width:100%;" placeholder="🔍 Buscar por código o descripción..." oninput="filterRegistros(this.value)"/>
+            </div>
+            <div id="ts-content">
+                <p class="pm-empty">👆 Selecciona una tabla del menú para ver su contenido</p>
+            </div>
+            <div id="ts-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<!-- JS -->
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var allRegistros = [], filteredRegistros = [], currentPage = 0, PAGE_SIZE = 15;
+    var currentTablaName = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            loadMenuTablasSunat();
+        });
+    });
+
+    function loadMenuTablasSunat() {
+        ApiClient.listMenuTablasSunat().then(function(items) {
+            var select = document.getElementById('ts-selector');
+            items.forEach(function(item) {
+                var opt = document.createElement('option');
+                opt.value = item.nombreTabla;
+                opt.textContent = item.nombreTabla;
+                select.appendChild(opt);
+            });
+        }).catch(function(err) {
+            console.error('Error cargando menú tablas SUNAT:', err);
+        });
+    }
+
+    function loadTablaSunat() {
+        var nombreTabla = document.getElementById('ts-selector').value;
+        var container = document.getElementById('ts-content');
+        var badge = document.getElementById('ts-badge');
+        var searchBar = document.getElementById('ts-search-bar');
+        var searchInput = document.getElementById('ts-search');
+
+        if (!nombreTabla) {
+            container.innerHTML = '<p class="pm-empty">👆 Selecciona una tabla del menú para ver su contenido</p>';
+            badge.textContent = '';
+            searchBar.style.display = 'none';
+            document.getElementById('ts-pag').style.display = 'none';
+            allRegistros = []; filteredRegistros = [];
+            return;
+        }
+
+        container.innerHTML = '<p class="pm-empty">⏳ Cargando tabla...</p>';
+        badge.textContent = '';
+        searchBar.style.display = 'none';
+        document.getElementById('ts-pag').style.display = 'none';
+
+        ApiClient.obtenerTablaSunat(nombreTabla).then(function(data) {
+            currentTablaName = data.nombreTabla || nombreTabla;
+            allRegistros = data.data || [];
+            filteredRegistros = allRegistros;
+            currentPage = 0;
+
+            badge.innerHTML = '<span class="badge badge-blue">' + data.registros + ' registros</span>';
+
+            // Mostrar buscador
+            searchInput.value = '';
+            searchBar.style.display = '';
+
+            renderPage();
+        }).catch(function(err) {
+            container.innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando tabla SUNAT</p>';
+            console.error(err);
+        });
+    }
+
+    function filterRegistros(term) {
+        if (!term) {
+            filteredRegistros = allRegistros;
+        } else {
+            var lower = term.toLowerCase();
+            filteredRegistros = allRegistros.filter(function(r) {
+                return (r.cod || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (r.descripcion || '').toLowerCase().indexOf(lower) !== -1;
+            });
+        }
+        currentPage = 0;
+        renderPage();
+    }
+
+    function renderPage() {
+        var total = filteredRegistros.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE;
+        var pageItems = filteredRegistros.slice(start, start + PAGE_SIZE);
+        renderTable(pageItems, total);
+        renderPagination(total, totalPages);
+    }
+
+    function goToPage(p) { currentPage = p; renderPage(); }
+
+    function renderTable(items, total) {
+        var container = document.getElementById('ts-content');
+        if (total === 0) {
+            container.innerHTML = '<p class="pm-empty">📭 No se encontraron registros' +
+                (document.getElementById('ts-search').value ? ' para "' + escapeHtml(document.getElementById('ts-search').value) + '"' : '') + '</p>';
+            return;
+        }
+
+        var html = '<div class="tbl-wrap"><table class="tbl">';
+        html += '<thead><tr>';
+        html += '<th style="width:120px;">Código</th>';
+        html += '<th>Descripción</th>';
+        html += '</tr></thead><tbody>';
+
+        items.forEach(function(reg) {
+            html += '<tr>';
+            html += '<td><code style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-weight:600;">' + escapeHtml(reg.cod) + '</code></td>';
+            html += '<td>' + escapeHtml(reg.descripcion) + '</td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    }
+
+    function renderPagination(total, totalPages) {
+        var bar = document.getElementById('ts-pag');
+        if (total === 0) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        var start = currentPage * PAGE_SIZE + 1;
+        var end = Math.min((currentPage + 1) * PAGE_SIZE, total);
+        var html = '<div class="pag-info"><span class="badge badge-blue">' + total + ' registro' + (total !== 1 ? 's' : '') + '</span> ' +
+            'Mostrando ' + start + '–' + end + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(0)" ' + (currentPage === 0 ? 'disabled' : '') + '>«</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) {
+                if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
+                continue;
+            }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (totalPages - 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>»</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
+
+
+

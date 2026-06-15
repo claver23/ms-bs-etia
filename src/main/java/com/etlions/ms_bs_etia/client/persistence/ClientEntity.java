@@ -40,11 +40,23 @@ public class ClientEntity {
 
     private String direccion;
 
+    private String departamento;
+
+    private String provincia;
+
+    private String distrito;
+
+    @Column(name = "codigo_pais", length = 2)
+    private String codigoPais;
+
     private String email;
 
     private String telefono;
 
+    @Column(name = "es_demo")
+    @Builder.Default
+    private Boolean esDemo = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 }
-

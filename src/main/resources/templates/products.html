@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Productos')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Productos')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>📦 Catálogo de Productos</h2>
+            <p>Gestiona tu catálogo de productos y servicios para facturar</p>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <input type="text" id="product-search" class="vt-search" placeholder="🔍 Buscar por nombre, código..." oninput="filterProducts(this.value)"/>
+            </div>
+            <div class="vt-actions">
+                <button class="btn btn-accent" onclick="openCreateModal()">➕ Nuevo Producto</button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="panel active" id="product-panel">
+            <div id="product-content">
+                <p class="pm-empty">⏳ Cargando productos...</p>
+            </div>
+            <div id="product-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ Modal: Crear Producto ═══════ -->
+<div class="modal-overlay" id="create-product-modal">
+    <div class="modal-card" style="max-width:540px;">
+        <h3>📦 Nuevo Producto o Servicio</h3>
+        <form id="product-form" onsubmit="return handleCreateProduct(event);">
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="pf-code">Código Interno</label>
+                    <input type="text" id="pf-code" placeholder="Ej: SRV-004" required/>
+                </div>
+                <div class="f-group">
+                    <label for="pf-sunat-code">Código SUNAT (UNSPSC)</label>
+                    <input type="text" id="pf-sunat-code" placeholder="Ej: 82101500" maxlength="8"/>
+                </div>
+            </div>
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="pf-um">Unidad de Medida</label>
+                    <select id="pf-um" required>
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+                <div class="f-group">
+                    <label for="pf-afectacion">Afectación IGV</label>
+                    <select id="pf-afectacion" onchange="calcIGV()">
+                        <option value="10">Gravado (10)</option>
+                        <option value="20">Exonerado (20)</option>
+                        <option value="30">Inafecto (30)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="f-group">
+                <label for="pf-desc">Descripción</label>
+                <input type="text" id="pf-desc" placeholder="Nombre del producto o servicio" required/>
+            </div>
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="pf-valor">Valor Unitario (sin IGV)</label>
+                    <input type="number" id="pf-valor" step="0.01" min="0.01" placeholder="0.00" required oninput="calcIGV()"/>
+                </div>
+                <div class="f-group">
+                    <label>IGV (18%)</label>
+                    <input type="text" id="pf-igv" readonly value="0.00"/>
+                </div>
+            </div>
+            <div class="f-group">
+                <label>Precio Unitario (con IGV)</label>
+                <input type="text" id="pf-precio" readonly value="0.00" style="font-weight:700; color:var(--accent); font-size:1.05rem;"/>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="closeCreateModal()">Cancelar</button>
+                <button type="submit" class="btn btn-accent" id="pf-submit">💾 Guardar Producto</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var unidades = [];
+    var PAGE_SIZE = 10;
+    var currentPage = 0;
+    var totalPages = 1;
+    var totalElements = 0;
+    var currentTerm = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() {
+            loadProducts();
+            loadUnidades();
+        });
+    });
+
+    /* ═══════ Load Data ═══════ */
+    function loadProducts() {
+        ApiClient.searchProducts(ETIA.companyId, currentTerm, currentPage, PAGE_SIZE).then(function(result) {
+            var prods = result.content || [];
+            var pag = result.pagination || {};
+            totalElements = pag.totalElements || prods.length;
+            totalPages = pag.totalPages || Math.max(1, Math.ceil(totalElements / PAGE_SIZE));
+            renderProducts(prods);
+            renderPagination();
+        }).catch(function() {
+            document.getElementById('product-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando productos</p>';
+            document.getElementById('product-pag').style.display = 'none';
+        });
+    }
+
+    function loadUnidades() {
+        ApiClient.listUnidadesMedida().then(function(data) {
+            unidades = data || [];
+            var sel = document.getElementById('pf-um');
+            sel.innerHTML = '';
+            unidades.forEach(function(u) {
+                var opt = document.createElement('option');
+                opt.value = u.codigo;
+                opt.textContent = u.codigo + ' — ' + u.descripcion;
+                sel.appendChild(opt);
+            });
+            sel.value = 'ZZ';
+        });
+    }
+
+    /* ═══════ Filter ═══════ */
+    var _searchTimeout;
+    function filterProducts(term) {
+        clearTimeout(_searchTimeout);
+        _searchTimeout = setTimeout(function() {
+            currentTerm = term || '';
+            currentPage = 0;
+            loadProducts();
+        }, 300);
+    }
+
+    function goToPage(p) {
+        if (p < 0 || p >= totalPages) return;
+        currentPage = p;
+        loadProducts();
+    }
+
+    /* ═══════ Render Table ═══════ */
+    function renderProducts(prods) {
+        if (!prods || prods.length === 0) {
+            document.getElementById('product-content').innerHTML = '<p class="pm-empty">📭 No hay productos en el catálogo</p>';
+            return;
+        }
+        var umMap = {};
+        unidades.forEach(function(u) { umMap[u.codigo] = u.descripcion; });
+
+        var afectMap = {'10':'Gravado','20':'Exonerado','30':'Inafecto'};
+
+        var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+            '<th>Código</th><th>SUNAT</th><th>Descripción</th><th>U.M.</th><th>Afect.</th><th>V.Unit.</th><th>P.Unit.</th><th>IGV</th>' +
+            '</tr></thead><tbody>';
+        prods.forEach(function(p) {
+            var umCode = p.unidadMedida || 'ZZ';
+            var umLabel = umMap[umCode] ? umCode + ' · ' + umMap[umCode] : umCode;
+            var afect = p.tipoAfectacionIgv || '10';
+            var afectLabel = afectMap[afect] || afect;
+            html += '<tr>' +
+                '<td><span class="badge badge-blue">' + (p.codigoProducto || '—') + '</span></td>' +
+                '<td><span class="badge badge-purple" style="font-size:0.6rem;">' + (p.codigoProductoSunat || '—') + '</span></td>' +
+                '<td><strong>' + (p.descripcion || '') + '</strong></td>' +
+                '<td><span class="badge badge-purple" style="font-size:0.6rem;">' + umLabel + '</span></td>' +
+                '<td><span class="badge ' + (afect==='10'?'badge-blue':afect==='20'?'badge-green':'badge-orange') + '" style="font-size:0.6rem;">' + afectLabel + '</span></td>' +
+                '<td style="font-family:var(--font-mono);">S/ ' + (parseFloat(p.valorUnitario) || 0).toFixed(2) + '</td>' +
+                '<td style="font-family:var(--font-mono);color:var(--accent);font-weight:600;">S/ ' + (parseFloat(p.precioUnitario) || 0).toFixed(2) + '</td>' +
+                '<td style="font-family:var(--font-mono);">S/ ' + (parseFloat(p.igv) || 0).toFixed(2) + '</td>' +
+                '</tr>';
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('product-content').innerHTML = html;
+    }
+
+    /* ═══════ Render Pagination ═══════ */
+    function renderPagination() {
+        var bar = document.getElementById('product-pag');
+        if (totalElements === 0) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        var start = currentPage * PAGE_SIZE + 1;
+        var end = Math.min((currentPage + 1) * PAGE_SIZE, totalElements);
+        var html = '<div class="pag-info"><span class="badge badge-blue">' + totalElements + ' producto' + (totalElements !== 1 ? 's' : '') + '</span> ' +
+            'Mostrando ' + start + '–' + end + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(0)" ' + (currentPage === 0 ? 'disabled' : '') + '>«</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) {
+                if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
+                continue;
+            }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (totalPages - 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>»</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
+
+    /* ═══════ Modal ═══════ */
+    function openCreateModal() {
+        document.getElementById('product-form').reset();
+        document.getElementById('pf-um').value = 'ZZ';
+        document.getElementById('pf-afectacion').value = '10';
+        document.getElementById('pf-igv').value = '0.00';
+        document.getElementById('pf-precio').value = '0.00';
+        document.getElementById('create-product-modal').classList.add('show');
+    }
+
+    function closeCreateModal() {
+        document.getElementById('create-product-modal').classList.remove('show');
+    }
+
+    function calcIGV() {
+        var val = parseFloat(document.getElementById('pf-valor').value) || 0;
+        var afect = document.getElementById('pf-afectacion').value;
+        var igv = (afect === '10') ? Math.round(val * 18) / 100 : 0;
+        document.getElementById('pf-igv').value = igv.toFixed(2);
+        document.getElementById('pf-precio').value = (val + igv).toFixed(2);
+    }
+
+    function handleCreateProduct(e) {
+        e.preventDefault();
+        var btn = document.getElementById('pf-submit');
+        btn.disabled = true;
+        btn.textContent = '⏳ Guardando...';
+
+        var product = {
+            companyId: ETIA.companyId,
+            codigoProducto: document.getElementById('pf-code').value.trim(),
+            codigoProductoSunat: document.getElementById('pf-sunat-code').value.trim() || null,
+            descripcion: document.getElementById('pf-desc').value.trim(),
+            unidadMedida: document.getElementById('pf-um').value,
+            tipoAfectacionIgv: document.getElementById('pf-afectacion').value,
+            valorUnitario: parseFloat(document.getElementById('pf-valor').value)
+        };
+
+        ApiClient.createProduct(product).then(function() {
+            closeCreateModal();
+            loadProducts();
+            if (ETIA.showSuccess) ETIA.showSuccess('Producto "' + product.descripcion + '" creado exitosamente');
+        }).catch(function() {
+            // Error handled by ApiClient toast
+        }).finally(function() {
+            btn.disabled = false;
+            btn.textContent = '💾 Guardar Producto';
+        });
+        return false;
+    }
+
+    document.getElementById('create-product-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeCreateModal();
+    });
+</script>
+</body>
+</html>
+

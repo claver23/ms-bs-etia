@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Empleados')}"></head>
+<body>
+
+<header th:replace="~{fragments/header :: header(backUrl='/menu', backLabel='Menú', breadcrumb='Empleados')}"></header>
+
+<div class="screen">
+    <div class="container">
+        <div class="menu-title">
+            <h2>🧑‍💼 Empleados</h2>
+            <p>Operadores y personal registrado en el sistema</p>
+        </div>
+
+        <div class="view-toolbar">
+            <div class="vt-search-wrap">
+                <input type="text" id="employee-search" class="vt-search" placeholder="🔍 Buscar por nombre, código, DNI..." oninput="filterEmployees(this.value)"/>
+            </div>
+            <div class="vt-actions">
+                <button class="btn btn-accent" onclick="openEmployeeForm()">➕ Nuevo Empleado</button>
+            </div>
+        </div>
+
+        <div class="panel active" id="employee-panel">
+            <div id="employee-content">
+                <p class="pm-empty">⏳ Cargando empleados...</p>
+            </div>
+            <div id="emp-pag" class="pag-bar" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ Modal: Crear / Editar Empleado ═══════ -->
+<div class="modal-overlay" id="employee-form-modal">
+    <div class="modal-card" style="max-width:540px;">
+        <h3 id="ef-title">🧑‍💼 Nuevo Empleado</h3>
+        <form id="employee-form" onsubmit="return handleSubmitEmployee(event);">
+            <input type="hidden" id="ef-id" value=""/>
+            <div class="f-group">
+                <label for="ef-dni">DNI</label>
+                <div style="display:flex;gap:0.4rem;">
+                    <input type="text" id="ef-dni" placeholder="8 dígitos" required maxlength="8" style="flex:1;"/>
+                    <button type="button" class="btn btn-accent" id="ef-btn-reniec" onclick="efQueryReniec()" style="white-space:nowrap;padding:0.4rem 0.7rem;font-size:0.8rem;">🔎 Consultar</button>
+                </div>
+            </div>
+            <!-- RENIEC status -->
+            <div id="ef-reniec-status" style="display:none;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.8rem;margin-bottom:0.8rem;"></div>
+            <div class="f-group">
+                <label for="ef-nombre">Nombre Completo</label>
+                <input type="text" id="ef-nombre" placeholder="Se autocompleta con RENIEC" required/>
+            </div>
+            <div class="f-row" style="margin-bottom:0;">
+                <div class="f-group">
+                    <label for="ef-cargo">Cargo</label>
+                    <input type="text" id="ef-cargo" placeholder="Ej: Contador Principal" required/>
+                </div>
+                <div class="f-group">
+                    <label for="ef-codigo">Código</label>
+                    <input type="text" id="ef-codigo" placeholder="Ej: EMP-001"/>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="closeEmployeeForm()">Cancelar</button>
+                <button type="submit" class="btn btn-accent" id="ef-submit">💾 Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Config Overlay -->
+<div th:replace="~{fragments/config-overlay :: configOverlay}"></div>
+
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script th:src="@{/js/navigation.js}"></script>
+<script th:src="@{/js/config-overlay.js}"></script>
+<script>
+    var allEmployees = [], filteredEmployees = [], currentPage = 0, PAGE_SIZE = 10;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        ETIA.init().then(function() { loadEmployees(); });
+    });
+
+    function loadEmployees() {
+        ApiClient.listEmployees(ETIA.companyId, '').then(function(employees) {
+            allEmployees = employees || [];
+            filteredEmployees = allEmployees;
+            currentPage = 0;
+            renderPage();
+        }).catch(function() {
+            document.getElementById('employee-content').innerHTML = '<p class="pm-empty" style="color:var(--danger);">❌ Error cargando empleados</p>';
+        });
+    }
+
+    function filterEmployees(term) {
+        if (!term) { filteredEmployees = allEmployees; } else {
+            var lower = term.toLowerCase();
+            filteredEmployees = allEmployees.filter(function(e) {
+                return (e.nombre || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (e.codigo || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (e.dni || '').toLowerCase().indexOf(lower) !== -1 ||
+                       (e.cargo || '').toLowerCase().indexOf(lower) !== -1;
+            });
+        }
+        currentPage = 0;
+        renderPage();
+    }
+
+    function renderPage() {
+        var total = filteredEmployees.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE;
+        renderEmployees(filteredEmployees.slice(start, start + PAGE_SIZE));
+        renderPagination(total, totalPages);
+    }
+
+    function goToPage(p) { currentPage = p; renderPage(); }
+
+    function renderEmployees(employees) {
+        if (!employees || employees.length === 0) {
+            document.getElementById('employee-content').innerHTML = '<p class="pm-empty">📭 No hay empleados registrados</p>';
+            return;
+        }
+        var html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+            '<th>Código</th><th>Nombre</th><th>Cargo</th><th>DNI</th><th>Estado</th><th style="text-align:center;">Acciones</th>' +
+            '</tr></thead><tbody>';
+        employees.forEach(function(e) {
+            var badgeCls = e.estado === 'ACTIVO' ? 'badge-green' : 'badge-gray';
+            var safe = function(s) { return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); };
+            html += '<tr>' +
+                '<td><span class="badge badge-blue">' + (e.codigo || '—') + '</span></td>' +
+                '<td><strong>' + (e.nombre || '—') + '</strong></td>' +
+                '<td>' + (e.cargo || '—') + '</td>' +
+                '<td style="font-family:var(--font-mono);">' + (e.dni || '—') + '</td>' +
+                '<td><span class="badge ' + badgeCls + '">' + (e.estado || '—') + '</span></td>' +
+                '<td style="text-align:center;white-space:nowrap;">' +
+                    '<button class="btn btn-ghost" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="editEmployee(\'' + safe(e.id) + '\',\'' + safe(e.nombre) + '\',\'' + safe(e.cargo) + '\',\'' + safe(e.codigo) + '\',\'' + safe(e.dni) + '\')">✏️</button> ';
+            if (e.estado === 'ACTIVO') {
+                html += '<button class="btn btn-ghost" style="padding:0.25rem 0.5rem;font-size:0.75rem;color:var(--danger);" onclick="confirmDeactivateEmployee(\'' + safe(e.id) + '\',\'' + safe(e.nombre) + '\')">⏸️</button>';
+            } else {
+                html += '<button class="btn btn-ghost" style="padding:0.25rem 0.5rem;font-size:0.75rem;color:var(--accent);" onclick="confirmDeleteEmployee(\'' + safe(e.id) + '\',\'' + safe(e.nombre) + '\')">🗑️</button>';
+            }
+            html += '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('employee-content').innerHTML = html;
+    }
+
+    function renderPagination(total, totalPages) {
+        var bar = document.getElementById('emp-pag');
+        if (total === 0) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        var start = currentPage * PAGE_SIZE + 1;
+        var end = Math.min((currentPage + 1) * PAGE_SIZE, total);
+        var html = '<div class="pag-info"><span class="badge badge-blue">' + total + ' empleado' + (total !== 1 ? 's' : '') + '</span> ' +
+            'Mostrando ' + start + '–' + end + '</div>';
+        html += '<div class="pag-controls">';
+        html += '<button class="pag-btn" onclick="goToPage(0)" ' + (currentPage === 0 ? 'disabled' : '') + '>«</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 0 ? 'disabled' : '') + '>‹</button>';
+        for (var i = 0; i < totalPages; i++) {
+            if (totalPages > 7 && Math.abs(i - currentPage) > 2 && i !== 0 && i !== totalPages - 1) {
+                if (i === 1 || i === totalPages - 2) html += '<span class="pag-btn" style="border:none;cursor:default;">…</span>';
+                continue;
+            }
+            html += '<button class="pag-btn' + (i === currentPage ? ' pag-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>';
+        }
+        html += '<button class="pag-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>›</button>';
+        html += '<button class="pag-btn" onclick="goToPage(' + (totalPages - 1) + ')" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>»</button>';
+        html += '</div>';
+        bar.innerHTML = html;
+    }
+
+    /* ═══════ RENIEC Consultation ═══════ */
+    function efQueryReniec() {
+        var numDoc = document.getElementById('ef-dni').value.trim();
+        var statusEl = document.getElementById('ef-reniec-status');
+        var btn = document.getElementById('ef-btn-reniec');
+
+        if (!numDoc) {
+            _efStatus('⚠️ Ingresa un número de DNI', 'warn');
+            return;
+        }
+        if (numDoc.length !== 8) {
+            _efStatus('⚠️ El DNI debe tener 8 dígitos', 'warn');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        _efStatus('🔄 Consultando RENIEC...', 'info');
+
+        ApiClient.consultarReniec('DNI', numDoc).then(function(data) {
+            btn.disabled = false;
+            btn.textContent = '🔎 Consultar';
+            if (data && (data.nombre || data.denominacion)) {
+                var nombre = data.denominacion || ((data.nombre || '') + ' ' + (data.apellidoPaterno || '') + ' ' + (data.apellidoMaterno || '')).trim();
+                document.getElementById('ef-nombre').value = nombre;
+                _efStatus('✅ Datos encontrados — ' + nombre, 'ok');
+            } else {
+                _efStatus('⚠️ No se encontraron datos. Completa manualmente.', 'warn');
+            }
+        }).catch(function(err) {
+            btn.disabled = false;
+            btn.textContent = '🔎 Consultar';
+            _efStatus('❌ Error consultando: ' + (err.message || err), 'error');
+        });
+    }
+
+    function _efStatus(msg, type) {
+        var el = document.getElementById('ef-reniec-status');
+        el.style.display = 'block';
+        el.textContent = msg;
+        if (type === 'ok')    { el.style.background = 'rgba(0,255,136,0.1)'; el.style.color = 'var(--accent)'; }
+        else if (type === 'warn')  { el.style.background = 'var(--warning-bg, rgba(255,200,0,0.1))'; el.style.color = 'var(--warning, #e0a800)'; }
+        else if (type === 'error') { el.style.background = 'rgba(248,81,73,0.1)'; el.style.color = 'var(--danger)'; }
+        else                       { el.style.background = 'var(--accent-glow, rgba(0,255,136,0.05))'; el.style.color = 'var(--accent)'; }
+    }
+
+    /* ═══════ Modal CRUD ═══════ */
+    var editingEmployeeId = null;
+
+    function openEmployeeForm() {
+        editingEmployeeId = null;
+        document.getElementById('ef-title').textContent = '🧑‍💼 Nuevo Empleado';
+        document.getElementById('ef-submit').textContent = '💾 Guardar';
+        document.getElementById('employee-form').reset();
+        document.getElementById('ef-id').value = '';
+        document.getElementById('ef-dni').readOnly = false;
+        document.getElementById('ef-btn-reniec').style.display = '';
+        document.getElementById('ef-reniec-status').style.display = 'none';
+        document.getElementById('employee-form-modal').classList.add('show');
+    }
+
+    function editEmployee(id, nombre, cargo, codigo, dni) {
+        editingEmployeeId = id;
+        document.getElementById('ef-title').textContent = '✏️ Editar Empleado';
+        document.getElementById('ef-submit').textContent = '💾 Actualizar';
+        document.getElementById('ef-id').value = id;
+        document.getElementById('ef-nombre').value = nombre || '';
+        document.getElementById('ef-cargo').value = cargo || '';
+        document.getElementById('ef-codigo').value = codigo || '';
+        document.getElementById('ef-dni').value = dni || '';
+        document.getElementById('ef-dni').readOnly = true;
+        document.getElementById('ef-btn-reniec').style.display = 'none';
+        document.getElementById('ef-reniec-status').style.display = 'none';
+        document.getElementById('employee-form-modal').classList.add('show');
+    }
+
+    function closeEmployeeForm() {
+        document.getElementById('employee-form-modal').classList.remove('show');
+    }
+
+    function handleSubmitEmployee(e) {
+        e.preventDefault();
+        var btn = document.getElementById('ef-submit');
+        btn.disabled = true;
+        btn.textContent = '⏳ Guardando...';
+
+        if (editingEmployeeId) {
+            var updatePayload = {
+                nombre: document.getElementById('ef-nombre').value.trim(),
+                cargo: document.getElementById('ef-cargo').value.trim(),
+                codigo: document.getElementById('ef-codigo').value.trim() || null,
+                dni: document.getElementById('ef-dni').value.trim()
+            };
+            ApiClient.updateEmployee(editingEmployeeId, updatePayload).then(function() {
+                closeEmployeeForm();
+                loadEmployees();
+                if (ETIA.showSuccess) ETIA.showSuccess('Empleado actualizado exitosamente');
+            }).catch(function() {}).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '💾 Actualizar';
+            });
+        } else {
+            var createPayload = {
+                companyId: ETIA.companyId,
+                nombre: document.getElementById('ef-nombre').value.trim(),
+                cargo: document.getElementById('ef-cargo').value.trim(),
+                codigo: document.getElementById('ef-codigo').value.trim() || null,
+                dni: document.getElementById('ef-dni').value.trim()
+            };
+            ApiClient.registerEmployee(createPayload).then(function() {
+                closeEmployeeForm();
+                loadEmployees();
+                if (ETIA.showSuccess) ETIA.showSuccess('Empleado "' + createPayload.nombre + '" registrado exitosamente');
+            }).catch(function() {}).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '💾 Guardar';
+            });
+        }
+        return false;
+    }
+
+    function confirmDeactivateEmployee(id, name) {
+        if (!confirm('¿Desactivar al empleado "' + name + '"?')) return;
+        ApiClient.deleteEmployee(id, true).then(function() {
+            loadEmployees();
+            if (ETIA.showSuccess) ETIA.showSuccess('Empleado desactivado exitosamente');
+        });
+    }
+
+    function confirmDeleteEmployee(id, name) {
+        if (!confirm('¿Eliminar permanentemente al empleado "' + name + '"? Esta acción no se puede deshacer.')) return;
+        ApiClient.deleteEmployee(id, false).then(function() {
+            loadEmployees();
+            if (ETIA.showSuccess) ETIA.showSuccess('Empleado eliminado exitosamente');
+        });
+    }
+
+    document.getElementById('employee-form-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeEmployeeForm();
+    });
+</script>
+</body>
+</html>
+

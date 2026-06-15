@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ETIA — Bienvenido')}"></head>
+<body>
+
+<!-- No header bar on landing — clean full-screen experience -->
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 1 — HERO
+     ═══════════════════════════════════════════════════ -->
+<div class="onb-view active" id="onb-1">
+    <div class="onb-hero">
+        <div class="onb-hero-particles">
+            <span class="onb-particle" style="--x:12%;--y:20%;--d:7s;--s:0.8;"></span>
+            <span class="onb-particle" style="--x:85%;--y:15%;--d:9s;--s:0.6;"></span>
+            <span class="onb-particle" style="--x:45%;--y:75%;--d:11s;--s:1;"></span>
+            <span class="onb-particle" style="--x:70%;--y:60%;--d:8s;--s:0.7;"></span>
+            <span class="onb-particle" style="--x:25%;--y:50%;--d:10s;--s:0.5;"></span>
+        </div>
+
+        <div class="onb-hero-content">
+            <div class="onb-hero-badge">🇵🇪 Hecho en Perú · Para emprendedores peruanos</div>
+            <div class="onb-hero-icon" id="onb-hero-icon">
+                <img id="onb-hero-logo-img" style="display:none;width:80px;height:80px;object-fit:contain;" alt="Logo"/>
+                <img id="onb-hero-logo-svg" th:src="@{/favicon.svg}" style="width:80px;height:80px;" alt="ETIA"/>
+            </div>
+            <h1 class="onb-hero-title">
+                Facturación Electrónica<br>
+                <span class="onb-hero-accent">sin complicaciones.</span>
+            </h1>
+            <p class="onb-hero-sub">
+                ETIA conecta tu negocio con SUNAT en segundos.<br>
+                Emite facturas, boletas, notas de crédito y más — todo desde un solo lugar,<br>
+                con la potencia que tu empresa necesita para <strong>crecer formalizada</strong>.
+            </p>
+            <button class="onb-hero-cta" onclick="onbGo(2)">
+                <span class="onb-cta-glow"></span>
+                🚀 INICIAR DEMO
+            </button>
+            <p class="onb-hero-hint">Sin instalaciones · Sin tarjeta de crédito · Listo en 2 minutos</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 2 — BENEFICIOS Y ALCANCE
+     ═══════════════════════════════════════════════════ -->
+<div class="onb-view" id="onb-2">
+    <div class="onb-benefits">
+        <div class="onb-benefits-header">
+            <h2 class="onb-section-title">Todo lo que necesitas para facturar</h2>
+            <p class="onb-section-sub">
+                ETIA nació con una misión clara: <strong>que ningún emprendedor peruano se quede atrás</strong>
+                por la complejidad de la facturación electrónica. Hoy cubrimos los comprobantes esenciales,
+                y mañana seremos tu plataforma completa de gestión tributaria.
+            </p>
+        </div>
+
+        <!-- Módulos actuales -->
+        <div class="onb-mod-label">
+            <span class="onb-mod-dot" style="background:var(--accent);"></span>
+            Disponible ahora
+        </div>
+        <div class="onb-modules-grid">
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">🧾</span>
+                <h3>Facturas</h3>
+                <p>Emite facturas electrónicas validadas por SUNAT al instante. Serie, correlativo, IGV — todo automático.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">🎫</span>
+                <h3>Boletas de Venta</h3>
+                <p>Para tus ventas a consumidores finales. Cumple con la normativa sin esfuerzo.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">📉</span>
+                <h3>Notas de Crédito</h3>
+                <p>Anula o modifica comprobantes emitidos. Devoluciones, descuentos, correcciones — resuelto.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">📈</span>
+                <h3>Notas de Débito</h3>
+                <p>Incrementa el valor de un comprobante por intereses, penalidades o ajustes.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">📋</span>
+                <h3>Resúmenes Diarios</h3>
+                <p>Envía tus boletas en lote a SUNAT. Comunicaciones de baja incluidas.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">🏢</span>
+                <h3>Multi-Sede</h3>
+                <p>Gestiona sucursales con series independientes. Cada sede con su propia configuración.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">👥</span>
+                <h3>Clientes</h3>
+                <p>Administra tu cartera de adquirientes con consulta directa a RENIEC y SUNAT.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">🧑‍💼</span>
+                <h3>Empleados</h3>
+                <p>Operadores y personal registrado en el sistema para control de acceso y auditoría.</p>
+            </div>
+            <div class="onb-mod-card">
+                <span class="onb-mod-icon">💱</span>
+                <h3>Tipo de Cambio</h3>
+                <p>Consulta tasas de cambio SBS y SUNAT del día para tus comprobantes en dólares.</p>
+            </div>
+        </div>
+
+        <!-- Módulos futuros -->
+        <div class="onb-mod-label" style="margin-top:2.5rem;">
+            <span class="onb-mod-dot" style="background:var(--info);"></span>
+            Próximamente
+        </div>
+        <div class="onb-modules-grid">
+            <div class="onb-mod-card onb-mod-soon">
+                <span class="onb-mod-icon">📄</span>
+                <h3>Recibos por Honorarios</h3>
+                <p>Emite recibos electrónicos como persona natural. Ideal para freelancers e independientes.</p>
+                <span class="onb-mod-tag">Persona Natural → Empresa</span>
+            </div>
+            <div class="onb-mod-card onb-mod-soon">
+                <span class="onb-mod-icon">🚚</span>
+                <h3>Guías de Remisión</h3>
+                <p>Documenta el traslado de mercadería con guías electrónicas válidas ante SUNAT.</p>
+            </div>
+            <div class="onb-mod-card onb-mod-soon">
+                <span class="onb-mod-icon">📊</span>
+                <h3>Dashboard Analítico</h3>
+                <p>Visualiza tus ventas, impuestos y tendencias. Toma decisiones con datos reales.</p>
+            </div>
+            <div class="onb-mod-card onb-mod-soon">
+                <span class="onb-mod-icon">🤖</span>
+                <h3>Automatización IA</h3>
+                <p>Generación inteligente de comprobantes, detección de errores y sugerencias fiscales.</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="onb-benefits-cta">
+            <p class="onb-benefits-quote">
+                "Formalizar tu negocio no debería ser un obstáculo,<br>sino el primer paso hacia algo más grande."
+            </p>
+            <button class="onb-step-btn" onclick="onbGo(3)">
+                PASO 1 → Configurar tu Empresa
+            </button>
+            <button class="onb-back-link" onclick="onbGo(1)">← Volver al inicio</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 3 — FORMULARIO DE REGISTRO
+     ═══════════════════════════════════════════════════ -->
+<div class="onb-view" id="onb-3">
+    <div class="screen-center" style="min-height:calc(100dvh - 56px);padding:2rem;">
+        <div class="welcome-card" style="max-width:580px;">
+            <div class="welcome-icon">⚡</div>
+            <h2>Configura tu Empresa</h2>
+            <p class="subtitle">Ingresa tus credenciales SOL y datos de contacto para conectar con SUNAT</p>
+
+            <div class="f-row" style="margin-top:1.5rem;">
+                <div class="f-group">
+                    <label>📝 Tipo de Contribuyente</label>
+                    <select id="onb-tipo-doc">
+                        <option value="">Cargando…</option>
+                    </select>
+                </div>
+                <div class="f-group">
+                    <label id="onb-numdoc-label">🏢 Número de Documento</label>
+                    <input type="text" id="onb-numdoc" placeholder="Ingrese número" maxlength="15"/>
+                </div>
+            </div>
+            <div class="f-row">
+                <div class="f-group">
+                    <label>👤 Usuario SOL</label>
+                    <input type="text" id="onb-usersol" placeholder="MODDATOS"/>
+                </div>
+                <div class="f-group">
+                    <label>🔑 Clave SOL</label>
+                    <input type="password" id="onb-clavesol" placeholder="••••••••"/>
+                </div>
+            </div>
+            <div class="f-row">
+                <div class="f-group">
+                    <label>📧 Correo electrónico</label>
+                    <input type="email" id="onb-email" placeholder="facturacion@empresa.com"/>
+                </div>
+                <div class="f-group">
+                    <label>📱 Teléfono</label>
+                    <input type="tel" id="onb-phone" placeholder="+51 999 888 777"/>
+                </div>
+            </div>
+
+            <!-- Logo upload widget -->
+            <div class="f-group" style="margin-top:1.2rem;">
+                <label>🖼️ Logo de tu Empresa <span style="font-size:.72rem;color:var(--text-muted);">(Opcional)</span></label>
+                <div id="onb-logo-upload-wrap" onclick="document.getElementById('onb-logo-file-input').click()"
+                     style="display:flex;align-items:center;gap:1rem;padding:1rem;border:2px dashed var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--bg-secondary);transition:all 0.2s;">
+                    <img id="onb-logo-preview" style="display:none;width:56px;height:56px;object-fit:contain;border-radius:var(--radius-sm);" alt="Logo preview"/>
+                    <span id="onb-logo-placeholder" style="font-size:2rem;width:56px;text-align:center;">📷</span>
+                    <div style="flex:1;">
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:0;">Haz clic para subir tu logo</p>
+                        <p id="onb-logo-hint" style="font-size:.72rem;color:var(--text-muted);margin:0.2rem 0 0;">PNG, JPG o SVG · Máx 10MB</p>
+                    </div>
+                    <input type="file" id="onb-logo-file-input" accept="image/png,image/jpeg,image/svg+xml,.png,.PNG,.jpg,.JPG,.jpeg,.JPEG,.svg,.SVG" style="display:none;" onchange="onbHandleLogoUpload(this)"/>
+                </div>
+                <div id="onb-logo-result" style="display:none;font-size:.78rem;margin-top:.3rem;padding:0.3rem 0.6rem;border-radius:var(--radius-sm);"></div>
+            </div>
+
+            <button class="btn btn-accent btn-block" style="margin-top:1.5rem;" onclick="onbSaveAndGo()">
+                🚀 Comenzar a Facturar
+            </button>
+
+            <!-- Guía para quienes no tienen SOL -->
+            <div class="onb-sol-help">
+                <div class="onb-sol-help-icon">💡</div>
+                <div class="onb-sol-help-text">
+                    <strong>¿No tienes Usuario o Clave SOL?</strong>
+                    <p>
+                        Para emitir comprobantes electrónicos necesitas una Clave SOL de SUNAT.
+                        Si aún no la tienes, te guiamos paso a paso.
+                    </p>
+                    <a href="#" class="onb-sol-help-link" onclick="event.preventDefault(); alert('🚧 Próximamente: Guía paso a paso para obtener tu Clave SOL desde SUNAT.');">
+                        📖 Ver guía rápida para obtener tu Clave SOL →
+                    </a>
+                </div>
+            </div>
+
+            <button class="onb-back-link" onclick="onbGo(2)" style="margin-top:1rem;">← Volver a beneficios</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Onboarding Styles ═══ -->
+<style>
+/* ─── Onboarding Views ─── */
+.onb-view {
+    display: none;
+    animation: onbFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.onb-view.active { display: block; }
+@keyframes onbFadeIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ VIEW 1 — HERO ═══ */
+.onb-hero {
+    min-height: calc(100dvh - 56px);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(88,166,255,0.04) 0%, transparent 50%),
+                var(--bg-primary);
+}
+.onb-hero-content {
+    text-align: center; position: relative; z-index: 2;
+    max-width: 720px; padding: 2rem;
+}
+.onb-hero-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 24px; padding: 0.35rem 1rem;
+    font-size: 0.72rem; font-weight: 600; color: var(--accent);
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+    margin-bottom: 2rem;
+}
+.onb-hero-icon {
+    font-size: 4rem; margin-bottom: 1.2rem;
+    filter: drop-shadow(0 0 40px rgba(0,255,136,0.3));
+}
+.onb-hero-title {
+    font-size: 3rem; font-weight: 900; line-height: 1.15;
+    color: var(--text-primary); margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+}
+.onb-hero-accent {
+    background: linear-gradient(135deg, var(--accent), var(--info));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.onb-hero-sub {
+    font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;
+    margin-bottom: 2.5rem; max-width: 560px; margin-left: auto; margin-right: auto;
+}
+.onb-hero-sub strong { color: var(--accent); font-weight: 600; }
+
+/* CTA Button — the star */
+.onb-hero-cta {
+    position: relative; display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--accent); color: var(--bg-primary);
+    border: none; border-radius: 14px;
+    padding: 1.1rem 2.8rem; font-size: 1.15rem; font-weight: 800;
+    font-family: var(--font-sans); cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 4px 24px rgba(0,255,136,0.3), 0 0 60px rgba(0,255,136,0.1);
+    overflow: hidden;
+}
+.onb-hero-cta:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 8px 40px rgba(0,255,136,0.4), 0 0 80px rgba(0,255,136,0.15);
+}
+.onb-hero-cta:active { transform: translateY(-1px) scale(0.99); }
+.onb-cta-glow {
+    position: absolute; inset: -2px; border-radius: 16px;
+    background: linear-gradient(135deg, rgba(0,255,136,0.4), rgba(88,166,255,0.3));
+    filter: blur(16px); opacity: 0.5; z-index: -1;
+    animation: ctaGlow 3s ease-in-out infinite;
+}
+@keyframes ctaGlow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50%      { opacity: 0.7; transform: scale(1.05); }
+}
+.onb-hero-hint {
+    font-size: 0.72rem; color: var(--text-muted); margin-top: 1.2rem;
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+}
+
+/* Floating particles */
+.onb-hero-particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.onb-particle {
+    position: absolute; left: var(--x); top: var(--y);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); opacity: 0.15;
+    animation: particleFloat var(--d) ease-in-out infinite;
+    transform: scale(var(--s));
+}
+@keyframes particleFloat {
+    0%, 100% { transform: scale(var(--s)) translateY(0); opacity: 0.1; }
+    50%      { transform: scale(var(--s)) translateY(-30px); opacity: 0.25; }
+}
+
+/* ═══ VIEW 2 — BENEFITS ═══ */
+.onb-benefits {
+    max-width: 960px; margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+}
+.onb-benefits-header { text-align: center; margin-bottom: 2.5rem; }
+.onb-section-title {
+    font-size: 2rem; font-weight: 800; margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, var(--text-primary), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.onb-section-sub {
+    font-size: 0.95rem; color: var(--text-secondary); line-height: 1.8;
+    max-width: 620px; margin: 0 auto;
+}
+.onb-section-sub strong { color: var(--accent); }
+
+.onb-mod-label {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; font-family: var(--font-mono);
+    color: var(--text-secondary); margin-bottom: 1rem;
+}
+.onb-mod-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+}
+
+.onb-modules-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+}
+.onb-mod-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.4rem;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+}
+.onb-mod-card:hover {
+    border-color: var(--accent-dim); transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 20px var(--accent-glow);
+}
+.onb-mod-card .onb-mod-icon { font-size: 1.8rem; display: block; margin-bottom: 0.6rem; }
+.onb-mod-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+.onb-mod-card p { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+.onb-mod-card.onb-mod-soon { opacity: 0.6; border-style: dashed; }
+.onb-mod-card.onb-mod-soon:hover { opacity: 0.85; }
+.onb-mod-tag {
+    display: inline-block; margin-top: 0.5rem;
+    font-size: 0.6rem; font-weight: 700; font-family: var(--font-mono);
+    background: rgba(88,166,255,0.1); color: var(--info);
+    border: 1px solid rgba(88,166,255,0.2); border-radius: 12px;
+    padding: 0.15rem 0.55rem; letter-spacing: 0.3px;
+}
+
+.onb-benefits-cta {
+    text-align: center; margin-top: 3rem;
+    padding-top: 2rem; border-top: 1px solid var(--border);
+}
+.onb-benefits-quote {
+    font-size: 1.05rem; font-style: italic; color: var(--text-secondary);
+    line-height: 1.7; margin-bottom: 2rem;
+}
+.onb-step-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--accent); color: var(--bg-primary);
+    border: none; border-radius: var(--radius-sm);
+    padding: 0.9rem 2.2rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; font-family: var(--font-sans);
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 4px 20px rgba(0,255,136,0.25);
+}
+.onb-step-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,255,136,0.35);
+}
+.onb-back-link {
+    display: block; background: none; border: none;
+    color: var(--text-muted); font-size: 0.78rem;
+    cursor: pointer; margin-top: 1rem; font-family: var(--font-sans);
+    transition: color 0.25s;
+}
+.onb-back-link:hover { color: var(--accent); }
+
+/* ═══ VIEW 3 — SOL Help box ═══ */
+.onb-sol-help {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1rem 1.2rem;
+    margin-top: 1.5rem; text-align: left;
+}
+.onb-sol-help-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 0.1rem; }
+.onb-sol-help-text strong { font-size: 0.82rem; color: var(--text-primary); display: block; margin-bottom: 0.2rem; }
+.onb-sol-help-text p { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 0.4rem; }
+.onb-sol-help-link {
+    font-size: 0.72rem; color: var(--info); text-decoration: none;
+    font-weight: 600; transition: color 0.25s;
+}
+.onb-sol-help-link:hover { color: var(--accent); }
+
+/* ─── Light theme ─── */
+[data-theme="light"] .onb-hero {
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,153,77,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(37,99,235,0.03) 0%, transparent 50%),
+                var(--bg-primary);
+}
+[data-theme="light"] .onb-hero-cta {
+    box-shadow: 0 4px 20px rgba(0,153,77,0.2), 0 0 40px rgba(0,153,77,0.08);
+}
+[data-theme="light"] .onb-hero-cta:hover {
+    box-shadow: 0 8px 36px rgba(0,153,77,0.3), 0 0 60px rgba(0,153,77,0.1);
+}
+[data-theme="light"] .onb-particle { background: var(--accent); }
+
+/* ─── Responsive ─── */
+@media(max-width:768px) {
+    .onb-hero-title { font-size: 2rem; }
+    .onb-hero-sub { font-size: 0.9rem; }
+    .onb-hero-cta { padding: 0.9rem 2rem; font-size: 1rem; }
+    .onb-modules-grid { grid-template-columns: repeat(2, 1fr); }
+    .onb-section-title { font-size: 1.5rem; }
+}
+@media(max-width:480px) {
+    .onb-hero-title { font-size: 1.6rem; }
+    .onb-modules-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- JS -->
+<script th:src="@{/js/api-client.js}"></script>
+<script th:src="@{/js/app-state.js}"></script>
+<script th:src="@{/js/error-handler.js}"></script>
+<script>
+    /* ═══ Onboarding Navigation ═══ */
+    var currentOnbView = 1;
+
+    function onbGo(view) {
+        if (view === currentOnbView) return;
+        var current = document.getElementById('onb-' + currentOnbView);
+        var target  = document.getElementById('onb-' + view);
+        if (current) {
+            current.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            current.style.opacity = '0';
+            current.style.transform = 'translateY(-10px)';
+        }
+        setTimeout(function() {
+            document.querySelectorAll('.onb-view').forEach(function(v) {
+                v.classList.remove('active');
+                v.style.opacity = ''; v.style.transform = ''; v.style.transition = '';
+            });
+            if (target) {
+                target.classList.add('active');
+                void target.offsetWidth;
+                target.style.animation = 'none';
+                void target.offsetWidth;
+                target.style.animation = '';
+            }
+            currentOnbView = view;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 220);
+    }
+
+    /* ═══ Config del campo según tipo de documento ═══ */
+    var DOC_CONFIG = {
+        '1': { label: '👤 Número de DNI',              placeholder: '12345678',    maxLength: 8  },
+        '6': { label: '🏢 Número de RUC',              placeholder: '20XXXXXXXXX', maxLength: 11 },
+        '4': { label: '📄 Carnet de Extranjería',      placeholder: 'CE-XXXXXXX',  maxLength: 12 },
+        '7': { label: '📄 Número de Pasaporte',        placeholder: 'Pasaporte',   maxLength: 12 },
+        'A': { label: '📄 Cédula Diplomática',         placeholder: 'Cédula',      maxLength: 15 },
+        'B': { label: '📄 Doc. Ident. País Residencia',placeholder: 'Documento',   maxLength: 15 },
+        'C': { label: '📄 Tax Identification Number',  placeholder: 'TIN',         maxLength: 15 },
+        'D': { label: '📄 Identification Number',      placeholder: 'IN',          maxLength: 15 },
+        '0': { label: '📄 Número de Documento',        placeholder: 'Documento',   maxLength: 15 }
+    };
+
+    function updateDocField() {
+        var tipoDoc  = document.getElementById('onb-tipo-doc');
+        var numDoc   = document.getElementById('onb-numdoc');
+        var numLabel = document.getElementById('onb-numdoc-label');
+        if (!tipoDoc || !numDoc || !numLabel) return;
+        var cfg = DOC_CONFIG[tipoDoc.value] || DOC_CONFIG['0'];
+        numLabel.textContent = cfg.label;
+        numDoc.placeholder   = cfg.placeholder;
+        numDoc.maxLength     = cfg.maxLength;
+    }
+
+    /* ═══ Cargar Tipo de Documento desde Catálogo SUNAT Nº 06 ═══ */
+    function cargarTiposDocumento() {
+        var select = document.getElementById('onb-tipo-doc');
+        if (!select) return Promise.resolve();
+
+        /* Landing publica: no consumir APIs protegidas al cargar */
+        select.innerHTML = '';
+        var fb = [
+            { codigo: '6', desc: 'REG. UNICO DE CONTRIBUYENTES' },
+            { codigo: '1', desc: 'DOC. NACIONAL DE IDENTIDAD' }
+        ];
+        fb.forEach(function(item) {
+            var opt = document.createElement('option');
+            opt.value = item.codigo;
+            opt.textContent = item.codigo + ' — ' + item.desc;
+            select.appendChild(opt);
+        });
+        select.value = '6';
+        updateDocField();
+        return Promise.resolve();
+    }
+
+    /* ═══ Tipo doc selector ═══ */
+    document.addEventListener('DOMContentLoaded', function() {
+        var nextRoute = ApiClient.resolveInitialRoute();
+        if (nextRoute !== '/login') {
+            window.location.href = nextRoute;
+            return;
+        }
+
+        var tipoDoc = document.getElementById('onb-tipo-doc');
+        if (tipoDoc) {
+            tipoDoc.addEventListener('change', updateDocField);
+        }
+
+        cargarTiposDocumento();
+    });
+
+    /* ═══ Onboarding Logo Upload — Auto-detect type ═══ */
+    function _onbDetectImageType(file) {
+        return new Promise(function(resolve) {
+            /* Try SVG first (text-based) */
+            var tr = new FileReader();
+            tr.onload = function() {
+                if ((tr.result || '').toLowerCase().indexOf('<svg') >= 0) { resolve('svg'); return; }
+                /* Binary check for PNG / JPG */
+                var br = new FileReader();
+                br.onload = function() {
+                    var a = new Uint8Array(br.result);
+                    if (a.length >= 4 && a[0]===0x89 && a[1]===0x50 && a[2]===0x4E && a[3]===0x47) { resolve('png'); return; }
+                    if (a.length >= 3 && a[0]===0xFF && a[1]===0xD8 && a[2]===0xFF) { resolve('jpg'); return; }
+                    resolve(null);
+                };
+                br.onerror = function() { resolve(null); };
+                br.readAsArrayBuffer(file.slice(0, 8));
+            };
+            tr.onerror = function() { resolve(null); };
+            tr.readAsText(file.slice(0, 1024));
+        });
+    }
+
+    function onbHandleLogoUpload(input) {
+        if (!input.files || input.files.length === 0) return;
+        var file = input.files[0];
+        var resultDiv = document.getElementById('onb-logo-result');
+
+        if (file.size > 10 * 1024 * 1024) {
+            _showOnbLogoResult(resultDiv, false, '⚠️ Excede 10 MB');
+            return;
+        }
+        if (!ETIA.companyId) {
+            _showOnbLogoResult(resultDiv, false, '⚠️ No se detectó empresa');
+            return;
+        }
+
+        _onbDetectImageType(file).then(function(detectedType) {
+            if (!detectedType) {
+                _showOnbLogoResult(resultDiv, false, '⚠️ Formato no reconocido. Usa PNG, JPG o SVG.');
+                input.value = '';
+                return;
+            }
+
+            if (detectedType === 'svg') { _doOnbLogoUpload(file, resultDiv, detectedType); return; }
+
+            var img = new Image();
+            img.onload = function() {
+                var w = img.naturalWidth, h = img.naturalHeight;
+                URL.revokeObjectURL(img.src);
+                if (w < 50 || h < 50) { _showOnbLogoResult(resultDiv, false, '⚠️ Muy pequeña (' + w + '×' + h + ')'); return; }
+                if (w > 2000 || h > 2000) {
+                    var ratio = Math.min(2000 / w, 2000 / h);
+                    var canvas = document.createElement('canvas');
+                    canvas.width = Math.round(w * ratio); canvas.height = Math.round(h * ratio);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(function(blob) { _doOnbLogoUpload(new File([blob], file.name, { type: file.type }), resultDiv, detectedType); }, file.type);
+                    return;
+                }
+                _doOnbLogoUpload(file, resultDiv, detectedType);
+            };
+            img.onerror = function() { _doOnbLogoUpload(file, resultDiv, detectedType); };
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    function _doOnbLogoUpload(file, resultDiv, logoType) {
+        ApiClient.uploadLogo(ETIA.companyId, file).then(function() {
+            var preview = document.getElementById('onb-logo-preview');
+            var placeholder = document.getElementById('onb-logo-placeholder');
+            var wrap = document.getElementById('onb-logo-upload-wrap');
+            if (preview) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                preview.style.objectFit = (logoType === 'svg') ? 'scale-down' : 'contain';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (wrap) wrap.style.borderStyle = 'solid';
+            if (ETIA.company) {
+                ETIA.company.tieneLogo = true;
+                ETIA.company.logoFormat = logoType || 'png';
+            }
+            if (ETIA.invalidateLogoCache) ETIA.invalidateLogoCache();
+            _showOnbLogoResult(resultDiv, true, '✅ Logo ' + (logoType || '').toUpperCase() + ' subido exitosamente');
+        }).catch(function(err) {
+            _showOnbLogoResult(resultDiv, false, '❌ Error: ' + (err.message || 'desconocido'));
+        });
+    }
+
+    function _showOnbLogoResult(el, ok, msg) {
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.background = ok ? 'rgba(0,255,136,0.06)' : 'rgba(248,81,73,0.06)';
+        el.style.border = ok ? '1px solid rgba(0,255,136,0.2)' : '1px solid rgba(248,81,73,0.2)';
+        el.style.color = ok ? 'var(--accent)' : 'var(--danger)';
+        el.textContent = msg;
+        if (ok) setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+
+    /* ═══ Save form data and navigate to menu ═══ */
+    function onbSaveAndGo() {
+        var payload = {};
+        var el;
+        el = document.getElementById('onb-usersol');  if (el && el.value.trim()) payload.usuarioSol = el.value.trim();
+        el = document.getElementById('onb-clavesol'); if (el && el.value.trim()) payload.claveSol = el.value.trim();
+        el = document.getElementById('onb-email');    if (el && el.value.trim()) payload.emailContacto = el.value.trim();
+        el = document.getElementById('onb-phone');    if (el && el.value.trim()) payload.telefono = el.value.trim();
+
+        if (ETIA.companyId && Object.keys(payload).length > 0) {
+            ApiClient.updateCompany(ETIA.companyId, payload).then(function() {
+                sessionStorage.removeItem('etia_company');
+                window.location.href = '/menu';
+            }).catch(function() {
+                window.location.href = '/menu';
+            });
+        } else {
+            window.location.href = '/menu';
+        }
+    }
+</script>
+</body>
+</html>

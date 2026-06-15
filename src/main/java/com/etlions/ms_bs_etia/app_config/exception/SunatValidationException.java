@@ -1,0 +1,23 @@
+package com.etlions.ms_bs_etia.app_config.exception;
+
+import java.util.List;
+
+public class SunatValidationException extends RuntimeException {
+
+    private final List<String> errors;
+
+    public SunatValidationException(String message, List<String> errors) {
+        super(message);
+        this.errors = errors;
+    }
+
+    public SunatValidationException(String message) {
+        super(message);
+        this.errors = List.of(message);
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+}
+

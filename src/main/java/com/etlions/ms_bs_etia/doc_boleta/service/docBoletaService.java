@@ -1,22 +1,44 @@
 package com.etlions.ms_bs_etia.doc_boleta.service;
 
-import com.etlions.openapicodegen.dto.AnularBoleta200Response;
-import com.etlions.openapicodegen.dto.AnularBoletaRequest;
-import com.etlions.openapicodegen.dto.BoletaEmitirRequest;
-import com.etlions.openapicodegen.dto.ListarBoletas200Response;
+import com.etlions.openapicodegen.dto.BoletaResponseDto;
+import com.etlions.openapicodegen.dto.AnularBoletaDto;
+import com.etlions.openapicodegen.dto.BoletaEmitirDto;
+import com.etlions.openapicodegen.dto.BoletaListResponseDto;
+import com.etlions.openapicodegen.dto.DocumentValidationResultDto;
 import com.etlions.openapicodegen.dto.SuccessResponse;
 
 import java.util.Date;
 
-public interface docBoletaService {
+public interface DocBoletaService {
 
-    AnularBoleta200Response emitirBoleta(BoletaEmitirRequest request);
+    BoletaResponseDto emitirBoleta(BoletaEmitirDto request);
 
-    AnularBoleta200Response anularBoleta(String boletaId, AnularBoletaRequest request);
+    BoletaResponseDto anularBoleta(String boletaId, AnularBoletaDto request);
 
     SuccessResponse eliminarBoletaBorrador(String boletaId);
 
-    ListarBoletas200Response listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
+    BoletaListResponseDto listarBoletas(String companyId, Date desdeFecha, Date hastaFecha,
                                            String serie, Integer numero,
                                            Integer page, Integer size);
+
+    BoletaResponseDto obtenerBoleta(String boletaId);
+
+    /** Ejecuta validación interna de una boleta y actualiza su estado a VALIDADO o CON_ERROR */
+    DocumentValidationResultDto validarBoleta(String boletaId);
+
+    /** Actualiza un borrador de boleta sin emitir */
+    BoletaResponseDto actualizarBoletaBorrador(String boletaId, BoletaEmitirDto request);
+
+    /** Descarga el XML UBL 2.1 tipo "03" de la boleta */
+    BoletaXmlResult descargarBoletaXml(String boletaId);
+    
+    /** Genera y devuelve el PDF de representación impresa de una boleta */
+    BoletaPdfResult descargarBoletaPdf(String boletaId);
+
+    /** Result record para descarga de XML */
+    record BoletaXmlResult(byte[] content, String filename, boolean hasContent) {}
+    
+    /** Result record para descarga de PDF */
+    record BoletaPdfResult(byte[] content, String filename, boolean hasContent) {}
 }
+

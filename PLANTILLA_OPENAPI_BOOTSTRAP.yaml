@@ -1,0 +1,1513 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  📐 PLANTILLA OPENAPI BOOTSTRAP — ESTÁNDAR ETLIONS                        ║
+# ║                                                                            ║
+# ║  Instrucciones:                                                            ║
+# ║  1. Copiar este archivo a src/main/resources/swagger/ms-bs-{nombre}.yaml   ║
+# ║  2. Buscar y reemplazar TODOS los {placeholders}                           ║
+# ║  3. Eliminar los dominios de ejemplo que no apliquen                       ║
+# ║  4. Agregar dominios adicionales copiando las secciones marcadas           ║
+# ║  5. NO modificar los schemas genéricos (SuccessResponse, ErrorResponse,    ║
+# ║     PaginationMeta, DocumentValidationResultDto)                           ║
+# ║                                                                            ║
+# ║  Placeholders globales a reemplazar:                                       ║
+# ║    {proyecto_titulo}     → Nombre del proyecto                             ║
+# ║    {proyecto_version}    → Versión semántica (ej: 1.0.0)                   ║
+# ║    {proyecto_descripcion}→ Descripción técnica del servicio                ║
+# ║    {puerto}              → Puerto del servidor (ej: 8080)                  ║
+# ║                                                                            ║
+# ║  Placeholders por dominio (buscar/reemplazar por bloque):                  ║
+# ║    {dominio}         → nombre en snake_case (ej: producto, orden_compra)   ║
+# ║    {Dominio}         → nombre en PascalCase (ej: Producto, OrdenCompra)    ║
+# ║    {dominio_plural}  → plural en snake_case (ej: productos)               ║
+# ║    {DominioPlural}   → plural en PascalCase (ej: Productos)               ║
+# ║    {prefijo_id}      → prefijo corto de ID (ej: prd, orc)                 ║
+# ║    {dominio_desc}    → descripción del tag                                ║
+# ║                                                                            ║
+# ║  Ref: ESPECIFICACION_TECNICA.md — Secciones 15-23                         ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+openapi: 3.0.3
+info:
+  title: "{proyecto_titulo}"
+  version: "{proyecto_version}"
+  description: "{proyecto_descripcion}"
+servers:
+  - url: http://localhost:{puerto}/api
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAGS — Declarar un tag por cada dominio del proyecto
+# ══════════════════════════════════════════════════════════════════════════════
+tags:
+  # ── Dominio maestro (CRUD completo) ──
+  - name: {dominio}
+    description: "{dominio_desc}"
+
+  # ── Dominio documento (CRUD + lifecycle: validar/emitir/xml) ──
+  # - name: {doc_dominio}
+  #   description: "{doc_dominio_desc}"
+
+  # ── Catálogo estático (solo lectura) ──
+  # - name: {catalogo}
+  #   description: "{catalogo_desc}"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PATHS
+# ══════════════════════════════════════════════════════════════════════════════
+paths:
+
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║  BLOQUE A — DOMINIO MAESTRO (CRUD)                                   ║
+  # ║  Copiar este bloque entero para cada entidad maestra del sistema.    ║
+  # ║  Reemplazar: {dominio}, {Dominio}, {DominioPlural}, {prefijo_id}    ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  # ==================== {DOMINIO} ====================
+  /{dominio}:
+    # ── TIPO 1: Crear recurso ──
+    post:
+      summary: "Crear {dominio}"
+      operationId: crear{Dominio}
+      tags:
+        - {dominio}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{Dominio}CreateDto'
+            example:
+              companyId: "cmp_20601234567"
+              nombre: "Ejemplo de {dominio}"
+              descripcion: "Descripción del {dominio}"
+      responses:
+        "200":
+          description: "{Dominio} creado exitosamente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{Dominio}ResponseDto'
+              example:
+                isSuccess: true
+                status: "OK"
+                message: "Operación exitosa"
+                timestamp: "2026-01-01T10:30:00Z"
+                data:
+                  id: "{prefijo_id}_001"
+                  companyId: "cmp_20601234567"
+                  nombre: "Ejemplo de {dominio}"
+                  descripcion: "Descripción del {dominio}"
+                  estado: "ACTIVO"
+                  fechaCreacion: "2026-01-01T10:30:00Z"
+        "400":
+          description: "Error de validación"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "ERR-400"
+                message: "Error de validación en los campos enviados"
+                timestamp: "2026-01-01T10:30:00Z"
+                errors:
+                  - "nombre: no puede ser vacío"
+                  - "companyId: es requerido"
+        "500":
+          description: "Error interno"
+
+    # ── TIPO 2: Listar con paginación ──
+    get:
+      summary: "Listar {dominio_plural}"
+      operationId: listar{DominioPlural}
+      tags:
+        - {dominio}
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "ID de la empresa"
+          example: "cmp_20601234567"
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: "Filtrar por estado"
+          example: "ACTIVO"
+        # ── Agregar filtros de fecha si el dominio es temporal ──
+        # - name: desdeFecha
+        #   in: query
+        #   schema:
+        #     type: string
+        #     format: date
+        #   example: "2026-01-01"
+        # - name: hastaFecha
+        #   in: query
+        #   schema:
+        #     type: string
+        #     format: date
+        #   example: "2026-12-31"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: "Lista de {dominio_plural}"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{Dominio}ListResponseDto'
+              example:
+                isSuccess: true
+                status: "OK"
+                message: "Operación exitosa"
+                timestamp: "2026-01-01T10:30:00Z"
+                data:
+                  content:
+                    - id: "{prefijo_id}_001"
+                      companyId: "cmp_20601234567"
+                      nombre: "Ejemplo 1"
+                      estado: "ACTIVO"
+                    - id: "{prefijo_id}_002"
+                      companyId: "cmp_20601234567"
+                      nombre: "Ejemplo 2"
+                      estado: "ACTIVO"
+                  pagination:
+                    totalElements: 50
+                    totalPages: 5
+                    currentPage: 0
+                    pageSize: 10
+        "401":
+          description: "Unauthorized"
+
+    # ── TIPO 4A: Actualizar recurso (ID en query) ──
+    put:
+      summary: "Actualizar {dominio}"
+      operationId: actualizar{Dominio}
+      tags:
+        - {dominio}
+      parameters:
+        - name: {dominio}Id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "ID del {dominio} a actualizar"
+          example: "{prefijo_id}_001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{Dominio}UpdateDto'
+            example:
+              nombre: "Nombre actualizado"
+              descripcion: "Descripción actualizada"
+      responses:
+        "200":
+          description: "{Dominio} actualizado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{Dominio}ResponseDto'
+              example:
+                isSuccess: true
+                status: "OK"
+                message: "Operación exitosa"
+                timestamp: "2026-01-01T10:30:00Z"
+                data:
+                  id: "{prefijo_id}_001"
+                  nombre: "Nombre actualizado"
+                  estado: "ACTIVO"
+        "400":
+          description: "No se puede actualizar"
+        "404":
+          description: "{Dominio} no encontrado"
+
+    # ── TIPO 5: Eliminar recurso ──
+    delete:
+      summary: "Eliminar {dominio}"
+      operationId: eliminar{Dominio}
+      tags:
+        - {dominio}
+      parameters:
+        - name: {dominio}Id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "{prefijo_id}_001"
+        - name: softDelete
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: "true = desactiva (soft), false = elimina físicamente"
+          example: true
+      responses:
+        "200":
+          description: "{Dominio} eliminado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                isSuccess: true
+                status: "OK"
+                message: "{Dominio} eliminado exitosamente"
+                timestamp: "2026-01-01T10:30:00Z"
+        "404":
+          description: "{Dominio} no encontrado"
+
+  # ── TIPO 3: Obtener por ID ──
+  /{dominio}/{"{dominio}Id"}:
+    get:
+      summary: "Obtener {dominio} por ID"
+      operationId: obtener{Dominio}
+      tags:
+        - {dominio}
+      parameters:
+        - name: "{dominio}Id"
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "ID del {dominio}"
+          example: "{prefijo_id}_001"
+      responses:
+        "200":
+          description: "{Dominio} encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{Dominio}ResponseDto'
+              example:
+                isSuccess: true
+                status: "OK"
+                message: "Operación exitosa"
+                timestamp: "2026-01-01T10:30:00Z"
+                data:
+                  id: "{prefijo_id}_001"
+                  companyId: "cmp_20601234567"
+                  nombre: "Ejemplo"
+                  descripcion: "Descripción"
+                  estado: "ACTIVO"
+                  fechaCreacion: "2026-01-01T10:30:00Z"
+        "404":
+          description: "{Dominio} no encontrado"
+
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║  BLOQUE B — DOMINIO DOCUMENTO (CRUD + Lifecycle)                     ║
+  # ║  Copiar este bloque para cada documento con máquina de estados.      ║
+  # ║  Incluye: emitir, listar, obtener, actualizar, eliminar,            ║
+  # ║           validar, emitir borrador, descargar archivo, anular        ║
+  # ║  Reemplazar: {doc}, {Doc}, {DocPlural}, {doc_prefijo_id}            ║
+  # ║              {doc_serie_ejemplo} (ej: F001, B001, FC01, FD01)        ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  # ==================== {DOC} ====================
+  # /{doc}:
+  #   # ── TIPO 1: Emitir documento (crear + opcional XML) ──
+  #   post:
+  #     summary: "Emitir {doc}"
+  #     operationId: emitir{Doc}
+  #     tags:
+  #       - {doc}
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/{Doc}EmitirDto'
+  #           example:
+  #             companyId: "cmp_20601234567"
+  #             clientId: "cli_123456"
+  #             serie: "{doc_serie_ejemplo}"
+  #             numero: 1
+  #             fechaEmision: "2026-01-01"
+  #             moneda: "PEN"
+  #             gravadas: 1000.00
+  #             igv: 180.00
+  #             total: 1180.00
+  #             detalle:
+  #               - descripcion: "Producto ejemplo"
+  #                 cantidad: 2
+  #                 valorUnitario: 500.00
+  #                 precioUnitario: 590.00
+  #             formaPago: "CONTADO"
+  #             emitir: true
+  #     responses:
+  #       "200":
+  #         description: "{Doc} emitido exitosamente"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Operación exitosa"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{doc_prefijo_id}_001"
+  #                 companyId: "cmp_20601234567"
+  #                 serie: "{doc_serie_ejemplo}"
+  #                 numero: 1
+  #                 estado: "ENVIADA"
+  #                 total: 1180.00
+  #                 fechaCreacion: "2026-01-01T10:30:00Z"
+  #       "400":
+  #         description: "Error de validación"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #             example:
+  #               code: "ERR-400"
+  #               message: "Error de validación"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               errors:
+  #                 - "serie: formato inválido"
+  #                 - "total: no coincide con la suma de detalle"
+  #       "500":
+  #         description: "Error interno"
+  #
+  #   # ── TIPO 2: Listar documentos con filtros temporales ──
+  #   get:
+  #     summary: "Listar {doc_plural}"
+  #     operationId: listar{DocPlural}
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: companyId
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         example: "cmp_20601234567"
+  #       - name: desdeFecha
+  #         in: query
+  #         schema:
+  #           type: string
+  #           format: date
+  #         example: "2026-01-01"
+  #       - name: hastaFecha
+  #         in: query
+  #         schema:
+  #           type: string
+  #           format: date
+  #         example: "2026-12-31"
+  #       - name: serie
+  #         in: query
+  #         schema:
+  #           type: string
+  #         description: "Filtrar por serie"
+  #         example: "{doc_serie_ejemplo}"
+  #       - name: estado
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+  #         description: "Filtrar por estado"
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 0
+  #       - name: size
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #     responses:
+  #       "200":
+  #         description: "Lista de {doc_plural}"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ListResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Operación exitosa"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 content:
+  #                   - id: "{doc_prefijo_id}_001"
+  #                     serie: "{doc_serie_ejemplo}"
+  #                     numero: 1
+  #                     total: 1180.00
+  #                     estado: "ENVIADA"
+  #                   - id: "{doc_prefijo_id}_002"
+  #                     serie: "{doc_serie_ejemplo}"
+  #                     numero: 2
+  #                     total: 590.00
+  #                     estado: "BORRADOR"
+  #                 pagination:
+  #                   totalElements: 25
+  #                   totalPages: 3
+  #                   currentPage: 0
+  #                   pageSize: 10
+  #
+  #   # ── TIPO 6C: Anular documento ──
+  #   put:
+  #     summary: "Anular {doc}"
+  #     operationId: anular{Doc}
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         example: "{doc_prefijo_id}_001"
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/Anular{Doc}Dto'
+  #           example:
+  #             motivoAnulacion: "Error en los datos del documento"
+  #     responses:
+  #       "200":
+  #         description: "{Doc} anulado exitosamente"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "{Doc} anulado"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{doc_prefijo_id}_001"
+  #                 estado: "ANULADA"
+  #       "400":
+  #         description: "No se puede anular"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+  #
+  #   # ── TIPO 5: Eliminar borrador ──
+  #   delete:
+  #     summary: "Eliminar borrador de {doc}"
+  #     operationId: eliminar{Doc}Borrador
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         example: "{doc_prefijo_id}_001"
+  #     responses:
+  #       "200":
+  #         description: "Borrador eliminado"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/SuccessResponse'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Borrador eliminado exitosamente"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #       "400":
+  #         description: "Solo se pueden eliminar borradores no enviados"
+  #
+  # # ── TIPO 3: Obtener documento por ID ──
+  # /{doc}/{"{doc}Id"}:
+  #   get:
+  #     summary: "Obtener {doc} por ID"
+  #     operationId: obtener{Doc}
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         example: "{doc_prefijo_id}_001"
+  #     responses:
+  #       "200":
+  #         description: "{Doc} encontrado"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Operación exitosa"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{doc_prefijo_id}_001"
+  #                 companyId: "cmp_20601234567"
+  #                 clientId: "cli_123456"
+  #                 serie: "{doc_serie_ejemplo}"
+  #                 numero: 1
+  #                 fechaEmision: "2026-01-01"
+  #                 moneda: "PEN"
+  #                 gravadas: 1000.00
+  #                 igv: 180.00
+  #                 total: 1180.00
+  #                 estado: "ENVIADA"
+  #                 fechaCreacion: "2026-01-01T10:30:00Z"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+  #
+  # # ── TIPO 6A: Validar documento ──
+  # /{doc}/{"{doc}Id"}/validar:
+  #   post:
+  #     summary: "Validar {doc} internamente (sin emitir)"
+  #     description: |
+  #       Ejecuta todas las reglas de validación sobre un {doc} existente
+  #       y actualiza su estado a VALIDADO o CON_ERROR. No genera archivos ni transmite.
+  #       Puede ejecutarse sobre recursos en estado BORRADOR, CON_ERROR o VALIDADO.
+  #     operationId: validar{Doc}
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "ID del {doc} a validar"
+  #         example: "{doc_prefijo_id}_001"
+  #     responses:
+  #       "200":
+  #         description: "Resultado de la validación"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/DocumentValidationResultDto'
+  #             example:
+  #               valid: false
+  #               errores:
+  #                 - "Serie inválida: debe empezar con {doc_serie_ejemplo[0]}"
+  #                 - "Total no coincide con gravadas + IGV"
+  #               advertencias:
+  #                 - "Tipo de cambio no informado para moneda USD"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+  #
+  # # ── TIPO 6B: Emitir borrador ──
+  # /{doc}/{"{doc}Id"}/emitir:
+  #   put:
+  #     summary: "Emitir {doc} en estado BORRADOR"
+  #     description: |
+  #       Toma un {doc} existente con estado BORRADOR o VALIDADO, genera el archivo
+  #       de salida, lo persiste en disco y BD, y publica la notificación de emisión.
+  #     operationId: emitir{Doc}Borrador
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "ID del {doc} borrador a emitir"
+  #         example: "{doc_prefijo_id}_001"
+  #     responses:
+  #       "200":
+  #         description: "{Doc} emitido exitosamente"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "{Doc} emitido exitosamente"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{doc_prefijo_id}_001"
+  #                 estado: "ENVIADA"
+  #       "400":
+  #         description: "No está en estado BORRADOR o VALIDADO"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+  #
+  # # ── TIPO 4B: Actualizar borrador ──
+  # /{doc}/{"{doc}Id"}/actualizar:
+  #   put:
+  #     summary: "Actualizar {doc} en estado BORRADOR"
+  #     description: |
+  #       Actualiza todos los campos mutables de un {doc} existente en estado BORRADOR
+  #       o CON_ERROR. No modifica serie, número, estado, fecha de emisión ni fecha de creación.
+  #     operationId: actualizar{Doc}Borrador
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "ID del {doc} borrador a actualizar"
+  #         example: "{doc_prefijo_id}_001"
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/{Doc}EmitirDto'
+  #           example:
+  #             companyId: "cmp_20601234567"
+  #             clientId: "cli_123456"
+  #             total: 1180.00
+  #     responses:
+  #       "200":
+  #         description: "Borrador actualizado exitosamente"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Doc}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Borrador actualizado"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{doc_prefijo_id}_001"
+  #                 total: 1180.00
+  #                 estado: "BORRADOR"
+  #       "400":
+  #         description: "No está en estado editable"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+  #
+  # # ── TIPO 7: Descargar archivo ──
+  # /{doc}/{"{doc}Id"}/xml:
+  #   get:
+  #     summary: "Descargar XML del {doc}"
+  #     description: |
+  #       Retorna el archivo XML generado para el {doc} indicado.
+  #       Si aún no tiene archivo generado (BORRADOR), retorna 204.
+  #     operationId: descargar{Doc}Xml
+  #     tags:
+  #       - {doc}
+  #     parameters:
+  #       - name: "{doc}Id"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "ID del {doc}"
+  #         example: "{doc_prefijo_id}_001"
+  #     responses:
+  #       "200":
+  #         description: "Archivo XML del {doc}"
+  #         headers:
+  #           Content-Disposition:
+  #             schema:
+  #               type: string
+  #             description: 'attachment; filename="{nombre_archivo}.xml"'
+  #             example: 'attachment; filename="20601234567-01-F001-00000001.xml"'
+  #         content:
+  #           application/xml:
+  #             schema:
+  #               type: string
+  #               format: binary
+  #       "204":
+  #         description: "El {doc} existe pero aún no tiene archivo generado"
+  #       "404":
+  #         description: "{Doc} no encontrado"
+
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║  BLOQUE C — CATÁLOGO ESTÁTICO (solo lectura)                         ║
+  # ║  Copiar para cada catálogo de referencia del sistema.                ║
+  # ║  Reemplazar: {catalogo}, {Catalogo}                                  ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  # /{catalogo}:
+  #   get:
+  #     summary: "Listar {catalogo}"
+  #     operationId: listar{Catalogo}
+  #     tags:
+  #       - {catalogo}
+  #     responses:
+  #       "200":
+  #         description: "Lista de {catalogo}"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: array
+  #               items:
+  #                 $ref: '#/components/schemas/{Catalogo}Data'
+  #             example:
+  #               - id: "001"
+  #                 codigo: "01"
+  #                 descripcion: "Valor ejemplo 1"
+  #               - id: "002"
+  #                 codigo: "02"
+  #                 descripcion: "Valor ejemplo 2"
+
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║  BLOQUE D — UPLOAD DE ARCHIVO                                        ║
+  # ║  Copiar para cada endpoint que reciba archivos binarios.             ║
+  # ║  Reemplazar: {dominio}, {Dominio}, {sub_recurso}, {TipoArchivo}     ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  # /{dominio}/{sub_recurso}:
+  #   post:
+  #     summary: "Subir {tipo_archivo}"
+  #     operationId: subir{TipoArchivo}
+  #     tags:
+  #       - {dominio}
+  #     parameters:
+  #       - name: "{dominio}Id"
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "ID del {dominio}"
+  #         example: "{prefijo_id}_001"
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - archivo
+  #             properties:
+  #               archivo:
+  #                 type: string
+  #                 format: binary
+  #                 description: "Archivo ({extensiones}, max {tamaño}MB)"
+  #     responses:
+  #       "200":
+  #         description: "Archivo subido exitosamente"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/{Dominio}ResponseDto'
+  #             example:
+  #               isSuccess: true
+  #               status: "OK"
+  #               message: "Archivo subido exitosamente"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               data:
+  #                 id: "{prefijo_id}_001"
+  #       "400":
+  #         description: "Archivo inválido"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #             example:
+  #               code: "ERR-400"
+  #               message: "Archivo inválido"
+  #               timestamp: "2026-01-01T10:30:00Z"
+  #               errors:
+  #                 - "Solo se permiten archivos {extensiones}"
+  #       "404":
+  #         description: "{Dominio} no encontrado"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COMPONENTS — SCHEMAS
+# ══════════════════════════════════════════════════════════════════════════════
+components:
+  schemas:
+
+    # ╔════════════════════════════════════════════════════════════════════════╗
+    # ║  SCHEMAS GENÉRICOS — NO MODIFICAR                                    ║
+    # ║  Estos schemas son estándar del framework. Copiar tal cual.          ║
+    # ╚════════════════════════════════════════════════════════════════════════╝
+
+    # ── Wrapper de respuesta exitosa ──
+    SuccessResponse:
+      type: object
+      required: [isSuccess, status, message, timestamp]
+      properties:
+        isSuccess:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: "OK"
+        message:
+          type: string
+          example: "Operación exitosa"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-01T10:30:00Z"
+
+    # ── Wrapper de respuesta de error ──
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "ERR-400"
+        message:
+          type: string
+          example: "Error en la solicitud"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-01T10:30:00Z"
+        errors:
+          type: array
+          items:
+            type: string
+          example: ["Campo requerido faltante", "Formato inválido"]
+
+    # ── Metadata de paginación ──
+    PaginationMeta:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+          example: 50
+        totalPages:
+          type: integer
+          example: 5
+        currentPage:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+
+    # ── Resultado de validación interna ──
+    DocumentValidationResultDto:
+      type: object
+      description: "Resultado de validación interna de un recurso"
+      properties:
+        valid:
+          type: boolean
+          description: "true si pasó todas las validaciones"
+          example: true
+        errores:
+          type: array
+          description: "Errores que bloquean la operación"
+          items:
+            type: string
+          example: []
+        advertencias:
+          type: array
+          description: "Advertencias que no bloquean pero recomiendan corrección"
+          items:
+            type: string
+          example: []
+
+    # ╔════════════════════════════════════════════════════════════════════════╗
+    # ║  SCHEMAS DE DOMINIO MAESTRO (CRUD)                                   ║
+    # ║  Copiar y adaptar este bloque para cada entidad maestra.             ║
+    # ║  Reemplazar: {Dominio}, {prefijo_id}                                ║
+    # ╚════════════════════════════════════════════════════════════════════════╝
+
+    # ── Request: Crear ──
+    {Dominio}CreateDto:
+      type: object
+      required:
+        - companyId
+        - nombre
+        # - {campo_requerido_n}
+      properties:
+        companyId:
+          type: string
+          minLength: 1
+          description: "ID de la empresa propietaria"
+          example: "cmp_20601234567"
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: "Nombre del {dominio}"
+          example: "Ejemplo de {dominio}"
+        descripcion:
+          type: string
+          maxLength: 500
+          description: "Descripción (opcional)"
+          example: "Descripción del {dominio}"
+        # ── Agregar campos específicos del dominio ──
+        # {campo_string}:
+        #   type: string
+        #   example: "valor"
+        # {campo_numero}:
+        #   type: number
+        #   minimum: 0
+        #   example: 100.00
+        # {campo_fecha}:
+        #   type: string
+        #   format: date
+        #   example: "2026-01-01"
+        # {campo_enum}:
+        #   type: string
+        #   enum: [VALOR_1, VALOR_2]
+        #   default: "VALOR_1"
+        #   example: "VALOR_1"
+        # {campo_boolean}:
+        #   type: boolean
+        #   default: true
+        #   example: true
+        # {campo_array}:
+        #   type: array
+        #   minItems: 1
+        #   items:
+        #     $ref: '#/components/schemas/{SubItem}'
+
+    # ── Request: Actualizar (todos los campos opcionales) ──
+    {Dominio}UpdateDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: "Nombre actualizado"
+        descripcion:
+          type: string
+          example: "Descripción actualizada"
+        # ── Copiar campos de CreateDto SIN companyId, SIN required ──
+
+    # ── Response Data: Modelo core ──
+    {Dominio}Data:
+      type: object
+      properties:
+        # ── Identidad ──
+        id:
+          type: string
+          example: "{prefijo_id}_001"
+        companyId:
+          type: string
+          example: "cmp_20601234567"
+        # ── Campos de negocio ──
+        nombre:
+          type: string
+          example: "Ejemplo de {dominio}"
+        descripcion:
+          type: string
+          example: "Descripción del {dominio}"
+        # ── Estado ──
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
+        # ── Auditoría ──
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2026-01-01T10:30:00Z"
+        fechaActualizacion:
+          type: string
+          format: date-time
+          example: "2026-01-01T12:00:00Z"
+
+    # ── Response Wrapper: Individual ──
+    {Dominio}ResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/{Dominio}Data'
+
+    # ── Response Wrapper: Lista paginada ──
+    {Dominio}ListResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/{Dominio}Data'
+                pagination:
+                  $ref: '#/components/schemas/PaginationMeta'
+
+    # ╔════════════════════════════════════════════════════════════════════════╗
+    # ║  SCHEMAS DE DOMINIO DOCUMENTO (Lifecycle)                            ║
+    # ║  Descomentar y adaptar para cada documento con máquina de estados.   ║
+    # ║  Reemplazar: {Doc}, {doc_prefijo_id}, {doc_serie_ejemplo}           ║
+    # ╚════════════════════════════════════════════════════════════════════════╝
+
+    # # ── Request: Emitir documento ──
+    # {Doc}EmitirDto:
+    #   type: object
+    #   required:
+    #     - companyId
+    #     - clientId
+    #     - serie
+    #     - numero
+    #     - total
+    #     - detalle
+    #   properties:
+    #     companyId:
+    #       type: string
+    #       minLength: 1
+    #       description: "ID de la empresa emisora"
+    #       example: "cmp_20601234567"
+    #     clientId:
+    #       type: string
+    #       minLength: 1
+    #       description: "ID del cliente (adquiriente)"
+    #       example: "cli_123456"
+    #     serie:
+    #       type: string
+    #       pattern: "^[A-Za-z]\\d{3}$"
+    #       description: "Serie del documento (4 chars: letra + 3 dígitos)"
+    #       example: "{doc_serie_ejemplo}"
+    #     numero:
+    #       type: integer
+    #       description: "Número correlativo"
+    #       example: 1
+    #     fechaEmision:
+    #       type: string
+    #       format: date
+    #       example: "2026-01-01"
+    #     moneda:
+    #       type: string
+    #       enum: [PEN, USD]
+    #       default: "PEN"
+    #       example: "PEN"
+    #     gravadas:
+    #       type: number
+    #       minimum: 0
+    #       description: "Subtotal operaciones gravadas"
+    #       example: 1000.00
+    #     exoneradas:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     inafectas:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     gratuitas:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     igv:
+    #       type: number
+    #       minimum: 0
+    #       description: "Total IGV"
+    #       example: 180.00
+    #     total:
+    #       type: number
+    #       minimum: 0
+    #       description: "Total del documento"
+    #       example: 1180.00
+    #     subtotal:
+    #       type: number
+    #       minimum: 0
+    #       description: "Suma de LineExtensionAmount de todas las líneas"
+    #       example: 1000.00
+    #     totalConImpuestos:
+    #       type: number
+    #       minimum: 0
+    #       description: "TaxInclusiveAmount"
+    #       example: 1180.00
+    #     totalCargos:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     totalDescuentos:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     leyenda:
+    #       type: string
+    #       description: "Monto en letras"
+    #       example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+    #     formaPago:
+    #       type: string
+    #       enum: [CONTADO, CREDITO]
+    #       default: "CONTADO"
+    #       example: "CONTADO"
+    #     tipoCambio:
+    #       type: number
+    #       minimum: 0
+    #       description: "Tipo de cambio (solo si moneda != PEN)"
+    #       example: 3.7520
+    #     fechaVencimiento:
+    #       type: string
+    #       format: date
+    #       description: "Fecha de vencimiento"
+    #       example: "2026-01-01"
+    #     tipoOperacion:
+    #       type: string
+    #       default: "0101"
+    #       description: "Código de tipo de operación"
+    #       example: "0101"
+    #     horaEmision:
+    #       type: string
+    #       description: "Hora de emisión HH:mm:ss"
+    #       example: "12:00:00"
+    #     detalle:
+    #       type: array
+    #       minItems: 1
+    #       items:
+    #         $ref: '#/components/schemas/DetalleItem'
+    #     cuotas:
+    #       type: array
+    #       description: "Cuotas (solo si formaPago=CREDITO)"
+    #       items:
+    #         $ref: '#/components/schemas/CuotaCredito'
+    #     cargosDescuentos:
+    #       type: array
+    #       description: "Cargos y/o descuentos globales"
+    #       items:
+    #         $ref: '#/components/schemas/AllowanceChargeItem'
+    #     emitir:
+    #       type: boolean
+    #       default: true
+    #       description: |
+    #         Si true (default), genera archivo y notifica emisión.
+    #         Si false, guarda como BORRADOR sin generar archivo.
+    #       example: true
+    #
+    # # ── Request: Anular documento ──
+    # Anular{Doc}Dto:
+    #   type: object
+    #   required:
+    #     - motivoAnulacion
+    #   properties:
+    #     motivoAnulacion:
+    #       type: string
+    #       description: "Motivo de la anulación"
+    #       example: "Error en el monto total"
+    #
+    # # ── Response Data: Modelo core del documento ──
+    # {Doc}Data:
+    #   type: object
+    #   properties:
+    #     # ── Identidad ──
+    #     id:
+    #       type: string
+    #       example: "{doc_prefijo_id}_001"
+    #     companyId:
+    #       type: string
+    #       example: "cmp_20601234567"
+    #     clientId:
+    #       type: string
+    #       example: "cli_123456"
+    #     # ── Datos del documento ──
+    #     serie:
+    #       type: string
+    #       example: "{doc_serie_ejemplo}"
+    #     numero:
+    #       type: integer
+    #       example: 1
+    #     fechaEmision:
+    #       type: string
+    #       format: date
+    #       example: "2026-01-01"
+    #     moneda:
+    #       type: string
+    #       enum: [PEN, USD]
+    #       example: "PEN"
+    #     gravadas:
+    #       type: number
+    #       example: 1000.00
+    #     exoneradas:
+    #       type: number
+    #       example: 0.00
+    #     inafectas:
+    #       type: number
+    #       example: 0.00
+    #     gratuitas:
+    #       type: number
+    #       example: 0.00
+    #     igv:
+    #       type: number
+    #       example: 180.00
+    #     total:
+    #       type: number
+    #       example: 1180.00
+    #     subtotal:
+    #       type: number
+    #       example: 1000.00
+    #     totalConImpuestos:
+    #       type: number
+    #       example: 1180.00
+    #     totalCargos:
+    #       type: number
+    #       example: 0.00
+    #     totalDescuentos:
+    #       type: number
+    #       example: 0.00
+    #     # ── Estado y lifecycle ──
+    #     estado:
+    #       type: string
+    #       enum: [BORRADOR, VALIDADO, CON_ERROR, ENVIADA, ACEPTADA, RECHAZADA, ANULADA]
+    #       example: "ENVIADA"
+    #     erroresValidacion:
+    #       type: array
+    #       nullable: true
+    #       items:
+    #         type: string
+    #       example: []
+    #     # ── Integración externa ──
+    #     hashCdr:
+    #       type: string
+    #       nullable: true
+    #     codigoRespuestaExterno:
+    #       type: string
+    #       nullable: true
+    #     descripcionRespuestaExterno:
+    #       type: string
+    #       nullable: true
+    #     # ── Presentación ──
+    #     leyenda:
+    #       type: string
+    #       example: "SON MIL CIENTO OCHENTA Y 00/100 SOLES"
+    #     formaPago:
+    #       type: string
+    #       enum: [CONTADO, CREDITO]
+    #       example: "CONTADO"
+    #     tipoCambio:
+    #       type: number
+    #       example: 3.7520
+    #     fechaVencimiento:
+    #       type: string
+    #       format: date
+    #     tipoOperacion:
+    #       type: string
+    #       example: "0101"
+    #     horaEmision:
+    #       type: string
+    #       example: "12:00:00"
+    #     # ── Archivo ──
+    #     xmlPath:
+    #       type: string
+    #       nullable: true
+    #     # ── Detalle embebido ──
+    #     detalle:
+    #       type: array
+    #       items:
+    #         $ref: '#/components/schemas/DetalleItem'
+    #     cuotas:
+    #       type: array
+    #       items:
+    #         $ref: '#/components/schemas/CuotaCredito'
+    #     cargosDescuentos:
+    #       type: array
+    #       items:
+    #         $ref: '#/components/schemas/AllowanceChargeItem'
+    #     # ── Auditoría ──
+    #     fechaCreacion:
+    #       type: string
+    #       format: date-time
+    #       example: "2026-01-01T10:30:00Z"
+    #
+    # # ── Response Wrapper: Individual ──
+    # {Doc}ResponseDto:
+    #   allOf:
+    #     - $ref: '#/components/schemas/SuccessResponse'
+    #     - type: object
+    #       properties:
+    #         data:
+    #           $ref: '#/components/schemas/{Doc}Data'
+    #
+    # # ── Response Wrapper: Lista paginada ──
+    # {Doc}ListResponseDto:
+    #   allOf:
+    #     - $ref: '#/components/schemas/SuccessResponse'
+    #     - type: object
+    #       properties:
+    #         data:
+    #           type: object
+    #           properties:
+    #             content:
+    #               type: array
+    #               items:
+    #                 $ref: '#/components/schemas/{Doc}Data'
+    #             pagination:
+    #               $ref: '#/components/schemas/PaginationMeta'
+
+    # ╔════════════════════════════════════════════════════════════════════════╗
+    # ║  SCHEMAS REUTILIZABLES — DETALLE, CUOTAS, CARGOS                     ║
+    # ║  Descomentar si el proyecto maneja documentos con líneas de detalle. ║
+    # ╚════════════════════════════════════════════════════════════════════════╝
+
+    # # ── Línea de detalle (reutilizable en todos los documentos) ──
+    # DetalleItem:
+    #   type: object
+    #   required:
+    #     - descripcion
+    #     - cantidad
+    #     - valorUnitario
+    #     - precioUnitario
+    #   properties:
+    #     codigo:
+    #       type: string
+    #       description: "Código interno del producto/servicio"
+    #       example: "PROD-001"
+    #     descripcion:
+    #       type: string
+    #       minLength: 1
+    #       description: "Descripción del ítem"
+    #       example: "LAPTOP HP 15"
+    #     unidadMedida:
+    #       type: string
+    #       description: "Código de unidad de medida"
+    #       default: "NIU"
+    #       example: "NIU"
+    #     cantidad:
+    #       type: number
+    #       minimum: 0.01
+    #       example: 2
+    #     valorUnitario:
+    #       type: number
+    #       minimum: 0
+    #       description: "Valor unitario sin impuesto"
+    #       example: 423.73
+    #     precioUnitario:
+    #       type: number
+    #       minimum: 0
+    #       description: "Valor unitario con impuesto"
+    #       example: 500.00
+    #     subtotal:
+    #       type: number
+    #       minimum: 0
+    #       description: "Subtotal de línea (cantidad × valorUnitario)"
+    #       example: 847.46
+    #     igv:
+    #       type: number
+    #       minimum: 0
+    #       description: "Impuesto de la línea"
+    #       example: 152.54
+    #     icbper:
+    #       type: number
+    #       minimum: 0
+    #       description: "Impuesto especial (si aplica)"
+    #       example: 0.00
+    #     descuento:
+    #       type: number
+    #       minimum: 0
+    #       example: 0.00
+    #     tipoAfectacionIgv:
+    #       type: string
+    #       description: "Tipo de afectación: 10=Gravado, 20=Exonerado, 30=Inafecto"
+    #       default: "10"
+    #       example: "10"
+    #     codigoTributo:
+    #       type: string
+    #       description: "Código de tributo: 1000=IGV, 9997=EXO, 9998=INA, 9996=GRA"
+    #       default: "1000"
+    #       example: "1000"
+    #     tipoPrecio:
+    #       type: string
+    #       description: "01=Precio con impuesto, 02=Valor referencial gratuita"
+    #       default: "01"
+    #       example: "01"
+    #     porcentajeIgv:
+    #       type: number
+    #       description: "Porcentaje de impuesto aplicado"
+    #       default: 18.00
+    #       example: 18.00
+    #     baseImponible:
+    #       type: number
+    #       description: "Base imponible por línea"
+    #       minimum: 0
+    #       example: 847.46
+    #     montoImpuesto:
+    #       type: number
+    #       description: "Monto de impuesto calculado por línea"
+    #       minimum: 0
+    #       example: 152.54
+    #
+    # # ── Cuota de crédito ──
+    # CuotaCredito:
+    #   type: object
+    #   required:
+    #     - numeroCuota
+    #     - monto
+    #     - fechaVencimiento
+    #   properties:
+    #     numeroCuota:
+    #       type: string
+    #       description: "Identificador (Cuota001, Cuota002, ...)"
+    #       example: "Cuota001"
+    #     monto:
+    #       type: number
+    #       minimum: 0.01
+    #       description: "Monto de la cuota"
+    #       example: 590.00
+    #     fechaVencimiento:
+    #       type: string
+    #       format: date
+    #       description: "Fecha de vencimiento de la cuota"
+    #       example: "2026-02-01"
+    #     moneda:
+    #       type: string
+    #       description: "Moneda (hereda del documento si no se indica)"
+    #       example: "PEN"
+    #
+    # # ── Cargo / Descuento global ──
+    # AllowanceChargeItem:
+    #   type: object
+    #   required:
+    #     - chargeIndicator
+    #     - amount
+    #   properties:
+    #     chargeIndicator:
+    #       type: boolean
+    #       description: "true = Cargo, false = Descuento"
+    #       example: true
+    #     reasonCode:
+    #       type: string
+    #       description: "Código de razón (catálogo del ente regulador)"
+    #       example: "46"
+    #     reasonDescription:
+    #       type: string
+    #       description: "Descripción del cargo o descuento"
+    #       example: "Recargo al consumo"
+    #     multiplierFactor:
+    #       type: number
+    #       description: "Factor multiplicador (ej. 0.10 para 10%)"
+    #       example: 0.10
+    #     amount:
+    #       type: number
+    #       description: "Monto del cargo o descuento"
+    #       minimum: 0
+    #       example: 100.00
+    #     baseAmount:
+    #       type: number
+    #       description: "Monto base sobre el que se calcula"
+    #       minimum: 0
+    #       example: 1000.00
+
+    # ╔════════════════════════════════════════════════════════════════════════╗
+    # ║  SCHEMAS DE CATÁLOGO ESTÁTICO                                        ║
+    # ║  Descomentar si el proyecto tiene catálogos de solo lectura.         ║
+    # ║  Reemplazar: {Catalogo}                                              ║
+    # ╚════════════════════════════════════════════════════════════════════════╝
+
+    # {Catalogo}Data:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #       example: "001"
+    #     codigo:
+    #       type: string
+    #       example: "01"
+    #     descripcion:
+    #       type: string
+    #       example: "Valor ejemplo"
+

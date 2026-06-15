@@ -10,7 +10,29 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+  flyway:
+    enabled: false
   h2:
     console:
       enabled: true
       path: /h2-console
+  thymeleaf:
+    cache: false
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
+          no-store: true
+
+# ── ETIA Config ──
+etia:
+  storage:
+    base-path: ${ETIA_STORAGE_PATH:./etia_storage}
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key-minimum-32-characters-for-hmac-sha256}
+    expiration-hours: ${JWT_EXPIRATION:24}
